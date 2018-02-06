@@ -68,14 +68,16 @@ typedef struct dummyRec
     sparkle_surface_file_t *surface;
     were_event_loop_t *were;
     sparkle_client_t *client;
+    int displayWidth;
+    int displayHeight;
 
     CreateScreenResourcesProcPtr CreateScreenResources;
     DamagePtr damage;
     ScreenBlockHandlerProcPtr BlockHandler;
 
     DisplayModePtr modes;
-    int desiredWidth;
-    int desiredHeight;
+    //int desiredWidth;
+    //int desiredHeight;
     
     OsTimerPtr timer;
     

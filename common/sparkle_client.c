@@ -1,6 +1,7 @@
 #include "sparkle_client.h"
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "were/were_socket_unix.h"
 
@@ -132,6 +133,8 @@ void sparkle_client_unregister_surface(sparkle_client_t *client, const char *nam
     sparkle_packet_add_string(packet, name);
     sparkle_client_send(client, packet);
     sparkle_packet_destroy(packet);
+    
+    usleep(100000);
 }
 
 void sparkle_client_set_surface_position(sparkle_client_t *client, const char *name, int x1, int y1, int x2, int y2)

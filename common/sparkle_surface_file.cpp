@@ -111,6 +111,20 @@ void sparkle_surface_file_destroy(sparkle_surface_file_t *surface)
     delete _surface;
 }
 
+int sparkle_surface_file_width(sparkle_surface_file_t *surface)
+{
+    SparkleSurfaceFile *_surface = static_cast<SparkleSurfaceFile *>(surface);
+    
+    return _surface->width();
+}
+
+int sparkle_surface_file_height(sparkle_surface_file_t *surface)
+{
+    SparkleSurfaceFile *_surface = static_cast<SparkleSurfaceFile *>(surface);
+    
+    return _surface->height();
+}
+
 void *sparkle_surface_file_data(sparkle_surface_file_t *surface)
 {
     SparkleSurfaceFile *_surface = static_cast<SparkleSurfaceFile *>(surface);

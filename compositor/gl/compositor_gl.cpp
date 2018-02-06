@@ -693,8 +693,31 @@ void CompositorGL::handleData(sparkle_packet_t *packet, void *user)
         }
         else
         {
+            //FIXME unregister
             sparkle_message("Already registered.\n");
         }
+        
+        compositor->_redraw = true;
+    }
+    else if (operation == SPARKLE_CLIENT_UNREGISTER_SURFACE)
+    {
+        std::string name = sparkle_packet_get_string(packet);
+        
+        std::vector<CompositorGLSurface *>::iterator it = compositor->_surfaces.begin();
+        while (it != compositor->_surfaces.end())
+        {
+            CompositorGLSurface *surface = *it;
+            if (surface->name() == name)
+            {
+                delete surface;
+                it = compositor->_surfaces.erase(it);
+                sparkle_message("Unregistered.\n");
+            }
+            else
+                ++it;
+        }
+        
+        compositor->_redraw = true;
     }
     else if (operation == SPARKLE_CLIENT_SET_SURFACE_POSITION)
     {

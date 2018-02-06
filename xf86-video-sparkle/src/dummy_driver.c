@@ -318,37 +318,40 @@ DUMMYProbe(DriverPtr drv, int flags)
 
 static void handle_connection(void *user)
 {
-    DUMMYPtr dPtr = (DUMMYPtr)user;
+    ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
+    DUMMYPtr dPtr = DUMMYPTR(pScrn);
         
     fprintf(stderr, "Connected\n");
     
-    DisplayModePtr mode = dPtr->modes;
-    
-    sparkle_client_register_surface_file(dPtr->client, dPtr->surface_name, dPtr->surface_file, mode->HDisplay, mode->VDisplay);
-    sparkle_client_set_surface_position(dPtr->client, dPtr->surface_name, 0, 0, dPtr->desiredWidth, dPtr->desiredHeight);
+    sparkle_client_register_surface_file(dPtr->client, dPtr->surface_name, dPtr->surface_file, sparkle_surface_file_width(dPtr->surface), sparkle_surface_file_height(dPtr->surface));
+    sparkle_client_set_surface_position(dPtr->client, dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight);
 }
 
 static void handle_disconnection(void *user)
 {   
-    DUMMYPtr dPtr = (DUMMYPtr)user;
+    ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
+    DUMMYPtr dPtr = DUMMYPTR(pScrn);
     
     fprintf(stderr, "Disconnected\n");
 }
 
 static void handle_data(sparkle_packet_t *packet, void *user)
 {
-    DUMMYPtr dPtr = (DUMMYPtr)user;
+    ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
+    DUMMYPtr dPtr = DUMMYPTR(pScrn);
     
     //fprintf(stderr, "Data\n");
 
     uint32_t operation = sparkle_packet_get_uint32(packet);
     
     if (operation == SPARKLE_SERVER_DISPLAY_SIZE)
-    {
-        dPtr->desiredWidth = sparkle_packet_get_uint32(packet);
-        dPtr->desiredHeight = sparkle_packet_get_uint32(packet);
+    {       
+        dPtr->displayWidth = sparkle_packet_get_uint32(packet);
+        dPtr->displayHeight = sparkle_packet_get_uint32(packet);
         
-        sparkle_client_set_surface_position(dPtr->client, dPtr->surface_name, 0, 0, dPtr->desiredWidth, dPtr->desiredHeight);
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DISPLAY SIZE: %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
+        
+        sparkle_client_set_surface_position(dPtr->client, dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight);
     }
 }
 
@@ -360,35 +363,38 @@ Bool DUMMYCrtc_resize(ScrnInfoPtr pScrn, int width, int height)
     ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
 
-
-    //XXX
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Crtc resize: %dx%d\n", width, height);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "PIXMAP SIZE: %dx%d\n", width, height);
 
 
 
     PixmapPtr pPixmap = pScreen->GetScreenPixmap(pScreen);
 
+#if 0
     if (pScrn->virtualX == width && pScrn->virtualY == height)
     {
-#if 0
-        //XXX
-        dPtr->shared->width = pScrn->virtualX;
-        dPtr->shared->height = pScrn->virtualY;
-        dPtr->shared->damageX1 = 0;
-        dPtr->shared->damageY1 = 0;
-        dPtr->shared->damageX2 = pScrn->virtualX;
-        dPtr->shared->damageY2 = pScrn->virtualY;
-#endif
-
         return TRUE;
     }
+#endif
+
+    sparkle_client_unregister_surface(dPtr->client, dPtr->surface_name);
+
+    if (dPtr->surface != NULL)
+        sparkle_surface_file_destroy(dPtr->surface);
+
+    dPtr->surface = sparkle_surface_file_create(dPtr->surface_file, width, height, 1);
+    
+    sparkle_client_register_surface_file(dPtr->client, dPtr->surface_name, dPtr->surface_file, sparkle_surface_file_width(dPtr->surface), sparkle_surface_file_height(dPtr->surface));
+    sparkle_client_set_surface_position(dPtr->client, dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight);
+    
 
     pScrn->virtualX = width;
     pScrn->virtualY = height;
     pScrn->displayWidth = width; //XXX
 
     int cpp = (pScrn->bitsPerPixel + 7) / 8;
-    pScreen->ModifyPixmapHeader(pPixmap, width, height, -1, -1, pScrn->displayWidth * cpp, NULL);
+    pScreen->ModifyPixmapHeader(pPixmap, width, height, -1, -1, pScrn->displayWidth * cpp, sparkle_surface_file_data(dPtr->surface));
+    
+
 
     //XXX
     int i;
@@ -716,11 +722,13 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
     if (dPtr->surface_file == NULL)
         return FALSE;
     
-    dPtr->desiredWidth = xf86SetIntOption(pScrn->options, "Width", 800);
-    dPtr->desiredHeight = xf86SetIntOption(pScrn->options, "Height", 600);
+    //dPtr->desiredWidth = xf86SetIntOption(pScrn->options, "Width", 800);
+    //dPtr->desiredHeight = xf86SetIntOption(pScrn->options, "Height", 600);
 
     
-    dPtr->modes = xf86CVTMode(dPtr->desiredWidth, dPtr->desiredHeight, 60, 0, 0);
+    //dPtr->modes = xf86CVTMode(800, 600, 60, 0, 0);
+    dPtr->displayWidth = 800;
+    dPtr->displayHeight = 600;
 
     //XXX Check results
     xf86CrtcConfigInit(pScrn, &dummyCrtcConfigFuncs);
@@ -831,16 +839,15 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
 	return FALSE;
 #else
     
-    dPtr->surface = sparkle_surface_file_create(dPtr->surface_file, dPtr->desiredWidth, dPtr->desiredHeight, 1);
-    pixels = sparkle_surface_file_data(dPtr->surface);
+    dPtr->surface = NULL;
     
 
     dPtr->were = were_event_loop_create();
 
     dPtr->client = sparkle_client_create(dPtr->were);
-    sparkle_client_set_connection_callback(dPtr->client, dPtr->were, handle_connection, dPtr);
-    sparkle_client_set_disconnection_callback(dPtr->client, dPtr->were, handle_disconnection, dPtr);
-    sparkle_client_set_data_callback(dPtr->client, 0, handle_data, dPtr);
+    sparkle_client_set_connection_callback(dPtr->client, dPtr->were, handle_connection, pScrn);
+    sparkle_client_set_disconnection_callback(dPtr->client, dPtr->were, handle_disconnection, pScrn);
+    sparkle_client_set_data_callback(dPtr->client, 0, handle_data, pScrn);
 
     dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);
 #endif
@@ -867,7 +874,7 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
      * Call the framebuffer layer's ScreenInit function, and fill in other
      * pScreen fields.
      */
-    ret = fbScreenInit(pScreen, pixels,
+    ret = fbScreenInit(pScreen, NULL,
 			    pScrn->virtualX, pScrn->virtualY,
 			    pScrn->xDpi, pScrn->yDpi,
 			    pScrn->displayWidth, pScrn->bitsPerPixel);
@@ -1003,9 +1010,11 @@ DUMMYCloseScreen(CLOSE_SCREEN_ARGS_DECL)
     TimerCancel(dPtr->timer);
     TimerFree(dPtr->timer);
     dPtr->timer = NULL;
+    sparkle_client_unregister_surface(dPtr->client, dPtr->surface_name);
+    if (dPtr->surface != NULL)
+        sparkle_surface_file_destroy(dPtr->surface);
     sparkle_client_destroy(dPtr->client);
     were_event_loop_destroy(dPtr->were);
-    sparkle_surface_file_destroy(dPtr->surface);
 #endif
 
     if (dPtr->CursorInfo)
