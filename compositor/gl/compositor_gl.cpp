@@ -15,6 +15,8 @@
 #include "common/sparkle_server.h"
 
 
+#define USE_BLENDING
+
 //==================================================================================================
 
 static const char simpleVS[] =

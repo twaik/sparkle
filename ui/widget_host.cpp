@@ -4,17 +4,23 @@ WidgetHost::~WidgetHost()
 {
 }
 
-WidgetHost::WidgetHost(unsigned char *buffer, int stride, int width, int height)
+WidgetHost::WidgetHost(WereEventLoop *loop, unsigned char *buffer, int stride, int width, int height)
 {
-    _buffer = reinterpret_cast<uint32_t *>(buffer);
+    _loop = loop;
+    _buffer = buffer;
     _stride = stride;
     _width = width;
     _height = height;
 }
 
-SizeA WidgetHost::size()
+int WidgetHost::width()
 {
-    return SizeA(_width, _height);
+    return _width;
+}
+
+int WidgetHost::height()
+{
+    return _height;
 }
     
 void *WidgetHost::data()
@@ -29,7 +35,7 @@ void WidgetHost::addWidget(Widget *widget, const RectangleC &position)
     widgetData._position = position;
     _widgets.push_back(widgetData);
 
-    widget->damage.connect(this, &WidgetHost::redrawWidget);    
+    widget->damage.connect(_loop, std::bind(&WidgetHost::redrawWidget, this, widget));    
     redrawWidget(widgetData._widget);
 }
 
@@ -56,14 +62,12 @@ void WidgetHost::redrawWidget(Widget *widget)
     int y2 = widgetData->_position.to.y.relative * _height + widgetData->_position.to.y.absolute;
     int width = x2 - x1;
     int height = y2 - y1;
-        
 
-    widget->draw(&_buffer[y1 * _width + x1], _width, width, height);
-    
-    //damage(this, RectangleA(PointA(x1, y1), PointA(x2, y2)));
-    
-    (*damageCallback)(x1, y1, x2, y2, damageCallbackUser);
 
+
+    widget->draw(&_buffer[(y1 * _stride + x1) * 4], _stride, width, height);
+    
+    damage(x1, y1, x2, y2);
 }
 
 void WidgetHost::pointerDown(int slot, int x, int y)

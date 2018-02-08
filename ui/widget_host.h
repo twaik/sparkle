@@ -4,6 +4,8 @@
 #include "sparkle.h"
 #include "widget.h"
 
+class WereEventLoop;
+
 class WidgetData
 {
 public:
@@ -15,9 +17,10 @@ class WidgetHost
 {
 public:
     ~WidgetHost();
-    WidgetHost(unsigned char *buffer, int stride, int width, int height);
+    WidgetHost(WereEventLoop *loop, unsigned char *buffer, int stride, int width, int height);
 
-    SizeA size();
+    int width();
+    int height();
     void *data();
     
     void addWidget(Widget *widget, const RectangleC &position);
@@ -28,16 +31,17 @@ public:
     void keyDown(int code);
     void keyUp(int code);
     
-    //FIXME Temporary
-    void (*damageCallback)(int x1, int y1, int x2, int y2, void *user);
-    void *damageCallbackUser;
+werethings:
+    WereSignal<void (int x1, int y1, int x2, int y2)> damage;
+
     
 private:
     void redrawWidget(Widget *widget);
     void transformCoordinates(int x, int y, WidgetData *widgetData, int *_x, int *_y);
     
 private:
-    uint32_t *_buffer;
+    WereEventLoop *_loop;
+    unsigned char *_buffer;
     int _stride;
     int _width;
     int _height;
