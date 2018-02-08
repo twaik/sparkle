@@ -19,7 +19,7 @@ public:
     ~WereServerUnix();
     WereServerUnix(WereEventLoop *loop, const std::string &path);
     
-    WereSocketUnix *acceptConnection();
+    WereSocketUnix *accept();
     
 werethings:
     WereSignal<void ()> newConnection;

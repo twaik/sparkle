@@ -378,8 +378,11 @@ private:
     void keyDown(int code);
     void keyUp(int code);
 
-    static void handleConnection(void *user);
-    static void handleData(sparkle_packet_t *packet, void *user);
+    void connection();
+    void registerSurfaceFile(const std::string &name, const std::string &path, int width, int height);
+    void unregisterSurface(const std::string &name);
+    void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
+    void addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2);
     
     CompositorGLSurface *findSurface(const std::string &name);
     void transformCoordinates(int x, int y, CompositorGLSurface *surface, int *_x, int *_y);
@@ -390,7 +393,7 @@ private:
     CompositorGL_EGL *_egl;
     CompositorGL_GL *_gl;
 
-    sparkle_server_t *_server;
+    SparkleServer *_server;
 
     std::vector<CompositorGLSurface *> _surfaces;
     
@@ -402,7 +405,7 @@ private:
 
 CompositorGL::~CompositorGL()
 {
-    sparkle_server_destroy(_server);
+    delete _server;
     
     if (_egl)
         delete _egl;
@@ -460,9 +463,12 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
     _platform->keyDown.connect(_loop, std::bind(&CompositorGL::keyDown, this, std::placeholders::_1));
     _platform->keyUp.connect(_loop, std::bind(&CompositorGL::keyUp, this, std::placeholders::_1));
     
-    _server = sparkle_server_create(_loop, "/dev/shm/sparkle.socket");
-    sparkle_server_set_connection_callback(_server, loop, &CompositorGL::handleConnection, this);
-    sparkle_server_set_data_callback(_server, loop, &CompositorGL::handleData, this);
+    _server = new SparkleServer(_loop, "/dev/shm/sparkle.socket");
+    _server->connection.connect(_loop, std::bind(&CompositorGL::connection, this));
+    _server->registerSurfaceFile.connect(_loop, std::bind(&CompositorGL::registerSurfaceFile, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    _server->unregisterSurface.connect(_loop, std::bind(&CompositorGL::unregisterSurface, this, std::placeholders::_1));
+    _server->setSurfacePosition.connect(_loop, std::bind(&CompositorGL::setSurfacePosition, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+    _server->addSurfaceDamage.connect(_loop, std::bind(&CompositorGL::addSurfaceDamage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 }
 
 int CompositorGL::displayWidth()
@@ -516,7 +522,7 @@ void CompositorGL::draw()
         _gl->_surfaceWidth = width;
         _gl->_surfaceHeight = height;
         glViewport(0, 0, _gl->_surfaceWidth, _gl->_surfaceHeight);
-        sparkle_server_display_size(_server, _gl->_surfaceWidth, _gl->_surfaceHeight);
+        _server->displaySize(_gl->_surfaceWidth, _gl->_surfaceHeight);
     }
     
 #endif
@@ -612,7 +618,7 @@ void CompositorGL::pointerDown(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            sparkle_server_pointer_down(_server, surface->name().c_str(), slot, _x, _y);
+            _server->pointerDown(surface->name(), slot, _x, _y);
             return;
         }
     }
@@ -628,7 +634,7 @@ void CompositorGL::pointerUp(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            sparkle_server_pointer_up(_server, surface->name().c_str(), slot, _x, _y);
+            _server->pointerUp(surface->name(), slot, _x, _y);
             return;
         }
     }
@@ -644,7 +650,7 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            sparkle_server_pointer_motion(_server, surface->name().c_str(), slot, _x, _y);
+            _server->pointerMotion(surface->name(), slot, _x, _y);
             return;
         }
     }
@@ -652,98 +658,73 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
 
 void CompositorGL::keyDown(int code)
 {
-    sparkle_server_key_down(_server, code);
+    _server->keyDown(code);
 }
 
 void CompositorGL::keyUp(int code)
 {
-    sparkle_server_key_up(_server, code);
+    _server->keyUp(code);
 }
 
 //==================================================================================================
 
-void CompositorGL::handleConnection(void *user)
+
+void CompositorGL::connection()
 {
-    CompositorGL *compositor = static_cast<CompositorGL *>(user);
-    
-    sparkle_server_display_size(compositor->_server, compositor->_gl->_surfaceWidth, compositor->_gl->_surfaceHeight);
+    _server->displaySize(_gl->_surfaceWidth, _gl->_surfaceHeight);
     
     sparkle_message("Connected\n");
 }
 
-void CompositorGL::handleData(sparkle_packet_t *packet, void *user)
+void CompositorGL::registerSurfaceFile(const std::string &name, const std::string &path, int width, int height)
 {
-    CompositorGL *compositor = static_cast<CompositorGL *>(user);
-
-    uint32_t operation = sparkle_packet_get_uint32(packet);
-    
-    if (operation == SPARKLE_CLIENT_REGISTER_SURFACE_FILE)
-    {
-        std::string name = sparkle_packet_get_string(packet);
-        std::string path = sparkle_packet_get_string(packet);
-        int width = sparkle_packet_get_uint32(packet);
-        int height = sparkle_packet_get_uint32(packet);
-        
-        CompositorGLSurface *surface = compositor->findSurface(name);
-        if (surface == 0)
+        CompositorGLSurface *surface = findSurface(name);
+        if (surface != 0)
         {
-            surface = new CompositorGLSurfaceFile(name, path, width, height);
-            compositor->_surfaces.push_back(surface);
-            sparkle_message("Surface registered.\n");
+            unregisterSurface(name);
+        }
+        
+        surface = new CompositorGLSurfaceFile(name, path, width, height);
+        _surfaces.push_back(surface);
+        sparkle_message("Surface registered.\n");
+
+        _redraw = true;
+}
+
+void CompositorGL::unregisterSurface(const std::string &name)
+{
+    std::vector<CompositorGLSurface *>::iterator it = _surfaces.begin();
+    while (it != _surfaces.end())
+    {
+        CompositorGLSurface *surface = *it;
+        if (surface->name() == name)
+        {
+            delete surface;
+            it = _surfaces.erase(it);
+            sparkle_message("Unregistered.\n");
         }
         else
-        {
-            //FIXME unregister
-            sparkle_message("Already registered.\n");
-        }
-        
-        compositor->_redraw = true;
+            ++it;
     }
-    else if (operation == SPARKLE_CLIENT_UNREGISTER_SURFACE)
-    {
-        std::string name = sparkle_packet_get_string(packet);
         
-        std::vector<CompositorGLSurface *>::iterator it = compositor->_surfaces.begin();
-        while (it != compositor->_surfaces.end())
-        {
-            CompositorGLSurface *surface = *it;
-            if (surface->name() == name)
-            {
-                delete surface;
-                it = compositor->_surfaces.erase(it);
-                sparkle_message("Unregistered.\n");
-            }
-            else
-                ++it;
-        }
-        
-        compositor->_redraw = true;
-    }
-    else if (operation == SPARKLE_CLIENT_SET_SURFACE_POSITION)
-    {
-        std::string name = sparkle_packet_get_string(packet);
-        int x1 = sparkle_packet_get_uint32(packet);
-        int y1 = sparkle_packet_get_uint32(packet);
-        int x2 = sparkle_packet_get_uint32(packet);
-        int y2 = sparkle_packet_get_uint32(packet);
-        CompositorGLSurface *surface = compositor->findSurface(name);
+    _redraw = true;
+}
+
+void CompositorGL::setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2)
+{
+        CompositorGLSurface *surface = findSurface(name);
         if (surface != 0)
         {
             surface->setPosition(x1, y1, x2, y2);
-            compositor->_redraw = true;
+            _redraw = true;
         }
-    }
-    else if (operation == SPARKLE_CLIENT_ADD_SURFACE_DAMAGE)
-    {
-        std::string name = sparkle_packet_get_string(packet);
-        int x1 = sparkle_packet_get_uint32(packet);
-        int y1 = sparkle_packet_get_uint32(packet);
-        int x2 = sparkle_packet_get_uint32(packet);
-        int y2 = sparkle_packet_get_uint32(packet);
-        CompositorGLSurface *surface = compositor->findSurface(name);
+}
+
+void CompositorGL::addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2)
+{
+        CompositorGLSurface *surface = findSurface(name);
         if (surface != 0)
             surface->addDamage(x1, y1, x2, y2);
-    }
 }
 
 //==================================================================================================

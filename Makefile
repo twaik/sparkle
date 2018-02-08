@@ -24,7 +24,7 @@ HEADERS += common/sparkle_packet.h
 SOURCES += common/sparkle_surface_file.cpp
 HEADERS += common/sparkle_surface_file.h
 
-SOURCES += common/sparkle_server.c
+SOURCES += common/sparkle_server.cpp
 HEADERS += common/sparkle_server.h
 
 all: test

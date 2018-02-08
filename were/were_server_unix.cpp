@@ -52,11 +52,11 @@ void WereServerUnix::event(uint32_t events)
 
 //==================================================================================================
 
-WereSocketUnix *WereServerUnix::acceptConnection()
+WereSocketUnix *WereServerUnix::accept()
 {
-    int fd = accept(_fd, NULL, NULL);
+    int fd = ::accept(_fd, NULL, NULL);
     if (fd == -1)
-        throw std::runtime_error("[WereServer::acceptConnection] Failed to accept connection.");
+        throw std::runtime_error("[WereServer::accept] Failed to accept connection.");
     
     WereSocketUnix *socket = new WereSocketUnix(_loop, fd);
     
@@ -92,7 +92,7 @@ were_socket_unix_t *were_server_unix_accept(were_server_unix_t *server)
 {
     WereServerUnix *_server = static_cast<WereServerUnix *>(server);
     
-    WereSocketUnix *_socket = _server->acceptConnection();
+    WereSocketUnix *_socket = _server->accept();
     
     return static_cast<were_socket_unix_t *>(_socket);
 }

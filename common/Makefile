@@ -8,8 +8,8 @@ LIBS = ../were/libwere.a
 
 SOURCES += main.cpp
 
-SOURCES += sparkle_client.cpp
-HEADERS += sparkle_client.h
+SOURCES += sparkle_server.cpp
+HEADERS += sparkle_server.h
 
 SOURCES += sparkle_packet.c
 HEADERS += sparkle_packet.h
