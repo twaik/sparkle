@@ -1,5 +1,5 @@
 AM_CFLAGS = $(XORG_CFLAGS) $(CWARNFLAGS)
-AM_CPPFLAGS =-I$(top_srcdir)/include $(LIBEVDEV_CFLAGS) -I../..
+AM_CPPFLAGS =-I$(top_srcdir)/include -I../..
 
 @DRIVER_NAME@_drv_la_LTLIBRARIES = @DRIVER_NAME@_drv.la
 @DRIVER_NAME@_drv_la_LDFLAGS = -module -avoid-version
@@ -8,7 +8,7 @@ AM_CPPFLAGS =-I$(top_srcdir)/include $(LIBEVDEV_CFLAGS) -I../..
 
 @DRIVER_NAME@_drv_la_SOURCES = @DRIVER_NAME@.c \
                                @DRIVER_NAME@.h \
-                               ../../common/sparkle_client.c \
+                               ../../common/sparkle_client.cpp \
 			                   ../../common/sparkle_client.h \
                                ../../common/sparkle_packet.c \
 			                   ../../common/sparkle_packet.h

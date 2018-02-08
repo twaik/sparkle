@@ -394,7 +394,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CFLAGS = $(XORG_CFLAGS) $(PCIACCESS_CFLAGS) -I../..
+AM_CFLAGS = $(XORG_CFLAGS) -I../..
+AM_CXXFLAGS = $(XORG_CFLAGS) -I../..
 sparkle_drv_la_LTLIBRARIES = sparkle_drv.la
 sparkle_drv_la_LDFLAGS = -module -avoid-version
 sparkle_drv_la_LIBADD = $(XORG_LIBS) ../../were/libwere.a
@@ -408,7 +409,7 @@ sparkle_drv_la_SOURCES = \
          ../../common/sparkle_surface_file.h \
          ../../common/sparkle_packet.c \
          ../../common/sparkle_packet.h \
-         ../../common/sparkle_client.c \
+         ../../common/sparkle_client.cpp \
          ../../common/sparkle_client.h
 
 all: all-am
@@ -523,13 +524,6 @@ sparkle_packet.lo: ../../common/sparkle_packet.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sparkle_packet.lo `test -f '../../common/sparkle_packet.c' || echo '$(srcdir)/'`../../common/sparkle_packet.c
 
-sparkle_client.lo: ../../common/sparkle_client.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT sparkle_client.lo -MD -MP -MF $(DEPDIR)/sparkle_client.Tpo -c -o sparkle_client.lo `test -f '../../common/sparkle_client.c' || echo '$(srcdir)/'`../../common/sparkle_client.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sparkle_client.Tpo $(DEPDIR)/sparkle_client.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../../common/sparkle_client.c' object='sparkle_client.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sparkle_client.lo `test -f '../../common/sparkle_client.c' || echo '$(srcdir)/'`../../common/sparkle_client.c
-
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -557,6 +551,13 @@ sparkle_surface_file.lo: ../../common/sparkle_surface_file.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../../common/sparkle_surface_file.cpp' object='sparkle_surface_file.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparkle_surface_file.lo `test -f '../../common/sparkle_surface_file.cpp' || echo '$(srcdir)/'`../../common/sparkle_surface_file.cpp
+
+sparkle_client.lo: ../../common/sparkle_client.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparkle_client.lo -MD -MP -MF $(DEPDIR)/sparkle_client.Tpo -c -o sparkle_client.lo `test -f '../../common/sparkle_client.cpp' || echo '$(srcdir)/'`../../common/sparkle_client.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sparkle_client.Tpo $(DEPDIR)/sparkle_client.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../../common/sparkle_client.cpp' object='sparkle_client.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparkle_client.lo `test -f '../../common/sparkle_client.cpp' || echo '$(srcdir)/'`../../common/sparkle_client.cpp
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -13,7 +13,7 @@
 
 WereSocketUnix::~WereSocketUnix()
 {
-    disconnect1();
+    disconnect();
 }
 
 WereSocketUnix::WereSocketUnix(WereEventLoop *loop) :
@@ -40,7 +40,7 @@ WereSocketUnix::WereSocketUnix(WereEventLoop *loop, int fd) :
 
 //==================================================================================================
 
-void WereSocketUnix::connect1(const std::string &path)
+void WereSocketUnix::connect(const std::string &path)
 {
     if (_connected)
         return;
@@ -53,7 +53,7 @@ void WereSocketUnix::connect1(const std::string &path)
     name.sun_family = AF_UNIX;
     strncpy(name.sun_path, path.c_str(), sizeof(name.sun_path) - 1);
     
-    if (connect(_fd, (const struct sockaddr *)&name, sizeof(struct sockaddr_un)) == -1)
+    if (::connect(_fd, (const struct sockaddr *)&name, sizeof(struct sockaddr_un)) == -1)
         return;
     
 #ifdef NONBLOCK
@@ -69,7 +69,7 @@ void WereSocketUnix::connect1(const std::string &path)
     signal_connected();
 }
 
-void WereSocketUnix::disconnect1()
+void WereSocketUnix::disconnect()
 {
     if (!_connected)
         return;
@@ -98,7 +98,7 @@ void WereSocketUnix::event(uint32_t events)
     else
     {
         signal_disconnected();
-        disconnect1();
+        disconnect();
     }
 }
 
@@ -160,14 +160,14 @@ void were_socket_unix_connect(were_socket_unix_t *socket, const char *path)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     
-    _socket->connect1(path);
+    _socket->connect(path);
 }
 
 void were_socket_unix_disconnect(were_socket_unix_t *socket)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     
-    _socket->disconnect1();
+    _socket->disconnect();
 }
 
 int were_socket_unix_connected(were_socket_unix_t *socket)

@@ -6,6 +6,7 @@ AC_INIT([xf86-input-sparklei],
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR(.)
+AC_PROG_CXX
 
 # Initialize Automake
 AM_INIT_AUTOMAKE([foreign dist-bzip2])

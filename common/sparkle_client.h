@@ -8,10 +8,54 @@
 
 //==================================================================================================
 
-struct _sparkle_client_t;
-typedef struct _sparkle_client_t sparkle_client_t;
+#ifdef __cplusplus
+
+#include "were/were_function.h"
+
+class WereSocketUnix;
+
+class SparkleClient
+{
+public:
+    ~SparkleClient();
+    SparkleClient(WereEventLoop *loop);
+    
+    WereSocketUnix *socket();
+    
+    void connect(const std::string &path);
+    void disconnect();
+    
+    void registerSurfaceFile(const std::string &name, const std::string &path, int width, int height);
+    void unregisterSurface(const std::string &name);
+    void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
+    void addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2);
+    
+    
+werethings:
+    WereSignal<void ()> connection;
+    WereSignal<void ()> disconnection;
+    WereSignal<void (int width, int height)> displaySize;
+    WereSignal<void (const std::string &name, int slot, int x, int y)> pointerDown;
+    WereSignal<void (const std::string &name, int slot, int x, int y)> pointerUp;
+    WereSignal<void (const std::string &name, int slot, int x, int y)> pointerMotion;
+    WereSignal<void (int code)> keyDown;
+    WereSignal<void (int code)> keyUp;
+    
+private:
+    void readData();
+    void handlePacket(sparkle_packet_t *packet);
+    void send(sparkle_packet_t *packet);
+    
+private:
+    WereEventLoop *_loop;
+    WereSocketUnix *_socket;
+};
+
+#endif
 
 //==================================================================================================
+
+typedef void sparkle_client_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +66,7 @@ void sparkle_client_destroy(sparkle_client_t *client);
 
 void sparkle_client_set_connection_callback(sparkle_client_t *client, were_event_loop_t *loop, void (*f)(void *user), void *user);
 void sparkle_client_set_disconnection_callback(sparkle_client_t *client, were_event_loop_t *loop, void (*f)(void *user), void *user);
-void sparkle_client_set_data_callback(sparkle_client_t *client, were_event_loop_t *loop, void (*f)(sparkle_packet_t *packet, void *user), void *user);
+void sparkle_client_set_operation_callback(sparkle_client_t *client, were_event_loop_t *loop, int operation, void *f, void *user);
 
 void sparkle_client_connect(sparkle_client_t *client, const char *path);
 void sparkle_client_disconnect(sparkle_client_t *client);

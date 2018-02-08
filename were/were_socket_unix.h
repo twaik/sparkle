@@ -17,8 +17,8 @@ public:
     WereSocketUnix(WereEventLoop *loop);
     WereSocketUnix(WereEventLoop *loop, int fd);
     
-    void connect1(const std::string &path);
-    void disconnect1();
+    void connect(const std::string &path);
+    void disconnect();
     
     bool connected();
     

@@ -335,24 +335,17 @@ static void handle_disconnection(void *user)
     fprintf(stderr, "Disconnected\n");
 }
 
-static void handle_data(sparkle_packet_t *packet, void *user)
+static void handle_display_size(void *user, int width, int height)
 {
     ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
-    
-    //fprintf(stderr, "Data\n");
-
-    uint32_t operation = sparkle_packet_get_uint32(packet);
-    
-    if (operation == SPARKLE_SERVER_DISPLAY_SIZE)
-    {       
-        dPtr->displayWidth = sparkle_packet_get_uint32(packet);
-        dPtr->displayHeight = sparkle_packet_get_uint32(packet);
         
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DISPLAY SIZE: %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
+    dPtr->displayWidth = width;
+    dPtr->displayHeight = height;
         
-        sparkle_client_set_surface_position(dPtr->client, dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight);
-    }
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DISPLAY SIZE: %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
+        
+    sparkle_client_set_surface_position(dPtr->client, dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight);
 }
 
 //==================================================================================================
@@ -847,7 +840,8 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
     dPtr->client = sparkle_client_create(dPtr->were);
     sparkle_client_set_connection_callback(dPtr->client, dPtr->were, handle_connection, pScrn);
     sparkle_client_set_disconnection_callback(dPtr->client, dPtr->were, handle_disconnection, pScrn);
-    sparkle_client_set_data_callback(dPtr->client, 0, handle_data, pScrn);
+    
+    sparkle_client_set_operation_callback(dPtr->client, dPtr->were, SPARKLE_SERVER_DISPLAY_SIZE, handle_display_size, pScrn);
 
     dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);
 #endif

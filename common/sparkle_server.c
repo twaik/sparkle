@@ -88,7 +88,7 @@ static void sparkle_server_data(void *user)
 {
     sparkle_server_client_t *client = (sparkle_server_client_t *)user;
 
-    int bytesAvailable = were_socket_unix_bytes_available(client->socket);
+    unsigned int bytesAvailable = were_socket_unix_bytes_available(client->socket);
     
     while (bytesAvailable >= sizeof(uint32_t))
     {
