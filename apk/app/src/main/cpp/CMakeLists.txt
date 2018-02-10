@@ -20,6 +20,7 @@ add_library(sparkle SHARED
             main.cpp
             ${SPARKLE_ROOT}/were/were_event_source.cpp
             ${SPARKLE_ROOT}/were/were_call_queue.cpp
+            ${SPARKLE_ROOT}/were/were_signal_handler.cpp
             ${SPARKLE_ROOT}/were/were_event_loop.cpp
             ${SPARKLE_ROOT}/were/were_timer.cpp
             ${SPARKLE_ROOT}/were/were_socket_unix.cpp
@@ -28,7 +29,7 @@ add_library(sparkle SHARED
             ${SPARKLE_ROOT}/compositor/gl/compositor_gl.cpp
             ${SPARKLE_ROOT}/compositor/gl/texture.cpp
             ${SPARKLE_ROOT}/common/sparkle_packet.c
-            ${SPARKLE_ROOT}/common/sparkle_server.c
+            ${SPARKLE_ROOT}/common/sparkle_server.cpp
             ${SPARKLE_ROOT}/common/sparkle_surface_file.cpp
 )
 
