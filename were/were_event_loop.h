@@ -12,12 +12,13 @@
 
 class WereEventSource;
 class WereCallQueue;
+class WereSignalHandler;
 
 class WereEventLoop
 {
 public:
     ~WereEventLoop();
-    WereEventLoop();
+    WereEventLoop(bool handleSignals = false);
     
     int fd();
     
@@ -38,6 +39,7 @@ private:
     bool _exit;
     
     WereCallQueue *_queue;
+    WereSignalHandler *_signal;
 };
 
 #endif //__cplusplus

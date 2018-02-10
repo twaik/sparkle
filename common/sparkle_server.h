@@ -33,6 +33,8 @@ werethings:
     WereSignal<void (const std::string &name)> unregisterSurface;
     WereSignal<void (const std::string &name, int x1, int y1, int x2, int y2)> setSurfacePosition;
     WereSignal<void (const std::string &name, int x1, int y1, int x2, int y2)> addSurfaceDamage;
+    WereSignal<void (int code)> keyPress;
+    WereSignal<void (int code)> keyRelease;
     
 private:
     void handleConnection();

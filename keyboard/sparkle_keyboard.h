@@ -24,6 +24,9 @@ private:
     void pointerDown(const std::string &name, int slot, int x, int y);
     void pointerUp(const std::string &name, int slot, int x, int y);
     
+    void keyPressed(int code);
+    void keyReleased(int code);
+    
 private:
     WereEventLoop *_loop;
     SparkleSurfaceFile *_surface;

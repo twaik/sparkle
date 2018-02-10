@@ -19,6 +19,8 @@ int main(int argc, char *argv[])
     delete platform;
     delete loop;
 
+    sparkle_message("Done\n");
+
     return 0;
 }
 

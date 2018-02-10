@@ -837,11 +837,12 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
 
     dPtr->were = were_event_loop_create();
 
-    dPtr->client = sparkle_client_create(dPtr->were);
+    dPtr->client = sparkle_client_create(dPtr->were, dPtr->compositor);
     sparkle_client_set_connection_callback(dPtr->client, dPtr->were, handle_connection, pScrn);
     sparkle_client_set_disconnection_callback(dPtr->client, dPtr->were, handle_disconnection, pScrn);
-    
     sparkle_client_set_operation_callback(dPtr->client, dPtr->were, SPARKLE_SERVER_DISPLAY_SIZE, handle_display_size, pScrn);
+    
+    sparkle_client_connect(dPtr->client);
 
     dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);
 #endif
@@ -1119,8 +1120,7 @@ static CARD32 DUMMYTimeout(OsTimerPtr timer, CARD32 time, pointer arg)
     ScreenPtr pScreen = (ScreenPtr)arg;
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
-    
-    sparkle_client_connect(dPtr->client, dPtr->compositor);
+
     were_event_loop_process_events(dPtr->were);
     
     dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);

@@ -108,6 +108,18 @@ void SparkleServer::handlePacket(sparkle_packet_t *packet)
         int y2 = sparkle_packet_get_uint32(packet);
         addSurfaceDamage(name, x1, y1, x2, y2);
     }
+    else if (operation == SPARKLE_CLIENT_KEY_PRESS)
+    {
+        int code = sparkle_packet_get_uint32(packet);
+        keyPress(code);
+        keyDown(code);
+    }
+    else if (operation == SPARKLE_CLIENT_KEY_RELEASE)
+    {
+        int code = sparkle_packet_get_uint32(packet);
+        keyRelease(code);
+        keyUp(code);
+    }
 }
 
 void SparkleServer::broadcast(sparkle_packet_t *packet)

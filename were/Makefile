@@ -32,17 +32,24 @@ SOURCES += were_call_queue.cpp
 HEADERS += were_call_queue.h
 OBJECTS += were_call_queue.o
 
+SOURCES += were_signal_handler.cpp
+HEADERS += were_signal_handler.h
+OBJECTS += were_signal_handler.o
+
 CXXFLAGS = 
 CXXFLAGS += -Wall
 CXXFLAGS += -fPIC
 
-all: libwere.a
+all: libwere.a test
 
 libwere.a: ${OBJECTS} ${HEADERS}
 	ar rcs libwere.a ${OBJECTS}
 
 %.o: %.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} -o $@ -c $<
+
+test: main.cpp
+	${CXX} ${CXXFLAGS} -o test main.cpp libwere.a
 
 clean:
 	rm -rf libwere.a *.o

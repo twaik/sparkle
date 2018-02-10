@@ -52,7 +52,7 @@ const ButtonData layout[] =
     {62, 6, 4, 4, 118, ""}, {66, 6, 4, 4, 110, ""}, {70, 6, 4, 4, 112, ""},
     {62, 10, 4, 4, 119, ""}, {66, 10, 4, 4, 115, ""}, {70, 10, 4, 4, 117, ""},
     
-    {66, 18, 4, 4, 98, ""}, {62, 22, 4, 4, 100, ""}, {66, 22, 4, 4, 104, ""}, {70, 22, 4, 4, 102, ""},
+    {66, 18, 4, 4, 98, "\x18"}, {62, 22, 4, 4, 100, "\x1b"}, {66, 22, 4, 4, 104, "\x19"}, {70, 22, 4, 4, 102, "\x1a"},
 };
 
 const int layoutWidth = 74;
@@ -62,6 +62,9 @@ const int layoutHeight = 26;
 
 SparkleKeyboard::~SparkleKeyboard()
 {
+    _client->unregisterSurface(surface_name);
+    
+    
     delete[] _buttons;
     delete _host;
     delete _surface;
@@ -71,9 +74,9 @@ SparkleKeyboard::~SparkleKeyboard()
 
 SparkleKeyboard::SparkleKeyboard()
 {
-    _loop = new WereEventLoop;
+    _loop = new WereEventLoop(true);
     
-    _client = new SparkleClient(_loop);
+    _client = new SparkleClient(_loop, "/dev/shm/sparkle.socket");
     _client->socket()->signal_connected.connect(_loop, std::bind(&SparkleKeyboard::handleConnection, this));
     _client->pointerDown.connect(_loop, std::bind(&SparkleKeyboard::pointerDown, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
     _client->pointerUp.connect(_loop, std::bind(&SparkleKeyboard::pointerUp, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
@@ -102,8 +105,8 @@ SparkleKeyboard::SparkleKeyboard()
             RectangleC(PointC(x1, y1), PointC(x2, y2))
         );
         
-        //_buttons[i].pressed.connect(this, &WindowKeyboard::buttonPressed);
-        //_buttons[i].released.connect(this, &WindowKeyboard::buttonReleased);
+        _buttons[i].pressed.connect(_loop, std::bind(&SparkleKeyboard::keyPressed, this, layout[i].code));
+        _buttons[i].released.connect(_loop, std::bind(&SparkleKeyboard::keyReleased, this, layout[i].code));
     }
 
 }
@@ -112,7 +115,7 @@ SparkleKeyboard::SparkleKeyboard()
 
 void SparkleKeyboard::start()
 {
-    _client->connect("/dev/shm/sparkle.socket");
+    _client->connect();
     _loop->run();
 }
 
@@ -150,4 +153,17 @@ void SparkleKeyboard::pointerUp(const std::string &name, int slot, int x, int y)
 }
     
 //==================================================================================================
+
+void SparkleKeyboard::keyPressed(int code)
+{
+    _client->keyPress(code);
+}
+
+void SparkleKeyboard::keyReleased(int code)
+{
+    _client->keyRelease(code);
+}
+
+//==================================================================================================
+
 

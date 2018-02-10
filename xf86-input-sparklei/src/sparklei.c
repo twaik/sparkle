@@ -270,8 +270,6 @@ static CARD32 EvdevTimeout(OsTimerPtr timer, CARD32 time, pointer arg)
     InputInfoPtr      pInfo    = (InputInfoPtr)arg;
     EvdevPtr          pEvdev   = pInfo->private;
     
-    sparkle_client_connect(pEvdev->client, pEvdev->compositor);
-    
     pEvdev->timer = TimerSet(pEvdev->timer, 0, 1000, EvdevTimeout, pInfo);
 
     return 0;
@@ -428,13 +426,15 @@ EvdevOpenDevice(InputInfoPtr pInfo)
         pEvdev->loop = were_event_loop_create();
         pInfo->fd = were_event_loop_fd(pEvdev->loop);
         
-        pEvdev->client = sparkle_client_create(pEvdev->loop);
+        pEvdev->client = sparkle_client_create(pEvdev->loop, pEvdev->compositor);
 
         sparkle_client_set_operation_callback(pEvdev->client, pEvdev->loop, SPARKLE_SERVER_POINTER_DOWN, SparkleiPointerDownHandler, pInfo);
         sparkle_client_set_operation_callback(pEvdev->client, pEvdev->loop, SPARKLE_SERVER_POINTER_UP, SparkleiPointerUpHandler, pInfo);
         sparkle_client_set_operation_callback(pEvdev->client, pEvdev->loop, SPARKLE_SERVER_POINTER_MOTION, SparkleiPointerMotionHandler, pInfo);
         sparkle_client_set_operation_callback(pEvdev->client, pEvdev->loop, SPARKLE_SERVER_KEY_DOWN, SparkleiKeyDownHandler, pInfo);
         sparkle_client_set_operation_callback(pEvdev->client, pEvdev->loop, SPARKLE_SERVER_KEY_UP, SparkleiKeyUpHandler, pInfo);
+        
+        sparkle_client_connect(pEvdev->client);
     }
 
     if (pInfo->fd < 0) {

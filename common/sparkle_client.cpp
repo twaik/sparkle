@@ -1,20 +1,26 @@
 #include "sparkle_client.h"
 #include "were/were_socket_unix.h"
+#include "were/were_timer.h"
 #include <unistd.h>
 
 //==================================================================================================
 
 SparkleClient::~SparkleClient()
 {
+    delete _connectTimer;
     delete _socket;
 }
 
-SparkleClient::SparkleClient(WereEventLoop *loop)
+SparkleClient::SparkleClient(WereEventLoop *loop, const std::string &path)
 {
     _loop = loop;
+    _path = path;
     
     _socket = new WereSocketUnix(_loop);
     _socket->signal_data.connect(_loop, std::bind(&SparkleClient::readData, this));
+    
+    _connectTimer = new WereTimer(_loop);
+    _connectTimer->timeout.connect(_loop, std::bind(&SparkleClient::connectTimeout, this));
 }
 
 //==================================================================================================
@@ -26,13 +32,15 @@ WereSocketUnix *SparkleClient::socket()
 
 //==================================================================================================
 
-void SparkleClient::connect(const std::string &path)
+void SparkleClient::connect()
 {
-    _socket->connect(path);
+    _connectTimer->start(1000, false);
+    //_socket->connect(_path);
 }
 
 void SparkleClient::disconnect()
 {
+    _connectTimer->stop();
     _socket->disconnect();
 }
 
@@ -121,6 +129,13 @@ void SparkleClient::send(sparkle_packet_t *packet)
 
 //==================================================================================================
 
+void SparkleClient::connectTimeout()
+{
+    _socket->connect(_path);
+}
+
+//==================================================================================================
+
 void SparkleClient::registerSurfaceFile(const std::string &name, const std::string &path, int width, int height)
 {
     sparkle_packet_t *packet = sparkle_packet_create(NULL, 64);
@@ -169,6 +184,24 @@ void SparkleClient::addSurfaceDamage(const std::string &name, int x1, int y1, in
     send(packet);
     sparkle_packet_destroy(packet);
 }
+
+void SparkleClient::keyPress(int code)
+{
+    sparkle_packet_t *packet = sparkle_packet_create(NULL, 64);
+    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_KEY_PRESS);
+    sparkle_packet_add_uint32(packet, code);
+    send(packet);
+    sparkle_packet_destroy(packet);
+}
+
+void SparkleClient::keyRelease(int code)
+{
+    sparkle_packet_t *packet = sparkle_packet_create(NULL, 64);
+    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_KEY_RELEASE);
+    sparkle_packet_add_uint32(packet, code);
+    send(packet);
+    sparkle_packet_destroy(packet);
+}
     
 //==================================================================================================
 
@@ -190,10 +223,10 @@ void conv2(void *f, void *user, const std::string &name, Args ... args)
 
 //==================================================================================================
 
-sparkle_client_t *sparkle_client_create(were_event_loop_t *loop)
+sparkle_client_t *sparkle_client_create(were_event_loop_t *loop, const char *path)
 {
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    SparkleClient *_client = new SparkleClient(_loop);
+    SparkleClient *_client = new SparkleClient(_loop, path);
     
     return static_cast<sparkle_client_t *>(_client);
 }
@@ -238,10 +271,10 @@ void sparkle_client_set_operation_callback(sparkle_client_t *client, were_event_
         _client->keyUp.connect(_loop, std::bind(conv1<int>, f, user, std::placeholders::_1));
 }
 
-void sparkle_client_connect(sparkle_client_t *client, const char *path)
+void sparkle_client_connect(sparkle_client_t *client)
 {
     SparkleClient *_client = static_cast<SparkleClient *>(client);
-    _client->connect(path);
+    _client->connect();
 }
 
 void sparkle_client_disconnect(sparkle_client_t *client)

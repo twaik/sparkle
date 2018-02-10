@@ -1,6 +1,7 @@
 #include "were_event_loop.h"
 #include "were_event_source.h"
 #include "were_call_queue.h"
+#include "were_signal_handler.h"
 #include <stdexcept>
 #include <unistd.h>
 
@@ -12,12 +13,14 @@ const int MAX_EVENTS = 16;
 
 WereEventLoop::~WereEventLoop()
 {
+    if (_signal != 0)
+        delete _signal;
     delete _queue;
     
     close(_epoll);
 }
 
-WereEventLoop::WereEventLoop()
+WereEventLoop::WereEventLoop(bool handleSignals)
 {
     _epoll = epoll_create(1);
     if (_epoll == -1)
@@ -26,6 +29,14 @@ WereEventLoop::WereEventLoop()
     _exit = false;
     
     _queue = new WereCallQueue(this);
+
+    if (handleSignals)
+    {
+        _signal = new WereSignalHandler(this);
+        _signal->terminate.connect(this, std::bind(&WereEventLoop::exit, this));
+    }
+    else
+        _signal = 0;
 }
 
 //==================================================================================================
