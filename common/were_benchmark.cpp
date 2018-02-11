@@ -37,7 +37,7 @@ void WereBenchmark::timeout()
     float cpuLoad = 100.0 * (elapsed_cpu / 1000) / (elapsed_real / 1000);
     
     
-    fprintf(stdout, "Loop: %.2f, CPU: %.2f, Events: %d.\n", loopPerformance, cpuLoad, _events);
+    were_message("Loop: %.2f, CPU: %.2f, Events: %d.\n", loopPerformance, cpuLoad, _events);
     
     _real1 = _real2;
     _cpu1 = _cpu2;

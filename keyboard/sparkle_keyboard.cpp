@@ -75,6 +75,7 @@ SparkleKeyboard::~SparkleKeyboard()
 SparkleKeyboard::SparkleKeyboard()
 {
     _loop = new WereEventLoop(true);
+    _surface = 0;
     
     _client = new SparkleClient(_loop, "/dev/shm/sparkle.socket");
     _client->displaySize.connect(_loop, std::bind(&SparkleKeyboard::displaySize, this, std::placeholders::_1, std::placeholders::_2));

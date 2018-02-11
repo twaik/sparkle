@@ -1,6 +1,7 @@
 #include "were/were_event_loop.h"
 #include "platform/na/platform_na.h"
 #include "compositor/gl/compositor_gl.h"
+#include "common/were_benchmark.h"
 #include <sys/stat.h>
 #include <stdexcept>
 
@@ -16,11 +17,15 @@ void android_main(struct android_app *app)
         WereEventLoop *loop = new WereEventLoop();
         Platform *platform = platform_na_create(loop, app);
         Compositor *compositor = compositor_gl_create(loop, platform);
+        
+        WereBenchmark *test = new WereBenchmark(loop);
+        compositor->frame.connect(loop, std::bind(&WereBenchmark::event, test));
 
         platform->start();
         loop->run();
         platform->stop();
 
+        delete test;
         delete compositor;
         delete platform;
         delete loop;

@@ -1,7 +1,7 @@
 #ifndef WERE_BENCHMARK_H
 #define WERE_BENCHMARK_H
 
-#include <stdint.h>
+#include "were/were.h"
 #include <time.h>
 
 class WereEventLoop;
