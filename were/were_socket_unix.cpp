@@ -54,7 +54,10 @@ void WereSocketUnix::connect(const std::string &path)
     strncpy(name.sun_path, path.c_str(), sizeof(name.sun_path) - 1);
     
     if (::connect(_fd, (const struct sockaddr *)&name, sizeof(struct sockaddr_un)) == -1)
+    {
+        close(_fd);
         return;
+    }
     
 #ifdef NONBLOCK
     int flags = fcntl(_fd, F_GETFL, 0);
@@ -117,7 +120,19 @@ int WereSocketUnix::receive(void *data, int size)
     if (!_connected)
         return -1;
     else
-        return read(_fd, data, size);
+    {
+        int total = 0;
+        while (total < size)
+        {
+            int n = recv(_fd, reinterpret_cast<unsigned char *>(data) + total, size, MSG_WAITALL);
+            if (n == -1)
+                return -1;
+            else
+                total += n;
+        }
+        
+        return total;
+    }
 }
 
 int WereSocketUnix::peek(void *data, int size)
