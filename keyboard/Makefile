@@ -3,7 +3,7 @@ all: test
 SOURCES = 
 HEADERS = 
 
-CXXFLAGS = -I..
+CXXFLAGS = -Wall -O2 -I..
 LIBS = ../were/libwere.a
 
 SOURCES += main.cpp

@@ -172,6 +172,16 @@ void SparkleClient::setSurfacePosition(const std::string &name, int x1, int y1, 
     sparkle_packet_destroy(packet);
 }
 
+void SparkleClient::setSurfaceStrata(const std::string &name, int strata)
+{
+    sparkle_packet_t *packet = sparkle_packet_create(NULL, 64);
+    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_SET_SURFACE_STRATA);
+    sparkle_packet_add_string(packet, name.c_str());
+    sparkle_packet_add_uint32(packet, strata);
+    send(packet);
+    sparkle_packet_destroy(packet);
+}
+
 void SparkleClient::addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2)
 {
     sparkle_packet_t *packet = sparkle_packet_create(NULL, 64);
@@ -299,6 +309,12 @@ void sparkle_client_set_surface_position(sparkle_client_t *client, const char *n
 {
     SparkleClient *_client = static_cast<SparkleClient *>(client);
     _client->setSurfacePosition(name, x1, y1, x2, y2);
+}
+
+void sparkle_client_set_surface_strata(sparkle_client_t *client, const char *name, int strata)
+{
+    SparkleClient *_client = static_cast<SparkleClient *>(client);
+    _client->setSurfaceStrata(name, strata);
 }
 
 void sparkle_client_add_surface_damage(sparkle_client_t *client, const char *name, int x1, int y1, int x2, int y2)

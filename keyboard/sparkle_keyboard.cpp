@@ -125,6 +125,7 @@ void SparkleKeyboard::handleConnection()
 {
     _client->registerSurfaceFile(surface_name, "/dev/shm/keyboard", _surface->width(), _surface->height());
     _client->setSurfacePosition(surface_name, 0, 600 - 240, _surface->width(), 600);
+    _client->setSurfaceStrata(surface_name, 0xFF);
     _client->addSurfaceDamage(surface_name, 0, 0, _surface->width(), _surface->height());
     fprintf(stderr, "Connected\n");
 }

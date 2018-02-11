@@ -99,6 +99,12 @@ void SparkleServer::handlePacket(sparkle_packet_t *packet)
         int y2 = sparkle_packet_get_uint32(packet);
         setSurfacePosition(name, x1, y1, x2, y2);
     }
+    else if (operation == SPARKLE_CLIENT_SET_SURFACE_STRATA)
+    {
+        std::string name = sparkle_packet_get_string(packet);
+        int strata = sparkle_packet_get_uint32(packet);
+        setSurfaceStrata(name, strata);
+    }
     else if (operation == SPARKLE_CLIENT_ADD_SURFACE_DAMAGE)
     {
         std::string name = sparkle_packet_get_string(packet);

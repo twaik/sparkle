@@ -9,6 +9,7 @@
 #include <thread>
 #include <map>
 #include <string>
+#include <algorithm>
 
 
 #include "common/sparkle_surface_file.h"
@@ -234,8 +235,10 @@ public:
     const std::string &name();
     Texture *texture();
     const RectangleA &position();
+    int strata();
     
     void setPosition(int x1, int y1, int x2, int y2);
+    void setStrata(int strata);
     void addDamage(int x1, int y1, int x2, int y2);
     
     virtual bool updateTexture() = 0;
@@ -244,6 +247,7 @@ protected:
     std::string _name;
     Texture _texture;
     RectangleA _position;
+    int _strata;
     RectangleA _damage;
 };
 
@@ -254,6 +258,7 @@ CompositorGLSurface::~CompositorGLSurface()
 CompositorGLSurface::CompositorGLSurface(const std::string &name)
 {
     _name = name;
+    _strata = 0;
 }
 
 const std::string &CompositorGLSurface::name()
@@ -271,9 +276,19 @@ const RectangleA &CompositorGLSurface::position()
     return _position;
 }
 
+int CompositorGLSurface::strata()
+{
+    return _strata;
+}
+
 void CompositorGLSurface::setPosition(int x1, int y1, int x2, int y2)
 {
     _position = RectangleA(PointA(x1, y1), PointA(x2, y2));
+}
+
+void CompositorGLSurface::setStrata(int strata)
+{
+    _strata = strata;
 }
 
 void CompositorGLSurface::addDamage(int x1, int y1, int x2, int y2)
@@ -384,10 +399,13 @@ private:
     void registerSurfaceFile(const std::string &name, const std::string &path, int width, int height);
     void unregisterSurface(const std::string &name);
     void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
+    void setSurfaceStrata(const std::string &name, int strata);
     void addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2);
     
     CompositorGLSurface *findSurface(const std::string &name);
     void transformCoordinates(int x, int y, CompositorGLSurface *surface, int *_x, int *_y);
+    
+    static bool sortFunction(CompositorGLSurface *a1, CompositorGLSurface *a2);
 
 private:
     WereEventLoop *_loop;
@@ -470,6 +488,7 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
     _server->registerSurfaceFile.connect(_loop, std::bind(&CompositorGL::registerSurfaceFile, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
     _server->unregisterSurface.connect(_loop, std::bind(&CompositorGL::unregisterSurface, this, std::placeholders::_1));
     _server->setSurfacePosition.connect(_loop, std::bind(&CompositorGL::setSurfacePosition, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+    _server->setSurfaceStrata.connect(_loop, std::bind(&CompositorGL::setSurfaceStrata, this, std::placeholders::_1, std::placeholders::_2));
     _server->addSurfaceDamage.connect(_loop, std::bind(&CompositorGL::addSurfaceDamage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 }
 
@@ -688,6 +707,7 @@ void CompositorGL::registerSurfaceFile(const std::string &name, const std::strin
         
         surface = new CompositorGLSurfaceFile(name, path, width, height);
         _surfaces.push_back(surface);
+        std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
         sparkle_message("Surface registered.\n");
 
         _redraw = true;
@@ -718,6 +738,16 @@ void CompositorGL::setSurfacePosition(const std::string &name, int x1, int y1, i
         if (surface != 0)
         {
             surface->setPosition(x1, y1, x2, y2);
+            _redraw = true;
+        }
+}
+
+void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
+{
+        CompositorGLSurface *surface = findSurface(name);
+        if (surface != 0)
+        {
+            surface->setStrata(strata);
             _redraw = true;
         }
 }
@@ -757,6 +787,11 @@ void CompositorGL::transformCoordinates(int x, int y, CompositorGLSurface *surfa
     
     *_x = (x - x1a) * surface->texture()->width() / (x2a - x1a);
     *_y = (y - y1a) * surface->texture()->height() / (y2a - y1a);
+}
+
+bool CompositorGL::sortFunction(CompositorGLSurface *a1, CompositorGLSurface *a2)
+{
+    return a1->strata() < a2->strata();
 }
 
 //==================================================================================================

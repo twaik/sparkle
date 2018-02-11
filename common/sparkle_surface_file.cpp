@@ -10,6 +10,9 @@
 SparkleSurfaceFile::~SparkleSurfaceFile()
 {
     unmap();
+
+    if (_owner)
+        unlink(_path.c_str());
 }
 
 SparkleSurfaceFile::SparkleSurfaceFile(const std::string &path, int width, int height, bool owner)

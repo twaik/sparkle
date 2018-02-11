@@ -37,7 +37,7 @@ HEADERS += were_signal_handler.h
 OBJECTS += were_signal_handler.o
 
 CXXFLAGS = 
-CXXFLAGS += -Wall
+CXXFLAGS += -Wall -O2
 CXXFLAGS += -fPIC
 
 all: libwere.a test

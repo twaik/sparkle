@@ -29,6 +29,7 @@ public:
     void registerSurfaceFile(const std::string &name, const std::string &path, int width, int height);
     void unregisterSurface(const std::string &name);
     void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
+    void setSurfaceStrata(const std::string &name, int strata);
     void addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2);
     void keyPress(int code);
     void keyRelease(int code);
@@ -82,6 +83,7 @@ void sparkle_client_disconnect(sparkle_client_t *client);
 void sparkle_client_register_surface_file(sparkle_client_t *client, const char *name, const char *path, int width, int height);
 void sparkle_client_unregister_surface(sparkle_client_t *client, const char *name);
 void sparkle_client_set_surface_position(sparkle_client_t *client, const char *name, int x1, int y1, int x2, int y2);
+void sparkle_client_set_surface_strata(sparkle_client_t *client, const char *name, int strata);
 void sparkle_client_add_surface_damage(sparkle_client_t *client, const char *name, int x1, int y1, int x2, int y2);
 
 #ifdef __cplusplus

@@ -1,8 +1,8 @@
 SOURCES =
 HEADERS =
 
-CXXFLAGS = \
--Wall -I.
+CXXFLAGS = 
+CXXFLAGS += -Wall -O2 -I.
 
 LIBS = -lX11 -lEGL -lGLESv2 were/libwere.a
 
@@ -26,6 +26,9 @@ HEADERS += common/sparkle_surface_file.h
 
 SOURCES += common/sparkle_server.cpp
 HEADERS += common/sparkle_server.h
+
+SOURCES += common/were_benchmark.cpp
+HEADERS += common/were_benchmark.h
 
 all: test
 
