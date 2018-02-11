@@ -70,6 +70,8 @@ typedef struct dummyRec
     sparkle_client_t *client;
     int displayWidth;
     int displayHeight;
+    int configuredWidth;
+    int configuredHeight;
 
     CreateScreenResourcesProcPtr CreateScreenResources;
     DamagePtr damage;

@@ -338,6 +338,7 @@ static void handle_disconnection(void *user)
 static void handle_display_size(void *user, int width, int height)
 {
     ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
+    ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
         
     dPtr->displayWidth = width;
@@ -346,6 +347,27 @@ static void handle_display_size(void *user, int width, int height)
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DISPLAY SIZE: %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
         
     sparkle_client_set_surface_position(dPtr->client, dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight);
+    
+
+    if (dPtr->displayWidth != dPtr->configuredWidth || dPtr->displayHeight != dPtr->configuredHeight)
+    {
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Reconfiguring for %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
+
+        DUMMYUpdateModes(pScrn, dPtr->displayWidth, dPtr->displayHeight);
+
+        DisplayModePtr mode = dPtr->modes;
+        //pScrn->currentMode = mode;
+
+        //XXX Take DPI from config
+        int mmWidth = mode->HDisplay * 254 / 960;
+        int mmHeight = mode->VDisplay * 254 / 960;
+
+        RRScreenSizeSet(pScreen, mode->HDisplay, mode->VDisplay, mmWidth, mmHeight);
+        xf86SetSingleMode(pScrn, mode, RR_Rotate_0);
+
+        dPtr->configuredWidth = dPtr->displayWidth;
+        dPtr->configuredHeight = dPtr->displayHeight;
+    }
 }
 
 //==================================================================================================
@@ -717,15 +739,15 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
     
     //dPtr->desiredWidth = xf86SetIntOption(pScrn->options, "Width", 800);
     //dPtr->desiredHeight = xf86SetIntOption(pScrn->options, "Height", 600);
-
-    
-    //dPtr->modes = xf86CVTMode(800, 600, 60, 0, 0);
     dPtr->displayWidth = 800;
     dPtr->displayHeight = 600;
+    dPtr->configuredWidth = dPtr->displayWidth;
+    dPtr->configuredHeight = dPtr->displayHeight;
+    dPtr->modes = xf86CVTMode(dPtr->displayWidth, dPtr->displayHeight, 60, 0, 0);
 
     //XXX Check results
     xf86CrtcConfigInit(pScrn, &dummyCrtcConfigFuncs);
-    xf86CrtcSetSizeRange(pScrn, 240, 240, 2048, 2048);
+    xf86CrtcSetSizeRange(pScrn, 240, 240, 4096, 4096);
 
     crtc = xf86CrtcCreate(pScrn, &dummyCrtcFuncs);
     output = xf86OutputCreate(pScrn, &dummyOutputFuncs, "sparkle");
@@ -1123,6 +1145,7 @@ static CARD32 DUMMYTimeout(OsTimerPtr timer, CARD32 time, pointer arg)
 
     were_event_loop_process_events(dPtr->were);
     
+    
     dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);
     
     return 0;
@@ -1166,31 +1189,6 @@ static void DUMMYBlockHandler(BLOCKHANDLER_ARGS_DECL)
     pScreen->BlockHandler = dPtr->BlockHandler;
     pScreen->BlockHandler(BLOCKHANDLER_ARGS);
     pScreen->BlockHandler = DUMMYBlockHandler;
-
-
-    //XXX
-#if 0
-        if (dPtr->desiredWidth != dPtr->configuredWidth || dPtr->desiredHeight != dPtr->configuredHeight)
-        {
-            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Reconfiguring for %dx%d\n", dPtr->desiredWidth, dPtr->desiredHeight);
-
-            DUMMYUpdateModes(pScrn, dPtr->desiredWidth, dPtr->desiredHeight);
-
-            DisplayModePtr mode = dPtr->modes;
-            //pScrn->currentMode = mode;
-
-            //XXX Take DPI from config
-            int mmWidth = mode->HDisplay * 254 / 960;
-            int mmHeight = mode->VDisplay * 254 / 960;
-
-            RRScreenSizeSet(pScreen, mode->HDisplay, mode->VDisplay, mmWidth, mmHeight);
-            xf86SetSingleMode(pScrn, mode, RR_Rotate_0);
-
-            dPtr->configuredWidth = dPtr->desiredWidth;
-            dPtr->configuredHeight = dPtr->desiredHeight;
-        }
-#endif
-
 
     RegionPtr pRegion = DamageRegion(dPtr->damage);
 

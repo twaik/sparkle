@@ -4,13 +4,10 @@ WidgetHost::~WidgetHost()
 {
 }
 
-WidgetHost::WidgetHost(WereEventLoop *loop, unsigned char *buffer, int stride, int width, int height)
+WidgetHost::WidgetHost(WereEventLoop *loop)
 {
     _loop = loop;
-    _buffer = buffer;
-    _stride = stride;
-    _width = width;
-    _height = height;
+    _buffer = 0;
 }
 
 int WidgetHost::width()
@@ -28,6 +25,19 @@ void *WidgetHost::data()
     return _buffer;
 }
 
+void WidgetHost::setBuffer(unsigned char *buffer, int stride, int width, int height)
+{
+    _buffer = buffer;
+    _stride = stride;
+    _width = width;
+    _height = height;
+    
+    for (unsigned int i = 0; i < _widgets.size(); ++i)
+    {
+        redrawWidget(_widgets[i]._widget);
+    }
+}
+
 void WidgetHost::addWidget(Widget *widget, const RectangleC &position)
 {
     WidgetData widgetData;
@@ -41,20 +51,19 @@ void WidgetHost::addWidget(Widget *widget, const RectangleC &position)
 
 void WidgetHost::redrawWidget(Widget *widget)
 {
+    if (_buffer == 0)
+        return;
+    
     WidgetData *widgetData = 0;
     
     for (unsigned int i = 0; i < _widgets.size(); ++i)
     {
         if (_widgets[i]._widget == widget)
-        {
             widgetData = &_widgets[i];
-        }
     }
     
     if (widgetData == 0)
-    {
         return;
-    }
     
     int x1 = widgetData->_position.from.x.relative * _width + widgetData->_position.from.x.absolute;
     int y1 = widgetData->_position.from.y.relative * _height + widgetData->_position.from.y.absolute;
@@ -62,8 +71,6 @@ void WidgetHost::redrawWidget(Widget *widget)
     int y2 = widgetData->_position.to.y.relative * _height + widgetData->_position.to.y.absolute;
     int width = x2 - x1;
     int height = y2 - y1;
-
-
 
     widget->draw(&_buffer[(y1 * _stride + x1) * 4], _stride, width, height);
     

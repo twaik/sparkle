@@ -18,9 +18,9 @@ public:
     void start();
     
 private:
-    void handleConnection();
     void hostDamage(int x1, int y1, int x2, int y2);
     
+    void displaySize(int width, int height);
     void pointerDown(const std::string &name, int slot, int x, int y);
     void pointerUp(const std::string &name, int slot, int x, int y);
     

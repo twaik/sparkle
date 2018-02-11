@@ -17,11 +17,13 @@ class WidgetHost
 {
 public:
     ~WidgetHost();
-    WidgetHost(WereEventLoop *loop, unsigned char *buffer, int stride, int width, int height);
+    WidgetHost(WereEventLoop *loop);
 
     int width();
     int height();
     void *data();
+    
+    void setBuffer(unsigned char *buffer, int stride, int width, int height);
     
     void addWidget(Widget *widget, const RectangleC &position);
     
