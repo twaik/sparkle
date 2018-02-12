@@ -127,7 +127,7 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
             platform->_pointer[slot].x = x;
             platform->_pointer[slot].y = y;
             platform->pointerDown(slot, x, y);
-            sparkle_message("DOWN %d %d %d\n", slot, x, y);
+            //sparkle_message("DOWN %d %d %d\n", slot, x, y);
         }
         else if (action == AMOTION_EVENT_ACTION_UP || action == AMOTION_EVENT_ACTION_POINTER_UP)
         {
@@ -139,7 +139,7 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
             platform->_pointer[slot].x = x;
             platform->_pointer[slot].y = y;
             platform->pointerUp(slot, x, y);
-            sparkle_message("UP %d %d %d\n", slot, x, y);
+            //sparkle_message("UP %d %d %d\n", slot, x, y);
         }
         else if (action == AMOTION_EVENT_ACTION_MOVE)
         {
@@ -155,7 +155,7 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
                     platform->_pointer[slot].x = x;
                     platform->_pointer[slot].y = y;
                     platform->pointerMotion(slot, x, y);
-                    sparkle_message("MOVE %d %d %d\n", slot, x, y);
+                    //sparkle_message("MOVE %d %d %d\n", slot, x, y);
                 }
             }
         }
