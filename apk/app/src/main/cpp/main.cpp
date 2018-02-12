@@ -6,8 +6,7 @@
 #include <sys/stat.h>
 #include <stdexcept>
 
-
-//#include "sound/sles/sound_sles.h"
+//#define SOUND_THREAD
 
 void android_main(struct android_app *app)
 {
@@ -18,8 +17,15 @@ void android_main(struct android_app *app)
         WereEventLoop *loop = new WereEventLoop();
         Platform *platform = platform_na_create(loop, app);
         Compositor *compositor = compositor_gl_create(loop, platform);
+
+#ifdef SOUND_THREAD
+        WereEventLoop *loop2 = new WereEventLoop();
+        SoundSLES *sound = new SoundSLES(loop2);
+        loop2->runThread();
+#else
         SoundSLES *sound = new SoundSLES(loop);
-        
+#endif
+
         WereBenchmark *test = new WereBenchmark(loop);
         compositor->frame.connect(loop, std::bind(&WereBenchmark::event, test));
 
@@ -28,6 +34,10 @@ void android_main(struct android_app *app)
         platform->stop();
 
         delete sound;
+#ifdef SOUND_THREAD
+        loop2->exit();
+        delete loop2;
+#endif
         delete test;
         delete compositor;
         delete platform;

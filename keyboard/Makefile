@@ -4,7 +4,7 @@ SOURCES =
 HEADERS = 
 
 CXXFLAGS = -Wall -O2 -I..
-LIBS = ../were/libwere.a
+LIBS = ../were/libwere.a -lpthread
 
 SOURCES += main.cpp
 

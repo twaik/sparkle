@@ -16,6 +16,8 @@ public:
     SparkleKeyboard();
     
     void start();
+    void show();
+    void hide();
     
 private:
     void hostDamage(int x1, int y1, int x2, int y2);
@@ -23,9 +25,12 @@ private:
     void displaySize(int width, int height);
     void pointerDown(const std::string &name, int slot, int x, int y);
     void pointerUp(const std::string &name, int slot, int x, int y);
+    void keyDown(int code);
+    void keyUp(int code);
     
     void keyPressed(int code);
     void keyReleased(int code);
+    
     
 private:
     WereEventLoop *_loop;
@@ -34,6 +39,9 @@ private:
     SparkleClient *_client;
     
     WidgetButton *_buttons;
+    
+    int _displayWidth;
+    int _displayHeight;
 };
 
 #endif //SPARKLE_KEYBOARD_H

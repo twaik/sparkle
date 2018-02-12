@@ -168,12 +168,12 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
         int code = AKeyEvent_getKeyCode(event);
         //int code = KeyEvent_getScanCode(event);
 
+        //sparkle_message("KEY %d\n", code);
+        
         code = sion_keymap[code];
 
         if (code == 0)
-        {
             return 0;
-        }
 
         if (action == AKEY_EVENT_ACTION_DOWN)
         {
@@ -184,7 +184,7 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
             platform->keyUp(code);
         }
 
-        return 0;
+        return 1;
     }
 
     return 0;

@@ -41,7 +41,7 @@ const ButtonData layout[] =
     {51, 14, 9, 4, 36, "Enter"},
     
     {0, 18, 9, 4, 50, "Shift"},
-    {9, 18, 4, 4, 52, "Z"}, {13, 18, 4, 4, 53, "X"}, {17, 18, 4, 4, 54, "C"}, {21, 18, 4, 4, 55, "V"}, {25, 18, 4, 4, 56, "B"}, {29, 18, 4, 4, 57, "N"}, {33, 18, 4, 4, 58, "M"}, {37, 18, 4, 4, 59, ""}, {41, 18, 4, 4, 60, ""}, {45, 18, 4, 4, 61, ""},
+    {9, 18, 4, 4, 52, "Z"}, {13, 18, 4, 4, 53, "X"}, {17, 18, 4, 4, 54, "C"}, {21, 18, 4, 4, 55, "V"}, {25, 18, 4, 4, 56, "B"}, {29, 18, 4, 4, 57, "N"}, {33, 18, 4, 4, 58, "M"}, {37, 18, 4, 4, 59, "<\n,"}, {41, 18, 4, 4, 60, ">\n."}, {45, 18, 4, 4, 61, "?\n/"},
     {49, 18, 11, 4, 62, "Shift"},
     
     {0, 22, 5, 4, 37, "Ctrl"}, {5, 22, 5, 4, 133, "Win"}, {10, 22, 5, 4, 64, "Alt"},
@@ -76,11 +76,15 @@ SparkleKeyboard::SparkleKeyboard()
 {
     _loop = new WereEventLoop(true);
     _surface = 0;
+    _displayWidth = 0;
+    _displayHeight = 0;
     
     _client = new SparkleClient(_loop, "/dev/shm/sparkle.socket");
     _client->displaySize.connect(_loop, std::bind(&SparkleKeyboard::displaySize, this, std::placeholders::_1, std::placeholders::_2));
     _client->pointerDown.connect(_loop, std::bind(&SparkleKeyboard::pointerDown, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
     _client->pointerUp.connect(_loop, std::bind(&SparkleKeyboard::pointerUp, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    _client->keyDown.connect(_loop, std::bind(&SparkleKeyboard::keyDown, this, std::placeholders::_1));
+    _client->keyUp.connect(_loop, std::bind(&SparkleKeyboard::keyUp, this, std::placeholders::_1));
     
     _host = new WidgetHost(_loop);
     _host->damage.connect(_loop, std::bind(&SparkleKeyboard::hostDamage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
@@ -115,6 +119,49 @@ void SparkleKeyboard::start()
     _loop->run();
 }
 
+void SparkleKeyboard::show()
+{
+    if (_displayWidth == 0 || _displayHeight == 0)
+        return;
+    
+    int sw = 0;
+    int sh = 0;
+    
+    if (_displayWidth > _displayHeight) //Landscape
+    {
+        sw = _displayWidth;
+        sh = _displayHeight / 2;
+    }
+    else //Portrait
+    {
+        sw = _displayWidth;
+        sh = _displayHeight / 3;
+    }
+    
+    if (_surface == 0)
+    {
+        _surface = new SparkleSurfaceFile("/dev/shm/keyboard", sw, sh, true);
+        _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
+    }
+    else if (_surface->width() != sw || _surface->height() != sh)
+    {
+        _client->unregisterSurface(surface_name);
+        delete _surface;
+        _surface = new SparkleSurfaceFile("/dev/shm/keyboard", sw, sh, true);
+        _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
+    }
+    
+    _client->registerSurfaceFile(surface_name, "/dev/shm/keyboard", _surface->width(), _surface->height());
+    _client->setSurfacePosition(surface_name, 0, _displayHeight - _surface->height(), _displayWidth, _displayHeight);
+    _client->setSurfaceStrata(surface_name, 0xFF);
+    _client->addSurfaceDamage(surface_name, 0, 0, _surface->width(), _surface->height());
+}
+
+void SparkleKeyboard::hide()
+{
+    _client->unregisterSurface(surface_name);
+}
+
 //==================================================================================================
 
 void SparkleKeyboard::hostDamage(int x1, int y1, int x2, int y2)
@@ -126,56 +173,35 @@ void SparkleKeyboard::hostDamage(int x1, int y1, int x2, int y2)
 
 void SparkleKeyboard::displaySize(int width, int height)
 {
-    int sw = 0;
-    int sh = 0;
+    if (_displayWidth != width || _displayHeight != height)
+        hide();
     
-    if (width > height) //Landscape
-    {
-        sw = width;
-        sh = height / 2;
-    }
-    else //Portrait
-    {
-        sw = width;
-        sh = height / 3;
-    }
-    
-    if (_surface == 0)
-    {
-        _surface = new SparkleSurfaceFile("/dev/shm/keyboard", sw, sh, true);
-        _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
-        _client->registerSurfaceFile(surface_name, "/dev/shm/keyboard", _surface->width(), _surface->height());
-        _client->setSurfacePosition(surface_name, 0, height - _surface->height(), width, height);
-        _client->setSurfaceStrata(surface_name, 0xFF);
-        _client->addSurfaceDamage(surface_name, 0, 0, _surface->width(), _surface->height());
-    }
-    else if (_surface->width() != sw || _surface->height() != sh)
-    {
-        _client->unregisterSurface(surface_name);
-        delete _surface;
-        _surface = new SparkleSurfaceFile("/dev/shm/keyboard", sw, sh, true);
-        _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
-        _client->registerSurfaceFile(surface_name, "/dev/shm/keyboard", _surface->width(), _surface->height());
-        _client->setSurfacePosition(surface_name, 0, height - _surface->height(), width, height);
-        _client->setSurfaceStrata(surface_name, 0xFF);
-        _client->addSurfaceDamage(surface_name, 0, 0, _surface->width(), _surface->height());
-    }
+    _displayWidth = width;
+    _displayHeight = height;
 }
 
 void SparkleKeyboard::pointerDown(const std::string &name, int slot, int x, int y)
 {
     if (name == surface_name)
-    {
         _host->pointerDown(slot, x, y);
-    }
 }
 
 void SparkleKeyboard::pointerUp(const std::string &name, int slot, int x, int y)
 {
     if (name == surface_name)
-    {
         _host->pointerUp(slot, x, y);
-    }
+}
+
+void SparkleKeyboard::keyDown(int code)
+{
+    if (code == 122)
+        show();
+    else if (code == 123)
+        hide();
+}
+
+void SparkleKeyboard::keyUp(int code)
+{
 }
     
 //==================================================================================================
