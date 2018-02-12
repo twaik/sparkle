@@ -5,6 +5,15 @@
 
 //==================================================================================================
 
+class PointerState
+{
+public:
+    PointerState() : down(false), x(0), y(0) {}
+    bool down;
+    int x;
+    int y;
+};
+
 class PlatformNA : public Platform
 {
 public:
@@ -28,7 +37,7 @@ private:
     
     bool _draw;
 
-    PointA _pointer[10];
+    PointerState _pointer[10];
 };
 
 PlatformNA::~PlatformNA()
@@ -114,10 +123,11 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
             int x = AMotionEvent_getX(event, pointerIndex);
             int y = AMotionEvent_getY(event, pointerIndex);
             int slot = AMotionEvent_getPointerId(event, pointerIndex);
+            platform->_pointer[slot].down = true;
             platform->_pointer[slot].x = x;
             platform->_pointer[slot].y = y;
             platform->pointerDown(slot, x, y);
-            //sparkle_message("DOWN %d %d %d\n", slot, x, y);
+            sparkle_message("DOWN %d %d %d\n", slot, x, y);
         }
         else if (action == AMOTION_EVENT_ACTION_UP || action == AMOTION_EVENT_ACTION_POINTER_UP)
         {
@@ -125,10 +135,11 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
             int x = AMotionEvent_getX(event, pointerIndex);
             int y = AMotionEvent_getY(event, pointerIndex);
             int slot = AMotionEvent_getPointerId(event, pointerIndex);
-            platform->_pointer[slot].x = -1;
-            platform->_pointer[slot].y = -1;
+            platform->_pointer[slot].down = false;
+            platform->_pointer[slot].x = x;
+            platform->_pointer[slot].y = y;
             platform->pointerUp(slot, x, y);
-            //sparkle_message("UP %d %d %d\n", slot, x, y);
+            sparkle_message("UP %d %d %d\n", slot, x, y);
         }
         else if (action == AMOTION_EVENT_ACTION_MOVE)
         {
@@ -139,17 +150,14 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
                 int y = AMotionEvent_getY(event, i);
                 int slot = AMotionEvent_getPointerId(event, i);
 
-                if ((platform->_pointer[slot].x != -1 && platform->_pointer[slot].y != -1) &&
-                    (x != platform->_pointer[slot].x || y != platform->_pointer[slot].y))
+                if (x != platform->_pointer[slot].x || y != platform->_pointer[slot].y)
                 {
                     platform->_pointer[slot].x = x;
                     platform->_pointer[slot].y = y;
                     platform->pointerMotion(slot, x, y);
-                    //sparkle_message("MOVE %d %d %d\n", slot, x, y);
-                    return 1;
+                    sparkle_message("MOVE %d %d %d\n", slot, x, y);
                 }
             }
-            sparkle_message("WARNING: Failed to find moved pointer!\n");
         }
 
         return 1;

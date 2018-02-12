@@ -7,7 +7,6 @@
 #include <math.h>
 #include <unistd.h>
 
-//#define BEEP
 
 //==================================================================================================
 
@@ -18,12 +17,11 @@ SoundSLES::~SoundSLES()
     (*engineObject)->Destroy(engineObject);
     
     delete _server;
-    delete _loop;
 }
 
-SoundSLES::SoundSLES()
+SoundSLES::SoundSLES(WereEventLoop *loop)
 {
-    _loop = new WereEventLoop();
+    _loop = loop;
     
     _server = new WereServerUnix(_loop, "/dev/shm/sparkle-sound.socket");
     _server->newConnection.connect(_loop, std::bind(&SoundSLES::connection, this));
@@ -89,45 +87,6 @@ SoundSLES::SoundSLES()
     checkResult(result);
     
     busy = false;
-
-#ifdef BEEP
-
-#define SINE_FRAMES (44100/20)
-
-    typedef struct
-    {
-        short left;
-        short right;
-    } frame_t;
-
-    unsigned i;
-    float pi2 = 3.14 * 2;
-    float hz = 441*5;
-    float sr = 44100;
-
-	frame_t sine[SINE_FRAMES];
-
-    for (i = 0; i < SINE_FRAMES; ++i) {
-        sine[i].left = sin((float) (i  / (sr / hz)) * pi2 ) * 32000.0;
-        sine[i].right = sine[i].left;
-    }
-
-    frame_t *buffer;
-    unsigned size;
-
-    buffer = sine;
-    size = sizeof(sine);
-
-    result = (*playerBufferqueue)->Enqueue(playerBufferqueue, buffer, size);
-    checkResult(result);
-
-#endif
-
-}
-
-void SoundSLES::loop()
-{
-    _loop->run();
 }
 
 void SoundSLES::callback(BufferQueueItf playerBufferqueue, void *data)
@@ -169,7 +128,7 @@ void SoundSLES::data()
 {
     unsigned int bytesAvailable = _client->bytesAvailable();
     
-    were_message("buffer load %d\n", bytesAvailable);
+    //were_message("buffer load %d\n", bytesAvailable);
     
     while (bytesAvailable >= sizeof(uint32_t))
     {
@@ -193,7 +152,7 @@ void SoundSLES::data()
             busy = true;
             SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, data + sizeof(uint32_t), size - sizeof(uint32_t));
             checkResult(result);
-            return;
+            return; //FIXME
         }
         else if (*operation == 1)
         {
@@ -215,4 +174,39 @@ void SoundSLES::data()
 }
     
 //==================================================================================================
+
+void SoundSLES::beep()
+{
+    const int SINE_FRAMES = 44100 / 20;
+
+    typedef struct
+    {
+        short left;
+        short right;
+    } frame_t;
+
+    unsigned i;
+    float pi2 = 3.14 * 2;
+    float hz = 441*5;
+    float sr = 44100;
+
+	frame_t sine[SINE_FRAMES];
+
+    for (i = 0; i < SINE_FRAMES; ++i) {
+        sine[i].left = sin((float) (i  / (sr / hz)) * pi2 ) * 32000.0;
+        sine[i].right = sine[i].left;
+    }
+
+    frame_t *buffer;
+    unsigned size;
+
+    buffer = sine;
+    size = sizeof(sine);
+
+    SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, buffer, size);
+    checkResult(result);
+}
+
+//==================================================================================================
+
 

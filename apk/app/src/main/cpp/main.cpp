@@ -2,6 +2,7 @@
 #include "platform/na/platform_na.h"
 #include "compositor/gl/compositor_gl.h"
 #include "common/were_benchmark.h"
+#include "sound/sles/sound_sles.h"
 #include <sys/stat.h>
 #include <stdexcept>
 
@@ -17,6 +18,7 @@ void android_main(struct android_app *app)
         WereEventLoop *loop = new WereEventLoop();
         Platform *platform = platform_na_create(loop, app);
         Compositor *compositor = compositor_gl_create(loop, platform);
+        SoundSLES *sound = new SoundSLES(loop);
         
         WereBenchmark *test = new WereBenchmark(loop);
         compositor->frame.connect(loop, std::bind(&WereBenchmark::event, test));
@@ -25,6 +27,7 @@ void android_main(struct android_app *app)
         loop->run();
         platform->stop();
 
+        delete sound;
         delete test;
         delete compositor;
         delete platform;
@@ -32,7 +35,7 @@ void android_main(struct android_app *app)
     }
     catch (const std::runtime_error &e)
     {
-        sparkle_message("%s\n", e.what());
+        were_error("%s\n", e.what());
     }
 
 

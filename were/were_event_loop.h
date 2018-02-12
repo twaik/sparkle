@@ -9,6 +9,7 @@
 #include <sys/epoll.h>
 #include <functional>
 #include <vector>
+#include <thread>
 
 class WereEventSource;
 class WereCallQueue;
@@ -26,6 +27,7 @@ public:
     void unregisterEventSource(WereEventSource *source);
     
     void run();
+    void runThread();
     void exit();
     
     void processEvents();
@@ -40,6 +42,8 @@ private:
     
     WereCallQueue *_queue;
     WereSignalHandler *_signal;
+    
+    std::thread _thread;
 };
 
 #endif //__cplusplus

@@ -82,8 +82,15 @@ static int sparkle_write1(snd_pcm_sparkle_t *sparkle, void *buffer, int size)
 {
     if (sparkle->fd == -1)
         return size;
-
-    return write(sparkle->fd, buffer, size);
+    
+    int n = write(sparkle->fd, buffer, size);
+    if (n == -1)
+    {
+        sparkle_disconnect();
+        return size;
+    }
+    else
+        return n;
 }
 
 //==============================================================================

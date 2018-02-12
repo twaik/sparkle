@@ -85,6 +85,11 @@ void WereEventLoop::run()
     }
 }
 
+void WereEventLoop::runThread()
+{
+    _thread = std::thread(&WereEventLoop::run, this);
+}
+
 void WereEventLoop::exit()
 {
     _exit = true;

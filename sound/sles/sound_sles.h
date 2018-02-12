@@ -40,9 +40,9 @@ class SoundSLES
 {
 public:
     ~SoundSLES();
-    SoundSLES();
+    SoundSLES(WereEventLoop *loop);
     
-    void loop();
+    void beep();
 
 private:
     void connection();
