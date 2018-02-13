@@ -1,5 +1,6 @@
 #include "platform_x11.h"
 #include "were/were_timer.h"
+#include <stdexcept>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
@@ -57,16 +58,12 @@ PlatformX11::PlatformX11(WereEventLoop *loop)
 int PlatformX11::start()
 {
     if (openDisplay() != 0)
-    {
-        return -1;
-    }
+        throw std::runtime_error("[PlatformX11::start] Failed to open display.");
 
     initializeForNativeDisplay(_display);
 
     if (createWindow() != 0)
-    {
-        return -1;
-    }
+        throw std::runtime_error("[PlatformX11::start] Failed to create window.");
 
     initializeForNativeWindow(_window);
 
@@ -88,6 +85,7 @@ int PlatformX11::stop()
 void PlatformX11::timeout()
 {
     processEvents();
+    
     draw();
 }
 
@@ -96,9 +94,7 @@ int PlatformX11::openDisplay()
     _display = XOpenDisplay(0);
 
     if (_display == 0)
-    {
         return -1;
-    }
 
     return 0;
 }
@@ -117,9 +113,7 @@ int PlatformX11::closeDisplay()
 int PlatformX11::createWindow()
 {
     if (_display == 0)
-    {
         return -1;
-    }
 
     int scrnum = DefaultScreen(_display);
     Window root = RootWindow(_display, scrnum);
@@ -135,9 +129,7 @@ int PlatformX11::createWindow()
         int num_visuals;
         XVisualInfo *visInfo = XGetVisualInfo(_display, VisualIDMask, &visTemplate, &num_visuals);
         if (!visInfo)
-        {
             return -1;
-        }
 
         visual = visInfo->visual;
         depth = visInfo->depth;
@@ -160,11 +152,8 @@ int PlatformX11::createWindow()
 
     _window = XCreateWindow(_display, root, 0, 0, w_width, w_height, 0, depth, InputOutput, visual, mask, &attr);
 
-
     if (!_window)
-    {
         return -1;
-    }
 
     XSizeHints sizehints;
     sizehints.x = w_x;
@@ -203,34 +192,27 @@ int PlatformX11::processEvents()
             case ButtonPress:
             {
                 pointerDown(0, event.xbutton.x, event.xbutton.y);
-
                 break;
             }
             case ButtonRelease:
             {
                 if (event.xbutton.type == 5)
-                {
                     pointerUp(0, event.xbutton.x, event.xbutton.y);
-                }
-
                 break;
             }
             case MotionNotify:
             {
                 pointerMotion(0, event.xbutton.x, event.xbutton.y);
-
                 break;
             }
             case KeyPress:
             {
                 keyDown(event.xkey.keycode);
-
                 break;
             }
             case KeyRelease:
             {
                 keyUp(event.xkey.keycode);
-
                 break;
             }
             default:

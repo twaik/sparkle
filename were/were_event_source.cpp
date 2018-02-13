@@ -16,7 +16,10 @@ WereEventSource::WereEventSource(WereEventLoop *loop)
 
 int WereEventSource::fd()
 {
-    return _fd;
+    if (_fd == -1)
+        throw std::runtime_error("[WereEventSource::fd] Bad fd.");
+    else
+        return _fd;
 }
 
 //==================================================================================================

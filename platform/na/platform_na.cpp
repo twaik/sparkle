@@ -1,6 +1,7 @@
 #include "platform_na.h"
 #include "were/were_timer.h"
 #include "sion_keymap.h"
+#include <stdexcept>
 #include <android/window.h>
 
 //==================================================================================================
@@ -55,12 +56,6 @@ PlatformNA::PlatformNA(WereEventLoop *loop, struct android_app *app)
     _app->onAppCmd = &handleCmd;
 
     _draw = false;
-
-    for (int i = 0; i < 10; ++i)
-    {
-        _pointer[i].x = -1;
-        _pointer[i].y = -1;
-    }
     
     _timer = new WereTimer(_loop);
     _timer->timeout.connect(_loop, std::bind(&PlatformNA::timeout, this));
@@ -87,7 +82,7 @@ void PlatformNA::timeout()
     int events;
     struct android_poll_source *source;
 
-    // -1 to wair forever
+    // -1 to wait forever
     while ((ident = ALooper_pollAll(0, NULL, &events, (void **)&source)) >= 0)
     {
         // Process this event.
@@ -97,9 +92,6 @@ void PlatformNA::timeout()
         // Check if we are exiting.
         if (_app->destroyRequested != 0)
         {
-            //XXX
-            finishForNativeWindow();
-            finishForNativeDisplay();
             _loop->exit();
             return;
         }
@@ -127,7 +119,7 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
             platform->_pointer[slot].x = x;
             platform->_pointer[slot].y = y;
             platform->pointerDown(slot, x, y);
-            //sparkle_message("DOWN %d %d %d\n", slot, x, y);
+            //were_message("DOWN %d %d %d\n", slot, x, y);
         }
         else if (action == AMOTION_EVENT_ACTION_UP || action == AMOTION_EVENT_ACTION_POINTER_UP)
         {
@@ -139,7 +131,7 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
             platform->_pointer[slot].x = x;
             platform->_pointer[slot].y = y;
             platform->pointerUp(slot, x, y);
-            //sparkle_message("UP %d %d %d\n", slot, x, y);
+            //were_message("UP %d %d %d\n", slot, x, y);
         }
         else if (action == AMOTION_EVENT_ACTION_MOVE)
         {
@@ -155,7 +147,7 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
                     platform->_pointer[slot].x = x;
                     platform->_pointer[slot].y = y;
                     platform->pointerMotion(slot, x, y);
-                    //sparkle_message("MOVE %d %d %d\n", slot, x, y);
+                    //were_message("MOVE %d %d %d\n", slot, x, y);
                 }
             }
         }
@@ -168,7 +160,7 @@ int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
         int code = AKeyEvent_getKeyCode(event);
         //int code = KeyEvent_getScanCode(event);
 
-        //sparkle_message("KEY %d\n", code);
+        //were_message("KEY %d\n", code);
         
         code = sion_keymap[code];
 
@@ -250,8 +242,6 @@ void PlatformNA::handleCmd(struct android_app *app, int32_t cmd)
 
 void PlatformNA::setImmersive()
 {
-#if 1
-
 /*
 @Override
 public void onWindowFocusChanged(boolean hasFocus) {
@@ -302,8 +292,6 @@ public void onWindowFocusChanged(boolean hasFocus) {
 	env->CallVoidMethod(decorView, setSystemUiVisibility, flag);
 
 	_app->activity->vm->DetachCurrentThread();
-
-#endif
 }
 
 //==================================================================================================

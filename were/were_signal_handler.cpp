@@ -36,14 +36,14 @@ void WereSignalHandler::event(uint32_t events)
     if (events == EPOLLIN)
     {        
         struct signalfd_siginfo si;
-        read(_fd, &si, sizeof(si));
+        
+        if (read(_fd, &si, sizeof(si)) != sizeof(si))
+            throw std::runtime_error("[WereSignalHandler::event] Failed to read signal fd.");
         
         terminate();
     }
     else
-    {
         throw std::runtime_error("[WereSignalHandler::event] Unknown event type.");
-    }
 }
 
 //==================================================================================================

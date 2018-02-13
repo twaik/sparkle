@@ -40,16 +40,13 @@ CXXFLAGS =
 CXXFLAGS += -Wall -O2
 CXXFLAGS += -fPIC
 
-all: libwere.a test
+all: libwere.a
 
 libwere.a: ${OBJECTS} ${HEADERS}
 	ar rcs libwere.a ${OBJECTS}
 
 %.o: %.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} -o $@ -c $<
-
-test: main.cpp
-	${CXX} ${CXXFLAGS} -o test main.cpp libwere.a
 
 clean:
 	rm -rf libwere.a *.o

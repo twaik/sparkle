@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[])
 {
-    WereEventLoop *loop = new WereEventLoop();
+    WereEventLoop *loop = new WereEventLoop(true);
 
 
     Platform *platform = platform_x11_create(loop);
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     delete platform;
     delete loop;
 
-    sparkle_message("Done\n");
+    were_message("Done\n");
 
     return 0;
 }

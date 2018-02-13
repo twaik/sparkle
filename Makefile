@@ -4,7 +4,7 @@ HEADERS =
 CXXFLAGS = 
 CXXFLAGS += -Wall -O2 -I.
 
-LIBS = -lX11 -lEGL -lGLESv2 were/libwere.a
+LIBS = -lX11 -lEGL -lGLESv2 were/libwere.a -lpthread
 
 SOURCES += main.cpp
 

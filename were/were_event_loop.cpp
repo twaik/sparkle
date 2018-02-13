@@ -4,6 +4,7 @@
 #include "were_signal_handler.h"
 #include <stdexcept>
 #include <unistd.h>
+#include <syscall.h>
 
 //==================================================================================================
 
@@ -68,6 +69,8 @@ void WereEventLoop::unregisterEventSource(WereEventSource *source)
 
 void WereEventLoop::run()
 {
+    were_debug("WereEventLoop %p started (thread %ld).\n", this, syscall(SYS_gettid));
+
     struct epoll_event events[MAX_EVENTS];
 
     while (!_exit)
@@ -79,10 +82,11 @@ void WereEventLoop::run()
         for (int i = 0; i < n; ++i)
         {
             WereEventSource *source = static_cast<WereEventSource *>(events[i].data.ptr);
-            
             source->event(events[i].events);
         }
     }
+    
+    were_debug("WereEventLoop %p finished (thread %ld).\n", this, syscall(SYS_gettid));
 }
 
 void WereEventLoop::runThread()
@@ -92,6 +96,7 @@ void WereEventLoop::runThread()
 
 void WereEventLoop::exit()
 {
+    //FIXME Break epoll_wait
     _exit = true;
 }
 
@@ -106,7 +111,6 @@ void WereEventLoop::processEvents()
     for (int i = 0; i < n; ++i)
     {
         WereEventSource *source = static_cast<WereEventSource *>(events[i].data.ptr);
-            
         source->event(events[i].events);
     }
 }
@@ -121,28 +125,24 @@ void WereEventLoop::queue(const std::function<void ()> &f)
 were_event_loop_t *were_event_loop_create()
 {
     WereEventLoop *_loop = new WereEventLoop();
-    
     return static_cast<were_event_loop_t *>(_loop);
 }
 
 void were_event_loop_destroy(were_event_loop_t *loop)
 {
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    
     delete _loop;
 }
 
 void were_event_loop_process_events(were_event_loop_t *loop)
 {
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    
     _loop->processEvents();
 }
 
 int were_event_loop_fd(were_event_loop_t *loop)
 {
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    
     return _loop->fd();
 }
 

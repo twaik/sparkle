@@ -10,6 +10,8 @@
 
 #define werethings public
 
+using namespace std::placeholders;
+
 //==================================================================================================
 
 template <typename Signature> class WereFunction;

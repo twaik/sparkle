@@ -29,8 +29,11 @@ WereSocketUnix::WereSocketUnix(WereEventLoop *loop, int fd) :
     
 #ifdef NONBLOCK
     int flags = fcntl(_fd, F_GETFL, 0);
+    if (flags == -1)
+        throw std::runtime_error("[WereSocketUnix::WereSocketUnix] Failed to get fd flags.");
     flags |= O_NONBLOCK;
-    fcntl(_fd, F_SETFL, flags);
+    if (fcntl(_fd, F_SETFL, flags) == -1)
+        throw std::runtime_error("[WereSocketUnix::WereSocketUnix] Failed to set fd flags.");
 #endif
     
     _connected = true;
@@ -61,8 +64,11 @@ void WereSocketUnix::connect(const std::string &path)
     
 #ifdef NONBLOCK
     int flags = fcntl(_fd, F_GETFL, 0);
+    if (flags == -1)
+        throw std::runtime_error("[WereSocketUnix::WereSocketUnix] Failed to get fd flags.");
     flags |= O_NONBLOCK;
-    fcntl(_fd, F_SETFL, flags);
+    if (fcntl(_fd, F_SETFL, flags) == -1)
+        throw std::runtime_error("[WereSocketUnix::WereSocketUnix] Failed to set fd flags.");
 #endif   
     
     _connected = true;
@@ -95,9 +101,7 @@ bool WereSocketUnix::connected()
 void WereSocketUnix::event(uint32_t events)
 {
     if (events == EPOLLIN)
-    {
         signal_data();
-    }
     else
     {
         signal_disconnected();
@@ -111,36 +115,42 @@ int WereSocketUnix::send(void *data, int size)
 {
     if (!_connected)
         return -1;
+
+    int n = write(_fd, data, size);
+    if (n == -1)
+        throw std::runtime_error("[WereSocketUnix::send] Socket error.");
+    else if (n != size)
+        throw std::runtime_error("[WereSocketUnix::send] n != size.");
     else
-        return write(_fd, data, size);
+        return n;
 }
 
 int WereSocketUnix::receive(void *data, int size)
 {
     if (!_connected)
         return -1;
+
+    int n = read(_fd, data, size);
+    if (n == -1)
+        throw std::runtime_error("[WereSocketUnix::receive] Socket error.");
+    else if (n != size)
+        throw std::runtime_error("[WereSocketUnix::receive] n != size.");
     else
-    {
-        int total = 0;
-        while (total < size)
-        {
-            int n = recv(_fd, reinterpret_cast<unsigned char *>(data) + total, size, MSG_WAITALL);
-            if (n == -1)
-                return -1;
-            else
-                total += n;
-        }
-        
-        return total;
-    }
+        return n;
 }
 
 int WereSocketUnix::peek(void *data, int size)
 {
     if (!_connected)
         return -1;
+    
+    int n = recv(_fd, data, size, MSG_PEEK);
+    if (n == -1)
+        throw std::runtime_error("[WereSocketUnix::peek] Socket error.");
+    else if (n != size)
+        throw std::runtime_error("[WereSocketUnix::peek] n != size.");
     else
-        return recv(_fd, data, size, MSG_PEEK);
+        return n;
 }
 
 int WereSocketUnix::bytesAvailable()
@@ -149,7 +159,8 @@ int WereSocketUnix::bytesAvailable()
         return -1;
     
     int bytes = 0;
-    ioctl(_fd, FIONREAD, &bytes);
+    if (ioctl(_fd, FIONREAD, &bytes) == -1)
+        throw std::runtime_error("[WereSocketUnix::bytesAvailable] ioctl failed.");
 
     return bytes;
 }
@@ -160,63 +171,54 @@ were_socket_unix_t *were_socket_unix_create(were_event_loop_t *loop)
 {
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
     WereSocketUnix *_socket = new WereSocketUnix(_loop);
-    
     return static_cast<were_socket_unix_t *>(_socket);
 }
 
 void were_socket_unix_destroy(were_socket_unix_t *socket)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    
     delete _socket;
 }
 
 void were_socket_unix_connect(were_socket_unix_t *socket, const char *path)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    
     _socket->connect(path);
 }
 
 void were_socket_unix_disconnect(were_socket_unix_t *socket)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    
     _socket->disconnect();
 }
 
 int were_socket_unix_connected(were_socket_unix_t *socket)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    
     return _socket->connected();
 }
 
 int were_socket_unix_send(were_socket_unix_t *socket, void *data, int size)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    
     return _socket->send(data, size);
 }
 
 int were_socket_unix_receive(were_socket_unix_t *socket, void *data, int size)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    
     return _socket->receive(data, size);
 }
 
 int were_socket_unix_peek(were_socket_unix_t *socket, void *data, int size)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    
     return _socket->peek(data, size);
 }
 
 int were_socket_unix_bytes_available(were_socket_unix_t *socket)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    
     return _socket->bytesAvailable();
 }
 
@@ -224,7 +226,6 @@ void were_socket_unix_set_connection_callback(were_socket_unix_t *socket, were_e
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    
     _socket->signal_connected.connect(_loop, std::bind(f, user));
 }
 
@@ -232,7 +233,6 @@ void were_socket_unix_set_disconnection_callback(were_socket_unix_t *socket, wer
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    
     _socket->signal_disconnected.connect(_loop, std::bind(f, user));
 }
 
@@ -240,7 +240,6 @@ void were_socket_unix_set_data_callback(were_socket_unix_t *socket, were_event_l
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    
     _socket->signal_data.connect(_loop, std::bind(f, user));
 }
 

@@ -89,10 +89,10 @@ CompositorGL_EGL::CompositorGL_EGL(NativeDisplayType nativeDisplay)
     if (eglInitialize(_display, &majorVersion, &minorVersion) != EGL_TRUE)
         throw std::runtime_error("[CompositorGL_EGL::CompositorGL_EGL] Failed: eglInitialize.");
 
-    sparkle_message("EGL_VERSION = %s\n",       eglQueryString(_display, EGL_VERSION));
-    sparkle_message("EGL_VENDOR = %s\n",        eglQueryString(_display, EGL_VENDOR));
-    sparkle_message("EGL_CLIENT_APIS = %s\n",   eglQueryString(_display, EGL_CLIENT_APIS));
-    sparkle_message("EGL_EXTENSIONS = %s\n",    eglQueryString(_display, EGL_EXTENSIONS));
+    were_message("EGL_VERSION = %s\n",       eglQueryString(_display, EGL_VERSION));
+    were_message("EGL_VENDOR = %s\n",        eglQueryString(_display, EGL_VENDOR));
+    were_message("EGL_CLIENT_APIS = %s\n",   eglQueryString(_display, EGL_CLIENT_APIS));
+    were_message("EGL_EXTENSIONS = %s\n",    eglQueryString(_display, EGL_EXTENSIONS));
 
     const EGLint configAttribs[] = {
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -174,10 +174,10 @@ CompositorGL_GL::CompositorGL_GL(CompositorGL_EGL *egl, NativeWindowType window)
     if (eglMakeCurrent(_egl->_display, _surface, _surface, _context) != EGL_TRUE)
         throw std::runtime_error("[CompositorGL_GL::CompositorGL_GL] Failed: eglMakeCurrent.");
 
-    sparkle_message("GL_VERSION = %s\n",    (char *) glGetString(GL_VERSION));
-    sparkle_message("GL_VENDOR = %s\n",     (char *) glGetString(GL_VENDOR));
-    sparkle_message("GL_RENDERER = %s\n",   (char *) glGetString(GL_RENDERER));
-    sparkle_message("GL_EXTENSIONS = %s\n", (char *) glGetString(GL_EXTENSIONS));
+    were_message("GL_VERSION = %s\n",    (char *) glGetString(GL_VERSION));
+    were_message("GL_VENDOR = %s\n",     (char *) glGetString(GL_VENDOR));
+    were_message("GL_RENDERER = %s\n",   (char *) glGetString(GL_RENDERER));
+    were_message("GL_EXTENSIONS = %s\n", (char *) glGetString(GL_EXTENSIONS));
 
     _vertexShader = loadShader(GL_VERTEX_SHADER, simpleVS);
     _pixelShader = loadShader(GL_FRAGMENT_SHADER, simpleFS);
@@ -305,9 +305,7 @@ void CompositorGLSurface::addDamage(int x1, int y1, int x2, int y2)
             _damage.to.y = y2;
     }
     else
-    {
         _damage = RectangleA(PointA(x1, y1), PointA(x2, y2));
-    }
 }
 
 //==================================================================================================
@@ -425,12 +423,15 @@ private:
 
 CompositorGL::~CompositorGL()
 {
+    for (unsigned int i = 0; i < _surfaces.size(); ++i)
+        delete _surfaces[i];
+    
     delete _server;
     
-    if (_egl)
-        delete _egl;
     if (_gl)
         delete _gl;
+    if (_egl)
+        delete _egl;
 }
 
 CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
@@ -467,29 +468,29 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
     
     _redraw = true;
 
-    _platform->initializeForNativeDisplay.connect(_loop, std::bind(&CompositorGL::initializeForNativeDisplay, this, std::placeholders::_1));
-    _platform->initializeForNativeWindow.connect(_loop, std::bind(&CompositorGL::initializeForNativeWindow, this, std::placeholders::_1));
+    _platform->initializeForNativeDisplay.connect(_loop, std::bind(&CompositorGL::initializeForNativeDisplay, this, _1));
+    _platform->initializeForNativeWindow.connect(_loop, std::bind(&CompositorGL::initializeForNativeWindow, this, _1));
     _platform->finishForNativeDisplay.connect(_loop, std::bind(&CompositorGL::finishForNativeDisplay, this));
     _platform->finishForNativeWindow.connect(_loop, std::bind(&CompositorGL::finishForNativeWindow, this));
 
     _platform->draw.connect(_loop, std::bind(&CompositorGL::draw, this));
 
     _platform->pointerDown.connect(_loop, std::bind(&CompositorGL::pointerDown, this, 
-        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        _1, _2, _3));
     _platform->pointerUp.connect(_loop, std::bind(&CompositorGL::pointerUp, this,
-        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        _1, _2, _3));
     _platform->pointerMotion.connect(_loop, std::bind(&CompositorGL::pointerMotion, this,
-    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    _platform->keyDown.connect(_loop, std::bind(&CompositorGL::keyDown, this, std::placeholders::_1));
-    _platform->keyUp.connect(_loop, std::bind(&CompositorGL::keyUp, this, std::placeholders::_1));
+    _1, _2, _3));
+    _platform->keyDown.connect(_loop, std::bind(&CompositorGL::keyDown, this, _1));
+    _platform->keyUp.connect(_loop, std::bind(&CompositorGL::keyUp, this, _1));
     
     _server = new SparkleServer(_loop, "/dev/shm/sparkle.socket");
     _server->connection.connect(_loop, std::bind(&CompositorGL::connection, this));
-    _server->registerSurfaceFile.connect(_loop, std::bind(&CompositorGL::registerSurfaceFile, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    _server->unregisterSurface.connect(_loop, std::bind(&CompositorGL::unregisterSurface, this, std::placeholders::_1));
-    _server->setSurfacePosition.connect(_loop, std::bind(&CompositorGL::setSurfacePosition, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-    _server->setSurfaceStrata.connect(_loop, std::bind(&CompositorGL::setSurfaceStrata, this, std::placeholders::_1, std::placeholders::_2));
-    _server->addSurfaceDamage.connect(_loop, std::bind(&CompositorGL::addSurfaceDamage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+    _server->registerSurfaceFile.connect(_loop, std::bind(&CompositorGL::registerSurfaceFile, this, _1, _2, _3, _4));
+    _server->unregisterSurface.connect(_loop, std::bind(&CompositorGL::unregisterSurface, this, _1));
+    _server->setSurfacePosition.connect(_loop, std::bind(&CompositorGL::setSurfacePosition, this, _1, _2, _3, _4, _5));
+    _server->setSurfaceStrata.connect(_loop, std::bind(&CompositorGL::setSurfaceStrata, this, _1, _2));
+    _server->addSurfaceDamage.connect(_loop, std::bind(&CompositorGL::addSurfaceDamage, this, _1, _2, _3, _4, _5));
 }
 
 int CompositorGL::displayWidth()
@@ -513,7 +514,9 @@ void CompositorGL::initializeForNativeDisplay(NativeDisplayType nativeDisplay)
 void CompositorGL::finishForNativeDisplay()
 {
     //XXX Disconnect getVID
-    delete _egl;
+    
+    if (_egl != 0)
+        delete _egl;
     _egl = 0;
 }
 
@@ -524,13 +527,16 @@ void CompositorGL::initializeForNativeWindow(NativeWindowType window)
 
 void CompositorGL::finishForNativeWindow()
 {
-    delete _gl;
+    if (_gl != 0)
+        delete _gl;
     _gl = 0;
 }
 
 void CompositorGL::draw()
 {
-   
+    if (_gl == 0)
+        return;
+
 #if 1
     int width;
     int height;
@@ -694,23 +700,21 @@ void CompositorGL::connection()
 {
     _server->displaySize(_gl->_surfaceWidth, _gl->_surfaceHeight);
     
-    sparkle_message("Connected\n");
+    were_debug("Connected\n");
 }
 
 void CompositorGL::registerSurfaceFile(const std::string &name, const std::string &path, int width, int height)
 {
-        CompositorGLSurface *surface = findSurface(name);
-        if (surface != 0)
-        {
-            unregisterSurface(name);
-        }
+    //CompositorGLSurface *surface = findSurface(name);
         
-        surface = new CompositorGLSurfaceFile(name, path, width, height);
-        _surfaces.push_back(surface);
-        std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
-        sparkle_message("Surface registered.\n");
+    unregisterSurface(name);
+        
+    CompositorGLSurface *surface = new CompositorGLSurfaceFile(name, path, width, height);
+    _surfaces.push_back(surface);
+    std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
+    were_debug("Surface [%s] registered.\n", name.c_str());
 
-        _redraw = true;
+    _redraw = true;
 }
 
 void CompositorGL::unregisterSurface(const std::string &name)
@@ -723,7 +727,7 @@ void CompositorGL::unregisterSurface(const std::string &name)
         {
             delete surface;
             it = _surfaces.erase(it);
-            sparkle_message("Unregistered.\n");
+            were_debug("Surface [%s] unregistered.\n", name.c_str());
         }
         else
             ++it;
@@ -734,29 +738,33 @@ void CompositorGL::unregisterSurface(const std::string &name)
 
 void CompositorGL::setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2)
 {
-        CompositorGLSurface *surface = findSurface(name);
-        if (surface != 0)
-        {
-            surface->setPosition(x1, y1, x2, y2);
-            _redraw = true;
-        }
+    were_debug("Surface [%s]: position changed.\n", name.c_str());
+    
+    CompositorGLSurface *surface = findSurface(name);
+    if (surface != 0)
+    {
+        surface->setPosition(x1, y1, x2, y2);
+        _redraw = true;
+    }
 }
 
 void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
 {
-        CompositorGLSurface *surface = findSurface(name);
-        if (surface != 0)
-        {
-            surface->setStrata(strata);
-            _redraw = true;
-        }
+    were_debug("Surface [%s]: strata changed.\n", name.c_str());
+    
+    CompositorGLSurface *surface = findSurface(name);
+    if (surface != 0)
+    {
+        surface->setStrata(strata);
+        _redraw = true;
+    }
 }
 
 void CompositorGL::addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2)
 {
-        CompositorGLSurface *surface = findSurface(name);
-        if (surface != 0)
-            surface->addDamage(x1, y1, x2, y2);
+    CompositorGLSurface *surface = findSurface(name);
+    if (surface != 0)
+        surface->addDamage(x1, y1, x2, y2);
 }
 
 //==================================================================================================
@@ -768,6 +776,8 @@ CompositorGLSurface *CompositorGL::findSurface(const std::string &name)
         if (_surfaces[i]->name() == name)
             return _surfaces[i];
     }
+    
+    were_debug("Surface [%s]: not registered.\n", name.c_str());
     
     return 0;
 }

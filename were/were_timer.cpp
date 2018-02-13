@@ -17,7 +17,7 @@ WereTimer::WereTimer(WereEventLoop *loop) :
 {
     _fd = timerfd_create(CLOCK_REALTIME, 0);
     if (_fd == -1)
-        throw std::runtime_error("[WereTimer::WereTimer] Failed to create timer.");
+        throw std::runtime_error("[WereTimer::WereTimer] Failed to create timer fd.");
     
     _loop->registerEventSource(this, EPOLLIN | EPOLLET);
 }
@@ -31,10 +31,12 @@ void WereTimer::event(uint32_t events)
         uint64_t expirations;
     
         if (read(_fd, &expirations, sizeof(uint64_t)) != sizeof(uint64_t))
-            throw std::runtime_error("[WereTimer::handleData] Failed to read timer.");
+            throw std::runtime_error("[WereTimer::handleData] Failed to read timer fd.");
         
         timeout();
     }
+    else
+        throw std::runtime_error("[WereTimer::event] Unknown event type.");
 }
     
 //==================================================================================================    

@@ -1,0 +1,16 @@
+{
+   supp1
+   Memcheck:Leak
+   fun:malloc
+   ...
+   obj:/usr/lib64/libEGL.so.1.0.0
+}
+
+{
+   supp2
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   ...
+   obj:/usr/lib64/libEGL_mesa.so.0.0.0
+}

@@ -10,6 +10,7 @@ WereBenchmark::~WereBenchmark()
 WereBenchmark::WereBenchmark(WereEventLoop *loop)
 {
     _loop = loop;
+    _events = 0;
     
     _timer = new WereTimer(_loop);
     _timer->timeout.connect(_loop, std::bind(&WereBenchmark::timeout, this));

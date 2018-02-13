@@ -47,7 +47,7 @@ void SparkleClient::disconnect()
 //==================================================================================================
 
 void SparkleClient::readData()
-{
+{  
     unsigned int bytesAvailable = _socket->bytesAvailable();
     
     while (bytesAvailable >= sizeof(uint32_t))
@@ -121,6 +121,9 @@ void SparkleClient::handlePacket(sparkle_packet_t *packet)
 
 void SparkleClient::send(sparkle_packet_t *packet)
 {
+    if (!_socket->connected())
+        return;
+    
     uint32_t size = sparkle_packet_position(packet);
     
     _socket->send(&size, sizeof(uint32_t));
@@ -237,14 +240,12 @@ sparkle_client_t *sparkle_client_create(were_event_loop_t *loop, const char *pat
 {
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
     SparkleClient *_client = new SparkleClient(_loop, path);
-    
     return static_cast<sparkle_client_t *>(_client);
 }
 
 void sparkle_client_destroy(sparkle_client_t *client)
 {
     SparkleClient *_client = static_cast<SparkleClient *>(client);
-    
     delete _client;
 }
 

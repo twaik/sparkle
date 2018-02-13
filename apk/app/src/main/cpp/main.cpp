@@ -49,6 +49,6 @@ void android_main(struct android_app *app)
     }
 
 
-    sparkle_message("android_main finished.\n");
+    were_message("android_main finished.\n");
 }
 

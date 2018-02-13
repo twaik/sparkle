@@ -43,9 +43,8 @@ void SparkleSurfaceFile::map()
     else
         fd = open(_path.c_str(), O_RDWR);
 
-    if (fd == -1) {
-        fprintf(stderr, "%s\n", _path.c_str());
-        throw std::runtime_error("[SparkleSurface::map] Failed to open file.");}
+    if (fd == -1)
+        throw std::runtime_error("[SparkleSurface::map] Failed to open file.");
     
     if (_owner)
     {
@@ -103,35 +102,30 @@ unsigned char *SparkleSurfaceFile::data()
 sparkle_surface_file_t *sparkle_surface_file_create(const char *path, int width, int height, int owner)
 {
     SparkleSurfaceFile *_surface = new SparkleSurfaceFile(path, width, height, owner);
-    
     return static_cast<sparkle_surface_file_t *>(_surface);
 }
 
 void sparkle_surface_file_destroy(sparkle_surface_file_t *surface)
 {
     SparkleSurfaceFile *_surface = static_cast<SparkleSurfaceFile *>(surface);
-    
     delete _surface;
 }
 
 int sparkle_surface_file_width(sparkle_surface_file_t *surface)
 {
     SparkleSurfaceFile *_surface = static_cast<SparkleSurfaceFile *>(surface);
-    
     return _surface->width();
 }
 
 int sparkle_surface_file_height(sparkle_surface_file_t *surface)
 {
     SparkleSurfaceFile *_surface = static_cast<SparkleSurfaceFile *>(surface);
-    
     return _surface->height();
 }
 
 void *sparkle_surface_file_data(sparkle_surface_file_t *surface)
 {
     SparkleSurfaceFile *_surface = static_cast<SparkleSurfaceFile *>(surface);
-    
     return _surface->data();
 }
 

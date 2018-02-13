@@ -1,1 +1,3 @@
 * More exceptions and error checking (lot more, really).
+* WereEventLoop: exit() from another thread.
+* Platforms: new thread to read events.
