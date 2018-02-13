@@ -33,6 +33,7 @@ add_library(sparkle SHARED
             ${SPARKLE_ROOT}/common/sparkle_surface_file.cpp
             ${SPARKLE_ROOT}/common/were_benchmark.cpp
             ${SPARKLE_ROOT}/sound/sles/sound_sles.cpp
+            ${SPARKLE_ROOT}/were/were_exception.cpp
 )
 
 target_include_directories(sparkle PRIVATE

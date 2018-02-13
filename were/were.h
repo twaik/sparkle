@@ -1,7 +1,8 @@
 #ifndef WERE_H
 #define WERE_H
 
-#include <stdint.h>
+#include <cstdint>
+#include "were_exception.h"
 
 #ifndef __ANDROID__
 #include <cstdio>

@@ -140,6 +140,7 @@ void SparkleServer::broadcast(sparkle_packet_t *packet)
         
         if (!client->connected())
         {
+            delete client;
             it = _clients.erase(it);
         }
         else

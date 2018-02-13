@@ -36,8 +36,12 @@ SOURCES += were_signal_handler.cpp
 HEADERS += were_signal_handler.h
 OBJECTS += were_signal_handler.o
 
+SOURCES += were_exception.cpp
+HEADERS += were_exception.h
+OBJECTS += were_exception.o
+
 CXXFLAGS = 
-CXXFLAGS += -Wall -O2
+CXXFLAGS += -Wall -O2 -std=c++11
 CXXFLAGS += -fPIC
 
 all: libwere.a

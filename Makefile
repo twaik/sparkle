@@ -2,7 +2,7 @@ SOURCES =
 HEADERS =
 
 CXXFLAGS = 
-CXXFLAGS += -Wall -O2 -I.
+CXXFLAGS += -Wall -O2 -I. -std=c++11
 
 LIBS = -lX11 -lEGL -lGLESv2 were/libwere.a -lpthread
 

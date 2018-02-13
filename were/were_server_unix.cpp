@@ -24,7 +24,8 @@ WereServerUnix::WereServerUnix(WereEventLoop *loop, const std::string &path) :
     
     unlink(_path.c_str());
     
-    _fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+    //_fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+    _fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (_fd == -1)
         throw std::runtime_error("[WereServerUnix::WereServerUnix] Failed to create socket.");
     

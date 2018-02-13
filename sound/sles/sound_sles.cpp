@@ -128,8 +128,6 @@ void SoundSLES::data()
 {
     unsigned int bytesAvailable = _client->bytesAvailable();
     
-    //were_message("buffer load %d\n", bytesAvailable);
-    
     while (bytesAvailable >= sizeof(uint32_t))
     {
         uint32_t size = 0;

@@ -370,6 +370,16 @@ static void handle_display_size(void *user, int width, int height)
     }
 }
 
+static void handle_event(int fd, int ready, void *data)
+{
+    ScrnInfoPtr pScrn = (ScrnInfoPtr)data;
+    ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
+    DUMMYPtr dPtr = DUMMYPTR(pScrn);
+    
+    if (ready)
+        were_event_loop_process_events(dPtr->were);
+}
+
 //==================================================================================================
 
 Bool DUMMYCrtc_resize(ScrnInfoPtr pScrn, int width, int height)
@@ -858,6 +868,7 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
     
 
     dPtr->were = were_event_loop_create();
+    SetNotifyFd(were_event_loop_fd(dPtr->were), handle_event, X_NOTIFY_READ, pScrn);
 
     dPtr->client = sparkle_client_create(dPtr->were, dPtr->compositor);
     sparkle_client_set_connection_callback(dPtr->client, dPtr->were, handle_connection, pScrn);
@@ -866,7 +877,7 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
     
     sparkle_client_connect(dPtr->client);
 
-    dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);
+    //dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);
 #endif
 
     /*
@@ -1024,13 +1035,14 @@ DUMMYCloseScreen(CLOSE_SCREEN_ARGS_DECL)
 #ifndef SPARKLE_MODE
     free(pScreen->GetScreenPixmap(pScreen)->devPrivate.ptr);
 #else
-    TimerCancel(dPtr->timer);
-    TimerFree(dPtr->timer);
-    dPtr->timer = NULL;
+    //TimerCancel(dPtr->timer);
+    //TimerFree(dPtr->timer);
+    //dPtr->timer = NULL;
     sparkle_client_unregister_surface(dPtr->client, dPtr->surface_name);
     if (dPtr->surface != NULL)
         sparkle_surface_file_destroy(dPtr->surface);
     sparkle_client_destroy(dPtr->client);
+    RemoveNotifyFd(were_event_loop_fd(dPtr->were));
     were_event_loop_destroy(dPtr->were);
 #endif
 
@@ -1143,10 +1155,9 @@ static CARD32 DUMMYTimeout(OsTimerPtr timer, CARD32 time, pointer arg)
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
 
-    were_event_loop_process_events(dPtr->were);
+    //were_event_loop_process_events(dPtr->were);
     
-    
-    dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);
+    //dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);
     
     return 0;
 }

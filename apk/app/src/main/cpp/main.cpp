@@ -43,12 +43,13 @@ void android_main(struct android_app *app)
         delete platform;
         delete loop;
     }
-    catch (const std::runtime_error &e)
+    catch (const std::exception &e)
     {
         were_error("%s\n", e.what());
     }
 
-
+    ANativeActivity_finish(app->activity);
+    
     were_message("android_main finished.\n");
 }
 

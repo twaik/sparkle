@@ -16,7 +16,7 @@
 
 const char *server_path = "/dev/shm/sparkle-sound.socket";
 
-#define NONBLOCK
+//#define NONBLOCK
 
 //==============================================================================
 
@@ -40,7 +40,8 @@ static void sparkle_connect(snd_pcm_sparkle_t *sparkle)
     if (sparkle->fd != -1)
         return;
 
-    int fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+    //int fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd == -1)
         return;
 

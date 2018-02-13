@@ -7,7 +7,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#define NONBLOCK
+//#define NONBLOCK
 
 //==================================================================================================
 
@@ -48,7 +48,8 @@ void WereSocketUnix::connect(const std::string &path)
     if (_connected)
         return;
 
-    _fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+    //_fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+    _fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (_fd == -1)
         throw std::runtime_error("[WereSocketUnix::connect] Failed to create socket.");
     
@@ -118,9 +119,9 @@ int WereSocketUnix::send(void *data, int size)
 
     int n = write(_fd, data, size);
     if (n == -1)
-        throw std::runtime_error("[WereSocketUnix::send] Socket error.");
+        throw WereException("[WereSocketUnix::send] Socket error (%s).", strerror(errno));
     else if (n != size)
-        throw std::runtime_error("[WereSocketUnix::send] n != size.");
+        throw WereException("[WereSocketUnix::send n != size (%d, %d).", n, size);
     else
         return n;
 }
@@ -132,9 +133,9 @@ int WereSocketUnix::receive(void *data, int size)
 
     int n = read(_fd, data, size);
     if (n == -1)
-        throw std::runtime_error("[WereSocketUnix::receive] Socket error.");
+        throw WereException("[WereSocketUnix::receive] Socket error (%s).", strerror(errno));
     else if (n != size)
-        throw std::runtime_error("[WereSocketUnix::receive] n != size.");
+        throw WereException("[WereSocketUnix::receive] n != size (%d, %d).", n, size);
     else
         return n;
 }
@@ -146,9 +147,9 @@ int WereSocketUnix::peek(void *data, int size)
     
     int n = recv(_fd, data, size, MSG_PEEK);
     if (n == -1)
-        throw std::runtime_error("[WereSocketUnix::peek] Socket error.");
+        throw WereException("[WereSocketUnix::peek] Socket error (%s).", strerror(errno));
     else if (n != size)
-        throw std::runtime_error("[WereSocketUnix::peek] n != size.");
+        throw WereException("[WereSocketUnix::peek] n != size (%d, %d).", n, size);
     else
         return n;
 }
@@ -161,6 +162,8 @@ int WereSocketUnix::bytesAvailable()
     int bytes = 0;
     if (ioctl(_fd, FIONREAD, &bytes) == -1)
         throw std::runtime_error("[WereSocketUnix::bytesAvailable] ioctl failed.");
+    
+    //were_debug("Bytes available: %d\n", bytes);
 
     return bytes;
 }
