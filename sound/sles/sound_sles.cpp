@@ -16,6 +16,9 @@ SoundSLES::~SoundSLES()
     (*outputmixObject)->Destroy(outputmixObject);
     (*engineObject)->Destroy(engineObject);
     
+    if (_client != 0)
+        delete _client;
+
     delete _server;
 }
 
@@ -104,7 +107,7 @@ void SoundSLES::callback(BufferQueueItf playerBufferqueue, void *data)
 void SoundSLES::connection()
 {   
     if (_client != 0)
-        return;
+        delete _client;
     
     _client = _server->accept();
     if (_client == 0)

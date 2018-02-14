@@ -1,5 +1,4 @@
 #include "were_call_queue.h"
-#include <stdexcept>
 #include <sys/eventfd.h>
 #include <unistd.h>
 
@@ -17,7 +16,7 @@ WereCallQueue::WereCallQueue(WereEventLoop *loop) :
 {
     _fd = eventfd(0, 0); //EFD_SEMAPHORE
     if (_fd == -1)
-        throw std::runtime_error("[WereCallQueue::WereCallQueue] Failed to create event fd.");
+        throw WereException("[%p][%s] Failed to create event fd.", this, __PRETTY_FUNCTION__);
     
     _loop->registerEventSource(this, EPOLLIN | EPOLLET);
 }
@@ -30,7 +29,7 @@ void WereCallQueue::event(uint32_t events)
     {
         uint64_t counter = 0;
         if (read(_fd, &counter, sizeof(uint64_t)) != sizeof(uint64_t))
-            throw std::runtime_error("[WereCallQueue::event] Failed to read event fd.");
+            throw WereException("[%p][%s] Failed to read event fd.", this, __PRETTY_FUNCTION__);
         
         //FIXME lock
         for (unsigned int i = 0; i < counter; ++i)
@@ -41,7 +40,7 @@ void WereCallQueue::event(uint32_t events)
         //FIXME unlock
     }
     else
-        throw std::runtime_error("[WereCallQueue::event] Unknown event type.");
+        throw WereException("[%p][%s] Unknown event type.", this, __PRETTY_FUNCTION__);
 }
 
 //==================================================================================================
@@ -54,7 +53,7 @@ void WereCallQueue::queue(const std::function<void ()> &f)
     
     uint64_t add = 1;
     if (write(_fd, &add, sizeof(uint64_t)) != sizeof(uint64_t))
-        throw std::runtime_error("[WereCallQueue::queue] Failed to write event fd.");
+        throw WereException("[%p][%s] Failed to write event fd.", this, __PRETTY_FUNCTION__);
 }
 
 //==================================================================================================

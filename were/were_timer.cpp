@@ -1,5 +1,4 @@
 #include "were_timer.h"
-#include <stdexcept>
 #include <sys/timerfd.h>
 #include <unistd.h>
 
@@ -17,7 +16,7 @@ WereTimer::WereTimer(WereEventLoop *loop) :
 {
     _fd = timerfd_create(CLOCK_REALTIME, 0);
     if (_fd == -1)
-        throw std::runtime_error("[WereTimer::WereTimer] Failed to create timer fd.");
+        throw WereException("[%p][%s] Failed to create timer fd.", this, __PRETTY_FUNCTION__);
     
     _loop->registerEventSource(this, EPOLLIN | EPOLLET);
 }
@@ -31,12 +30,12 @@ void WereTimer::event(uint32_t events)
         uint64_t expirations;
     
         if (read(_fd, &expirations, sizeof(uint64_t)) != sizeof(uint64_t))
-            throw std::runtime_error("[WereTimer::handleData] Failed to read timer fd.");
+            throw WereException("[%p][%s] Failed to read timer fd.", this, __PRETTY_FUNCTION__);
         
         timeout();
     }
     else
-        throw std::runtime_error("[WereTimer::event] Unknown event type.");
+        throw WereException("[%p][%s] Unknown event type.", this, __PRETTY_FUNCTION__);
 }
     
 //==================================================================================================    
@@ -44,7 +43,7 @@ void WereTimer::event(uint32_t events)
 void WereTimer::start(int interval, bool singleShot)
 {
     if (interval <= 0)
-        throw std::runtime_error("[WereTimer::start] Illegal interval.");
+        throw WereException("[%p][%s] Illegal interval.", this, __PRETTY_FUNCTION__);
 
     struct itimerspec new_value;
     
@@ -63,7 +62,7 @@ void WereTimer::start(int interval, bool singleShot)
     }
     
     if (timerfd_settime(_fd, 0, &new_value, NULL) == -1)
-        throw std::runtime_error("[WereTimer::start] Failed to start timer.");
+        throw WereException("[%p][%s] Failed to start timer.", this, __PRETTY_FUNCTION__);
 }
 
 void WereTimer::stop()
@@ -76,7 +75,7 @@ void WereTimer::stop()
     new_value.it_interval.tv_nsec = 0;
 
     if (timerfd_settime(_fd, 0, &new_value, NULL) == -1)
-        throw std::runtime_error("[WereTimer::stop] Failed to stop timer.");
+        throw WereException("[%p][%s] Failed to stop timer.", this, __PRETTY_FUNCTION__);
 }
 
 //==================================================================================================

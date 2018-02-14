@@ -17,7 +17,7 @@ WereEventSource::WereEventSource(WereEventLoop *loop)
 int WereEventSource::fd()
 {
     if (_fd == -1)
-        throw std::runtime_error("[WereEventSource::fd] Bad fd.");
+        throw WereException("[%p][%s] Bad fd.", this, __PRETTY_FUNCTION__);
     else
         return _fd;
 }

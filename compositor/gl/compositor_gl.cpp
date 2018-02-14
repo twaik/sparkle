@@ -698,7 +698,8 @@ void CompositorGL::keyUp(int code)
 
 void CompositorGL::connection()
 {
-    _server->displaySize(_gl->_surfaceWidth, _gl->_surfaceHeight);
+    if (_gl != 0)
+        _server->displaySize(_gl->_surfaceWidth, _gl->_surfaceHeight);
     
     were_debug("Connected\n");
 }

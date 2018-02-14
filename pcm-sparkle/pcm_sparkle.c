@@ -77,6 +77,8 @@ static void sparkle_disconnect(snd_pcm_sparkle_t *sparkle)
     close(sparkle->fd);
 
     sparkle->fd = -1;
+    
+    fprintf(stderr, "[Sparkle sound] Disconnected.\n");
 }
 
 static int sparkle_write1(snd_pcm_sparkle_t *sparkle, void *buffer, int size)
@@ -89,6 +91,12 @@ static int sparkle_write1(snd_pcm_sparkle_t *sparkle, void *buffer, int size)
     {
         sparkle_disconnect(sparkle);
         return size;
+    }
+    else if (n != size)
+    {
+        fprintf(stderr, "[Sparkle sound] n != size.\n");
+        sparkle_disconnect(sparkle);
+        return n;
     }
     else
         return n;

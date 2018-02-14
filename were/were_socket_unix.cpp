@@ -1,5 +1,4 @@
 #include "were_socket_unix.h"
-#include <stdexcept>
 #include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -30,28 +29,30 @@ WereSocketUnix::WereSocketUnix(WereEventLoop *loop, int fd) :
 #ifdef NONBLOCK
     int flags = fcntl(_fd, F_GETFL, 0);
     if (flags == -1)
-        throw std::runtime_error("[WereSocketUnix::WereSocketUnix] Failed to get fd flags.");
+        throw WereException("[%p][%s] Failed to get fd flags.", this, __PRETTY_FUNCTION__);
     flags |= O_NONBLOCK;
     if (fcntl(_fd, F_SETFL, flags) == -1)
-        throw std::runtime_error("[WereSocketUnix::WereSocketUnix] Failed to set fd flags.");
+        throw WereException("[%p][%s] Failed to set fd flags.", this, __PRETTY_FUNCTION__);
 #endif
     
     _connected = true;
     
     _loop->registerEventSource(this, EPOLLIN | EPOLLET);
+
+    were_debug("[%p][%s] Connected (accept).\n", this, __PRETTY_FUNCTION__);
 }
 
 //==================================================================================================
 
-void WereSocketUnix::connect(const std::string &path)
+bool WereSocketUnix::connect(const std::string &path)
 {
     if (_connected)
-        return;
+        return true;
 
     //_fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
     _fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (_fd == -1)
-        throw std::runtime_error("[WereSocketUnix::connect] Failed to create socket.");
+        throw WereException("[%p][%s] Failed to create socket.", this, __PRETTY_FUNCTION__);
     
     struct sockaddr_un name = {};
     name.sun_family = AF_UNIX;
@@ -60,16 +61,16 @@ void WereSocketUnix::connect(const std::string &path)
     if (::connect(_fd, (const struct sockaddr *)&name, sizeof(struct sockaddr_un)) == -1)
     {
         close(_fd);
-        return;
+        return false;
     }
     
 #ifdef NONBLOCK
     int flags = fcntl(_fd, F_GETFL, 0);
     if (flags == -1)
-        throw std::runtime_error("[WereSocketUnix::WereSocketUnix] Failed to get fd flags.");
+        throw WereException("[%p][%s] Failed to get fd flags.", this, __PRETTY_FUNCTION__);
     flags |= O_NONBLOCK;
     if (fcntl(_fd, F_SETFL, flags) == -1)
-        throw std::runtime_error("[WereSocketUnix::WereSocketUnix] Failed to set fd flags.");
+        throw WereException("[%p][%s] Failed to set fd flags.", this, __PRETTY_FUNCTION__);
 #endif   
     
     _connected = true;
@@ -77,6 +78,10 @@ void WereSocketUnix::connect(const std::string &path)
     _loop->registerEventSource(this, EPOLLIN | EPOLLET);
     
     signal_connected();
+    
+    were_debug("[%p][%s] Connected (connect).\n", this, __PRETTY_FUNCTION__);
+    
+    return true;
 }
 
 void WereSocketUnix::disconnect()
@@ -90,6 +95,8 @@ void WereSocketUnix::disconnect()
     
     shutdown(_fd, SHUT_RDWR);
     close(_fd);
+    
+    were_debug("[%p][%s] Disconnected.\n", this, __PRETTY_FUNCTION__);
 }
 
 bool WereSocketUnix::connected()
@@ -115,13 +122,16 @@ void WereSocketUnix::event(uint32_t events)
 int WereSocketUnix::send(void *data, int size)
 {
     if (!_connected)
+    {
+        were_debug("[%p][%s] Not connected.", this, __PRETTY_FUNCTION__);
         return -1;
+    }
 
     int n = write(_fd, data, size);
     if (n == -1)
-        throw WereException("[WereSocketUnix::send] Socket error (%s).", strerror(errno));
+        throw WereException("[%p][%s] Socket error (%s).", this, __PRETTY_FUNCTION__, strerror(errno));
     else if (n != size)
-        throw WereException("[WereSocketUnix::send n != size (%d, %d).", n, size);
+        throw WereException("[%p][%s] n != size (%d, %d).", this, __PRETTY_FUNCTION__, n, size);
     else
         return n;
 }
@@ -129,13 +139,16 @@ int WereSocketUnix::send(void *data, int size)
 int WereSocketUnix::receive(void *data, int size)
 {
     if (!_connected)
+    {
+        were_debug("[%p][%s] Not connected.", this, __PRETTY_FUNCTION__);
         return -1;
+    }
 
     int n = read(_fd, data, size);
     if (n == -1)
-        throw WereException("[WereSocketUnix::receive] Socket error (%s).", strerror(errno));
+        throw WereException("[%p][%s] Socket error (%s).", this, __PRETTY_FUNCTION__, strerror(errno));
     else if (n != size)
-        throw WereException("[WereSocketUnix::receive] n != size (%d, %d).", n, size);
+        throw WereException("[%p][%s] n != size (%d, %d).", this, __PRETTY_FUNCTION__, n, size);
     else
         return n;
 }
@@ -147,9 +160,9 @@ int WereSocketUnix::peek(void *data, int size)
     
     int n = recv(_fd, data, size, MSG_PEEK);
     if (n == -1)
-        throw WereException("[WereSocketUnix::peek] Socket error (%s).", strerror(errno));
+        throw WereException("[%p][%s] Socket error (%s).", this, __PRETTY_FUNCTION__, strerror(errno));
     else if (n != size)
-        throw WereException("[WereSocketUnix::peek] n != size (%d, %d).", n, size);
+        throw WereException("[%p][%s] n != size (%d, %d).", this, __PRETTY_FUNCTION__, n, size);
     else
         return n;
 }
@@ -161,7 +174,7 @@ int WereSocketUnix::bytesAvailable()
     
     int bytes = 0;
     if (ioctl(_fd, FIONREAD, &bytes) == -1)
-        throw std::runtime_error("[WereSocketUnix::bytesAvailable] ioctl failed.");
+        throw WereException("[%p][%s] ioctl failed.", this, __PRETTY_FUNCTION__);
     
     //were_debug("Bytes available: %d\n", bytes);
 

@@ -2,7 +2,6 @@
 #include "were_event_source.h"
 #include "were_call_queue.h"
 #include "were_signal_handler.h"
-#include <stdexcept>
 #include <unistd.h>
 #include <syscall.h>
 
@@ -25,7 +24,7 @@ WereEventLoop::WereEventLoop(bool handleSignals)
 {
     _epoll = epoll_create(1);
     if (_epoll == -1)
-        throw std::runtime_error("[WereEventLoop::WereEventLoop] Failed to create epoll device.");
+        throw WereException("[%p][%s] Failed to create epoll device.", this, __PRETTY_FUNCTION__);
     
     _exit = false;
     
@@ -56,20 +55,20 @@ void WereEventLoop::registerEventSource(WereEventSource *source, uint32_t events
     ev.data.ptr = source;
 
     if (epoll_ctl(_epoll, EPOLL_CTL_ADD, source->fd(), &ev) == -1)
-        throw std::runtime_error("[WereEventLoop::registerEventSource] Failed to register event source.");
+        throw WereException("[%p][%s] Failed to register event source.", this, __PRETTY_FUNCTION__);
 }
 
 void WereEventLoop::unregisterEventSource(WereEventSource *source)
 {
     if (epoll_ctl(_epoll, EPOLL_CTL_DEL, source->fd(), NULL) == -1)
-        throw std::runtime_error("[WereEventLoop::unregisterEventSource] Failed to unregister event source.");
+        throw WereException("[%p][%s] Failed to unregister event source.", this, __PRETTY_FUNCTION__);
 }
     
 //==================================================================================================
 
 void WereEventLoop::run()
 {
-    were_debug("WereEventLoop %p started (thread %ld).\n", this, syscall(SYS_gettid));
+    were_debug("[%p][%s] Started (thread %ld).\n", this, __PRETTY_FUNCTION__, syscall(SYS_gettid));
 
     struct epoll_event events[MAX_EVENTS];
 
@@ -77,7 +76,7 @@ void WereEventLoop::run()
     {
         int n = epoll_wait(_epoll, events, MAX_EVENTS, -1);
         if (n == -1)
-            throw std::runtime_error("[WereEventLoop::run] epoll_wait returned -1.");
+            throw WereException("[%p][%s] epoll_wait returned -1.", this, __PRETTY_FUNCTION__);
 
         for (int i = 0; i < n; ++i)
         {
@@ -86,7 +85,7 @@ void WereEventLoop::run()
         }
     }
     
-    were_debug("WereEventLoop %p finished (thread %ld).\n", this, syscall(SYS_gettid));
+    were_debug("[%p][%s] Finished (thread %ld).\n", this, __PRETTY_FUNCTION__, syscall(SYS_gettid));
 }
 
 void WereEventLoop::runThread()
@@ -106,7 +105,7 @@ void WereEventLoop::processEvents()
     
     int n = epoll_wait(_epoll, events, MAX_EVENTS, 0);
     if (n == -1)
-        throw std::runtime_error("[WereEventLoop::processEvents] epoll_wait returned -1.");
+        throw WereException("[%p][%s] epoll_wait returned -1.", this, __PRETTY_FUNCTION__);
 
     for (int i = 0; i < n; ++i)
     {

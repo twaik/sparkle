@@ -1,5 +1,4 @@
 #include "were_signal_handler.h"
-#include <stdexcept>
 #include <signal.h>
 #include <sys/signalfd.h>
 #include <unistd.h>
@@ -24,7 +23,7 @@ WereSignalHandler::WereSignalHandler(WereEventLoop *loop) :
         
     _fd = signalfd(-1, &mask, 0);
     if (_fd == -1)
-        throw std::runtime_error("[WereSignalHandler::WereSignalHandler] Failed to create signal fd.");
+        throw WereException("[%p][%s] Failed to create signal fd.", this, __PRETTY_FUNCTION__);
     
     _loop->registerEventSource(this, EPOLLIN | EPOLLET);
 }
@@ -38,12 +37,12 @@ void WereSignalHandler::event(uint32_t events)
         struct signalfd_siginfo si;
         
         if (read(_fd, &si, sizeof(si)) != sizeof(si))
-            throw std::runtime_error("[WereSignalHandler::event] Failed to read signal fd.");
+            throw WereException("[%p][%s] Failed to read signal fd.", this, __PRETTY_FUNCTION__);
         
         terminate();
     }
     else
-        throw std::runtime_error("[WereSignalHandler::event] Unknown event type.");
+        throw WereException("[%p][%s] Unknown event type.", this, __PRETTY_FUNCTION__);
 }
 
 //==================================================================================================
