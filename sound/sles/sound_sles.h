@@ -11,6 +11,9 @@
 #include <SLES/OpenSLES_Android.h>
 #endif
 
+#include <list>
+#include <vector>
+
 //==================================================================================================
 
 #ifdef USE_ANDROID_SIMPLE_BUFFER_QUEUE
@@ -27,7 +30,7 @@
 #define INDEX playIndex
 #endif
 
-#define checkResult(r) do { if ((r) != SL_RESULT_SUCCESS) fprintf(stderr, "error %d at %s:%d\n", \
+#define checkResult(r) do { if ((r) != SL_RESULT_SUCCESS) were_error("error %d at %s:%d\n", \
     (int) r, __FILE__, __LINE__); } while (0)
     
 //==================================================================================================
@@ -35,6 +38,20 @@
 class WereEventLoop;
 class WereServerUnix;
 class WereSocketUnix;
+
+class SoundSLESBuffer
+{
+public:
+    ~SoundSLESBuffer();
+    SoundSLESBuffer(unsigned int size);
+    
+    unsigned char *data();
+    unsigned int size();
+    
+private:
+    unsigned char *_data;
+    unsigned int _size;
+};
 
 class SoundSLES
 {
@@ -48,8 +65,10 @@ private:
     void connection();
     void disconnection();
     void data();
-    
+    void checkQueue();
+    void clearQueue();
     static void callback(BufferQueueItf playerBufferqueue, void *data);
+
 
 private:
     WereEventLoop *_loop;
@@ -69,6 +88,7 @@ private:
     BufferQueueItf playerBufferqueue;
     SLuint32 state;
     
+    std::list<SoundSLESBuffer *> _queue;
     bool busy;
 };
 

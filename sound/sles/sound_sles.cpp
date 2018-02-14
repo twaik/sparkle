@@ -7,11 +7,40 @@
 #include <math.h>
 #include <unistd.h>
 
+//==================================================================================================
+
+SoundSLESBuffer::~SoundSLESBuffer()
+{
+    delete[] _data;
+}
+
+SoundSLESBuffer::SoundSLESBuffer(unsigned int size)
+{
+    _size = size;
+    _data = new unsigned char [size];
+}
+
+unsigned char *SoundSLESBuffer::data()
+{
+    return _data;
+}
+
+unsigned int SoundSLESBuffer::size()
+{
+    return _size;
+}
 
 //==================================================================================================
 
 SoundSLES::~SoundSLES()
 {
+    state = SL_PLAYSTATE_STOPPED;
+    SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
+    checkResult(result);
+    result = (*playerBufferqueue)->Clear(playerBufferqueue);
+    checkResult(result);
+    clearQueue();
+    
     (*playerObject)->Destroy(playerObject);
     (*outputmixObject)->Destroy(outputmixObject);
     (*engineObject)->Destroy(engineObject);
@@ -92,13 +121,45 @@ SoundSLES::SoundSLES(WereEventLoop *loop)
     busy = false;
 }
 
+void SoundSLES::checkQueue()
+{
+    if (busy)
+        return;
+    
+    if (_queue.size() == 0)
+        return;
+    
+    SoundSLESBuffer *buffer1 = _queue.front();
+    SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, buffer1->data(), buffer1->size());
+    checkResult(result);
+
+    busy = true;
+}
+
+void SoundSLES::clearQueue()
+{
+    std::list<SoundSLESBuffer *>::iterator it;
+    
+    for (it = _queue.begin(); it != _queue.end(); ++it)
+    {
+        SoundSLESBuffer *buffer1 = *it;
+        delete buffer1;
+    }
+    
+    _queue.clear();
+}
+
 void SoundSLES::callback(BufferQueueItf playerBufferqueue, void *data)
 {
     SoundSLES *sound = reinterpret_cast<SoundSLES *>(data);
     
+    SoundSLESBuffer *buffer1 = sound->_queue.front();
+    delete buffer1;
+    sound->_queue.pop_front();
+    
     sound->busy = false;
     
-    //were_message("Played\n");
+    sound->checkQueue();
 }
 
 
@@ -116,7 +177,7 @@ void SoundSLES::connection()
     _client->signal_disconnected.connect(_loop, std::bind(&SoundSLES::disconnection, this));
     _client->signal_data.connect(_loop, std::bind(&SoundSLES::data, this));
     
-    were_message("Connected\n");
+    were_debug("[%p][%s] Connected.\n", this, __PRETTY_FUNCTION__);
 }
 
 void SoundSLES::disconnection()
@@ -124,7 +185,7 @@ void SoundSLES::disconnection()
     delete _client;
     _client = 0;
     
-    were_message("Disconnected\n");
+    were_debug("[%p][%s] Disconnected.\n", this, __PRETTY_FUNCTION__);
 }
 
 void SoundSLES::data()
@@ -142,35 +203,36 @@ void SoundSLES::data()
         _client->receive(&size, sizeof(uint32_t));
         bytesAvailable -= sizeof(uint32_t);
     
-        unsigned char *data = new unsigned char[size];
-        _client->receive(data, size);
-        bytesAvailable -= size;
+        uint32_t operation = 0;
+        _client->receive(&operation, sizeof(uint32_t));
+        bytesAvailable -= sizeof(uint32_t);
         
-        uint32_t *operation = reinterpret_cast<uint32_t *>(data);
-        
-        if (*operation == 0)
+        if (operation == 0)
         {
-            busy = true;
-            SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, data + sizeof(uint32_t), size - sizeof(uint32_t));
-            checkResult(result);
-            return; //FIXME
+            SoundSLESBuffer *buffer1 = new SoundSLESBuffer(size - sizeof(uint32_t));
+            _client->receive(buffer1->data(), buffer1->size());
+            bytesAvailable -= buffer1->size();
+            _queue.push_back(buffer1);
+            checkQueue();
+
         }
-        else if (*operation == 1)
+        else if (operation == 1)
         {
             state = SL_PLAYSTATE_PLAYING;
             SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
             checkResult(result);
+            checkQueue();
         }
-        else if (*operation == 2)
+        else if (operation == 2)
         {
             state = SL_PLAYSTATE_STOPPED;
             SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
             checkResult(result);
             result = (*playerBufferqueue)->Clear(playerBufferqueue);
             checkResult(result);
+            clearQueue();
+            busy = 0;
         }
-        
-        delete[] data;
     }
 }
     
