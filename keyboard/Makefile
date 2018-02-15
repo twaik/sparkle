@@ -8,10 +8,10 @@ LIBS = ../were/libwere.a -lpthread
 
 SOURCES += main.cpp
 
-SOURCES += ../common/sparkle_client.cpp
-HEADERS += ../common/sparkle_client.h
+SOURCES += ../common/sparkle_connection.cpp
+HEADERS += ../common/sparkle_connection.h
 
-SOURCES += ../common/sparkle_packet.c
+SOURCES += ../common/sparkle_packet.cpp
 HEADERS += ../common/sparkle_packet.h
 
 SOURCES += ../common/sparkle_surface_file.cpp

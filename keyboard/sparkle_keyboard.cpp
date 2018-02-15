@@ -2,9 +2,10 @@
 #include "were/were_event_loop.h"
 #include "common/sparkle_surface_file.h"
 #include "ui/widget_host.h"
-#include "common/sparkle_client.h"
+#include "common/sparkle_connection.h"
 #include "were/were_socket_unix.h"
 #include "ui/widget_button.h"
+#include "common/sparkle_protocol.h"
 
 #include <string.h>
 
@@ -61,14 +62,17 @@ const int layoutHeight = 26;
 //==================================================================================================
 
 SparkleKeyboard::~SparkleKeyboard()
-{
-    _client->unregisterSurface(surface_name);
+{    
+    SparklePacket packet;
+    packet.addUint32(SPARKLE_CLIENT_UNREGISTER_SURFACE);
+    packet.addString(surface_name);
+    _sparkle->send(packet);
     
     delete[] _buttons;
     delete _host;
     if (_surface != 0)
         delete _surface;
-    delete _client;
+    delete _sparkle;
     delete _loop;
 }
 
@@ -79,15 +83,12 @@ SparkleKeyboard::SparkleKeyboard()
     _displayWidth = 0;
     _displayHeight = 0;
     
-    _client = new SparkleClient(_loop, "/dev/shm/sparkle.socket");
-    _client->displaySize.connect(_loop, std::bind(&SparkleKeyboard::displaySize, this, std::placeholders::_1, std::placeholders::_2));
-    _client->pointerDown.connect(_loop, std::bind(&SparkleKeyboard::pointerDown, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    _client->pointerUp.connect(_loop, std::bind(&SparkleKeyboard::pointerUp, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    _client->keyDown.connect(_loop, std::bind(&SparkleKeyboard::keyDown, this, std::placeholders::_1));
-    _client->keyUp.connect(_loop, std::bind(&SparkleKeyboard::keyUp, this, std::placeholders::_1));
+    _sparkle = new SparkleConnection(_loop, "/dev/shm/sparkle.socket");
+    _sparkle->signal_packet.connect(_loop, std::bind(&SparkleKeyboard::packet, this, _1));
+
     
     _host = new WidgetHost(_loop);
-    _host->damage.connect(_loop, std::bind(&SparkleKeyboard::hostDamage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    _host->damage.connect(_loop, std::bind(&SparkleKeyboard::hostDamage, this, _1, _2, _3, _4));
 
     unsigned int n = sizeof(layout) / sizeof(ButtonData);
     
@@ -115,7 +116,6 @@ SparkleKeyboard::SparkleKeyboard()
 
 void SparkleKeyboard::start()
 {
-    _client->connect();
     _loop->run();
 }
 
@@ -145,77 +145,144 @@ void SparkleKeyboard::show()
     }
     else if (_surface->width() != sw || _surface->height() != sh)
     {
-        _client->unregisterSurface(surface_name);
+        
+        SparklePacket packet;
+        packet.addUint32(SPARKLE_CLIENT_UNREGISTER_SURFACE);
+        packet.addString(surface_name);
+        _sparkle->send(packet);
+        
         delete _surface;
+        
         _surface = new SparkleSurfaceFile("/dev/shm/keyboard", sw, sh, true);
         _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
     }
     
-    _client->registerSurfaceFile(surface_name, "/dev/shm/keyboard", _surface->width(), _surface->height());
-    _client->setSurfacePosition(surface_name, 0, _displayHeight - _surface->height(), _displayWidth, _displayHeight);
-    _client->setSurfaceStrata(surface_name, 0xFF);
-    _client->addSurfaceDamage(surface_name, 0, 0, _surface->width(), _surface->height());
+    
+    SparklePacket packet;
+    packet.addUint32(SPARKLE_CLIENT_REGISTER_SURFACE_FILE);
+    packet.addString(surface_name);
+    packet.addString("/dev/shm/keyboard");
+    packet.addUint32(_surface->width());
+    packet.addUint32(_surface->height());
+    _sparkle->send(packet);
+    
+    packet = SparklePacket();
+    packet.addUint32(SPARKLE_CLIENT_SET_SURFACE_POSITION);
+    packet.addString(surface_name);
+    packet.addUint32(0);
+    packet.addUint32(_displayHeight - _surface->height());
+    packet.addUint32(_displayWidth);
+    packet.addUint32(_displayHeight);
+    _sparkle->send(packet);
+    
+    packet = SparklePacket();
+    packet.addUint32(SPARKLE_CLIENT_SET_SURFACE_STRATA);
+    packet.addString(surface_name);
+    packet.addUint32(0xFF);
+    _sparkle->send(packet);
+    
+    packet = SparklePacket();
+    packet.addUint32(SPARKLE_CLIENT_ADD_SURFACE_DAMAGE);
+    packet.addString(surface_name);
+    packet.addUint32(0);
+    packet.addUint32(0);
+    packet.addUint32(_displayWidth);
+    packet.addUint32(_displayHeight);
+    _sparkle->send(packet);
 }
 
 void SparkleKeyboard::hide()
 {
-    _client->unregisterSurface(surface_name);
+    SparklePacket packet;
+    packet.addUint32(SPARKLE_CLIENT_UNREGISTER_SURFACE);
+    packet.addString(surface_name);
+    _sparkle->send(packet);
 }
 
 //==================================================================================================
 
 void SparkleKeyboard::hostDamage(int x1, int y1, int x2, int y2)
 {
-    _client->addSurfaceDamage(surface_name, x1, y1, x2, y2);
+    SparklePacket packet = SparklePacket();
+    packet.addUint32(SPARKLE_CLIENT_ADD_SURFACE_DAMAGE);
+    packet.addString(surface_name);
+    packet.addUint32(x1);
+    packet.addUint32(y1);
+    packet.addUint32(x2);
+    packet.addUint32(y2);
+    _sparkle->send(packet);
 }
 
 //==================================================================================================
 
-void SparkleKeyboard::displaySize(int width, int height)
+void SparkleKeyboard::packet(SparklePacket packet)
 {
-    if (_displayWidth != width || _displayHeight != height)
-        hide();
-    
-    _displayWidth = width;
-    _displayHeight = height;
-}
-
-void SparkleKeyboard::pointerDown(const std::string &name, int slot, int x, int y)
-{
-    if (name == surface_name)
-        _host->pointerDown(slot, x, y);
-}
-
-void SparkleKeyboard::pointerUp(const std::string &name, int slot, int x, int y)
-{
-    if (name == surface_name)
-        _host->pointerUp(slot, x, y);
-}
-
-void SparkleKeyboard::keyDown(int code)
-{
-    if (code == 122)
-        show();
-    else if (code == 123)
-        hide();
-}
-
-void SparkleKeyboard::keyUp(int code)
-{
+    uint32_t operation = packet.getUint32();
+      
+    if (operation == SPARKLE_SERVER_POINTER_DOWN)
+    {
+        std::string name = packet.getString();
+        int slot = packet.getUint32();
+        int x = packet.getUint32();
+        int y = packet.getUint32();
+        if (name == surface_name)
+            _host->pointerDown(slot, x, y);
+    }
+    else if (operation == SPARKLE_SERVER_POINTER_UP)
+    {
+        std::string name = packet.getString();
+        int slot = packet.getUint32();
+        int x = packet.getUint32();
+        int y = packet.getUint32();
+        if (name == surface_name)
+            _host->pointerUp(slot, x, y);
+    }
+    else if (operation == SPARKLE_SERVER_POINTER_MOTION)
+    {
+        std::string name = packet.getString();
+    }
+    else if (operation == SPARKLE_SERVER_KEY_DOWN)
+    {
+        int code = packet.getUint32();
+        if (code == 122)
+            show();
+        else if (code == 123)
+            hide();
+    }
+    else if (operation == SPARKLE_SERVER_DISPLAY_SIZE)
+    {
+        int width = packet.getUint32();
+        int height = packet.getUint32();
+        
+        if (_displayWidth != width || _displayHeight != height)
+        {
+            hide();
+            _displayWidth = width;
+            _displayHeight = height;
+            //show();
+        }
+    }
 }
     
 //==================================================================================================
 
 void SparkleKeyboard::keyPressed(int code)
 {
-    _client->keyPress(code);
+    SparklePacket packet;
+    packet.addUint32(SPARKLE_CLIENT_ECHO);
+    packet.addUint32(SPARKLE_SERVER_KEY_DOWN);
+    packet.addUint32(code);
+    _sparkle->send(packet);
 }
 
 void SparkleKeyboard::keyReleased(int code)
 {
-    _client->keyRelease(code);
+    SparklePacket packet;
+    packet.addUint32(SPARKLE_CLIENT_ECHO);
+    packet.addUint32(SPARKLE_SERVER_KEY_UP);
+    packet.addUint32(code);
+    _sparkle->send(packet);
 }
 
 //==================================================================================================
-
 

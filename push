@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+cd ..
+tar -czf /tmp/sparkle.tar.gz ./sparkle
+adb push /tmp/sparkle.tar.gz /data/local/tmp/fedora/home/sion/
+

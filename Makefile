@@ -18,7 +18,7 @@ HEADERS += compositor/gl/compositor_gl.h
 SOURCES += compositor/gl/texture.cpp
 HEADERS += compositor/gl/texture.h
 
-SOURCES += common/sparkle_packet.c
+SOURCES += common/sparkle_packet.cpp
 HEADERS += common/sparkle_packet.h
 
 SOURCES += common/sparkle_surface_file.cpp
@@ -29,6 +29,9 @@ HEADERS += common/sparkle_server.h
 
 SOURCES += common/were_benchmark.cpp
 HEADERS += common/were_benchmark.h
+
+SOURCES += common/sparkle_connection.cpp
+HEADERS += common/sparkle_connection.h
 
 all: test
 

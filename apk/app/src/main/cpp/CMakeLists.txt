@@ -28,7 +28,8 @@ add_library(sparkle SHARED
             ${SPARKLE_ROOT}/platform/na/platform_na.cpp
             ${SPARKLE_ROOT}/compositor/gl/compositor_gl.cpp
             ${SPARKLE_ROOT}/compositor/gl/texture.cpp
-            ${SPARKLE_ROOT}/common/sparkle_packet.c
+            ${SPARKLE_ROOT}/common/sparkle_packet.cpp
+            ${SPARKLE_ROOT}/common/sparkle_connection.cpp
             ${SPARKLE_ROOT}/common/sparkle_server.cpp
             ${SPARKLE_ROOT}/common/sparkle_surface_file.cpp
             ${SPARKLE_ROOT}/common/were_benchmark.cpp

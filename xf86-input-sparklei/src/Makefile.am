@@ -8,8 +8,8 @@ AM_CPPFLAGS =-I$(top_srcdir)/include -I../..
 
 @DRIVER_NAME@_drv_la_SOURCES = @DRIVER_NAME@.c \
                                @DRIVER_NAME@.h \
-                               ../../common/sparkle_client.cpp \
-			                   ../../common/sparkle_client.h \
-                               ../../common/sparkle_packet.c \
+                               ../../common/sparkle_connection.cpp \
+			                   ../../common/sparkle_connection.h \
+                               ../../common/sparkle_packet.cpp \
 			                   ../../common/sparkle_packet.h
 

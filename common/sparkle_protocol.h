@@ -8,14 +8,15 @@
 #define SPARKLE_CLIENT_KEY_PRESS                0x04
 #define SPARKLE_CLIENT_KEY_RELEASE              0x05
 #define SPARKLE_CLIENT_SET_SURFACE_STRATA       0x06
+#define SPARKLE_CLIENT_ECHO                     0x0d
 
 
-#define SPARKLE_SERVER_DISPLAY_SIZE             0x00
-#define SPARKLE_SERVER_POINTER_DOWN             0x01
-#define SPARKLE_SERVER_POINTER_UP               0x02
-#define SPARKLE_SERVER_POINTER_MOTION           0x03
-#define SPARKLE_SERVER_KEY_DOWN                 0x04
-#define SPARKLE_SERVER_KEY_UP                   0x05
+#define SPARKLE_SERVER_DISPLAY_SIZE             0x07
+#define SPARKLE_SERVER_POINTER_DOWN             0x08
+#define SPARKLE_SERVER_POINTER_UP               0x09
+#define SPARKLE_SERVER_POINTER_MOTION           0x0a
+#define SPARKLE_SERVER_KEY_DOWN                 0x0b
+#define SPARKLE_SERVER_KEY_UP                   0x0c
 
 #endif //SPARKLE_PROTOCOL_H
 

@@ -323,8 +323,24 @@ static void handle_connection(void *user)
         
     fprintf(stderr, "Connected\n");
     
-    sparkle_client_register_surface_file(dPtr->client, dPtr->surface_name, dPtr->surface_file, sparkle_surface_file_width(dPtr->surface), sparkle_surface_file_height(dPtr->surface));
-    sparkle_client_set_surface_position(dPtr->client, dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight);
+    sparkle_packet_t *packet = sparkle_packet_create();
+    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_REGISTER_SURFACE_FILE);
+    sparkle_packet_add_string(packet, dPtr->surface_name);
+    sparkle_packet_add_string(packet, dPtr->surface_file);
+    sparkle_packet_add_uint32(packet, sparkle_surface_file_width(dPtr->surface));
+    sparkle_packet_add_uint32(packet, sparkle_surface_file_height(dPtr->surface));
+    sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_destroy(packet);
+    
+    packet = sparkle_packet_create();
+    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_SET_SURFACE_POSITION);
+    sparkle_packet_add_string(packet, dPtr->surface_name);
+    sparkle_packet_add_uint32(packet, 0);
+    sparkle_packet_add_uint32(packet, 0);
+    sparkle_packet_add_uint32(packet, dPtr->displayWidth);
+    sparkle_packet_add_uint32(packet, dPtr->displayHeight);
+    sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_destroy(packet);
 }
 
 static void handle_disconnection(void *user)
@@ -335,38 +351,56 @@ static void handle_disconnection(void *user)
     fprintf(stderr, "Disconnected\n");
 }
 
-static void handle_display_size(void *user, int width, int height)
+static void handle_packet(void *user, sparkle_packet_t *packet)
 {
     ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
     ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
+    
+    uint32_t operation = sparkle_packet_get_uint32(packet);
+    
+    if (operation == SPARKLE_SERVER_DISPLAY_SIZE)
+    {
+        int width = sparkle_packet_get_uint32(packet);
+        int height = sparkle_packet_get_uint32(packet);
         
-    dPtr->displayWidth = width;
-    dPtr->displayHeight = height;
+        dPtr->displayWidth = width;
+        dPtr->displayHeight = height;
         
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DISPLAY SIZE: %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
-        
-    sparkle_client_set_surface_position(dPtr->client, dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight);
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DISPLAY SIZE: %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
+
+    
+        sparkle_packet_t *packet = sparkle_packet_create();
+        sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_SET_SURFACE_POSITION);
+        sparkle_packet_add_string(packet, dPtr->surface_name);
+        sparkle_packet_add_uint32(packet, 0);
+        sparkle_packet_add_uint32(packet, 0);
+        sparkle_packet_add_uint32(packet, dPtr->displayWidth);
+        sparkle_packet_add_uint32(packet, dPtr->displayHeight);
+        sparkle_connection_send(dPtr->sparkle, packet);
+        sparkle_packet_destroy(packet);
     
 
-    if (dPtr->displayWidth != dPtr->configuredWidth || dPtr->displayHeight != dPtr->configuredHeight)
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Reconfiguring for %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
+        if (dPtr->displayWidth != dPtr->configuredWidth || dPtr->displayHeight != dPtr->configuredHeight)
+        {
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Reconfiguring for %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
 
-        DUMMYUpdateModes(pScrn, dPtr->displayWidth, dPtr->displayHeight);
+            DUMMYUpdateModes(pScrn, dPtr->displayWidth, dPtr->displayHeight);
 
-        DisplayModePtr mode = dPtr->modes;
-        //pScrn->currentMode = mode;
+            DisplayModePtr mode = dPtr->modes;
+            //pScrn->currentMode = mode;
 
-        //XXX Take DPI from config
-        int mmWidth = mode->HDisplay * 254 / 960;
-        int mmHeight = mode->VDisplay * 254 / 960;
+            //XXX Take DPI from config
+            int mmWidth = mode->HDisplay * 254 / 960;
+            int mmHeight = mode->VDisplay * 254 / 960;
 
-        RRScreenSizeSet(pScreen, mode->HDisplay, mode->VDisplay, mmWidth, mmHeight);
-        xf86SetSingleMode(pScrn, mode, RR_Rotate_0);
+            RRScreenSizeSet(pScreen, mode->HDisplay, mode->VDisplay, mmWidth, mmHeight);
+            xf86SetSingleMode(pScrn, mode, RR_Rotate_0);
 
-        dPtr->configuredWidth = dPtr->displayWidth;
-        dPtr->configuredHeight = dPtr->displayHeight;
+            dPtr->configuredWidth = dPtr->displayWidth;
+            dPtr->configuredHeight = dPtr->displayHeight;
+        }
+    
     }
 }
 
@@ -401,15 +435,35 @@ Bool DUMMYCrtc_resize(ScrnInfoPtr pScrn, int width, int height)
     }
 #endif
 
-    sparkle_client_unregister_surface(dPtr->client, dPtr->surface_name);
+    sparkle_packet_t *packet = sparkle_packet_create();
+    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_UNREGISTER_SURFACE);
+    sparkle_packet_add_string(packet, dPtr->surface_name);
+    sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_destroy(packet);
 
     if (dPtr->surface != NULL)
         sparkle_surface_file_destroy(dPtr->surface);
 
     dPtr->surface = sparkle_surface_file_create(dPtr->surface_file, width, height, 1);
     
-    sparkle_client_register_surface_file(dPtr->client, dPtr->surface_name, dPtr->surface_file, sparkle_surface_file_width(dPtr->surface), sparkle_surface_file_height(dPtr->surface));
-    sparkle_client_set_surface_position(dPtr->client, dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight);
+    packet = sparkle_packet_create();
+    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_REGISTER_SURFACE_FILE);
+    sparkle_packet_add_string(packet, dPtr->surface_name);
+    sparkle_packet_add_string(packet, dPtr->surface_file);
+    sparkle_packet_add_uint32(packet, sparkle_surface_file_width(dPtr->surface));
+    sparkle_packet_add_uint32(packet, sparkle_surface_file_height(dPtr->surface));
+    sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_destroy(packet);
+    
+    packet = sparkle_packet_create();
+    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_SET_SURFACE_POSITION);
+    sparkle_packet_add_string(packet, dPtr->surface_name);
+    sparkle_packet_add_uint32(packet, 0);
+    sparkle_packet_add_uint32(packet, 0);
+    sparkle_packet_add_uint32(packet, dPtr->displayWidth);
+    sparkle_packet_add_uint32(packet, dPtr->displayHeight);
+    sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_destroy(packet);
     
 
     pScrn->virtualX = width;
@@ -870,12 +924,11 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
     dPtr->were = were_event_loop_create();
     SetNotifyFd(were_event_loop_fd(dPtr->were), handle_event, X_NOTIFY_READ, pScrn);
 
-    dPtr->client = sparkle_client_create(dPtr->were, dPtr->compositor);
-    sparkle_client_set_connection_callback(dPtr->client, dPtr->were, handle_connection, pScrn);
-    sparkle_client_set_disconnection_callback(dPtr->client, dPtr->were, handle_disconnection, pScrn);
-    sparkle_client_set_operation_callback(dPtr->client, dPtr->were, SPARKLE_SERVER_DISPLAY_SIZE, handle_display_size, pScrn);
-    
-    sparkle_client_connect(dPtr->client);
+    dPtr->sparkle = sparkle_connection_create(dPtr->were, dPtr->compositor);
+    sparkle_connection_add_connection_callback(dPtr->sparkle, dPtr->were, handle_connection, pScrn);
+    sparkle_connection_add_disconnection_callback(dPtr->sparkle, dPtr->were, handle_disconnection, pScrn);
+    sparkle_connection_add_packet_callback(dPtr->sparkle, dPtr->were, handle_packet, pScrn);
+
 
     //dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);
 #endif
@@ -1038,10 +1091,17 @@ DUMMYCloseScreen(CLOSE_SCREEN_ARGS_DECL)
     //TimerCancel(dPtr->timer);
     //TimerFree(dPtr->timer);
     //dPtr->timer = NULL;
-    sparkle_client_unregister_surface(dPtr->client, dPtr->surface_name);
+
+    sparkle_packet_t *packet = sparkle_packet_create();
+    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_UNREGISTER_SURFACE);
+    sparkle_packet_add_string(packet, dPtr->surface_name);
+    sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_destroy(packet);
+
+    
     if (dPtr->surface != NULL)
         sparkle_surface_file_destroy(dPtr->surface);
-    sparkle_client_destroy(dPtr->client);
+    sparkle_connection_destroy(dPtr->sparkle);
     RemoveNotifyFd(were_event_loop_fd(dPtr->were));
     were_event_loop_destroy(dPtr->were);
 #endif
@@ -1205,7 +1265,15 @@ static void DUMMYBlockHandler(BLOCKHANDLER_ARGS_DECL)
 
     if (RegionNotEmpty(pRegion))
     {
-        sparkle_client_add_surface_damage(dPtr->client, dPtr->surface_name, pRegion->extents.x1, pRegion->extents.y1, pRegion->extents.x2, pRegion->extents.y2);
+        sparkle_packet_t *packet = sparkle_packet_create();
+        sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_ADD_SURFACE_DAMAGE);
+        sparkle_packet_add_string(packet, dPtr->surface_name);
+        sparkle_packet_add_uint32(packet, pRegion->extents.x1);
+        sparkle_packet_add_uint32(packet, pRegion->extents.y1);
+        sparkle_packet_add_uint32(packet, pRegion->extents.x2);
+        sparkle_packet_add_uint32(packet, pRegion->extents.y2);
+        sparkle_connection_send(dPtr->sparkle, packet);
+        sparkle_packet_destroy(packet);
 
         DamageEmpty(dPtr->damage);
     }

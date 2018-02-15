@@ -1,8 +1,9 @@
-* Handle socket errors.
-* More exceptions and error checking (lot more, really).
+* Good way to create and send packages.
 * WereEventLoop: exit() from another thread.
 * Platforms: new thread to read events.
-* Single function to send all requests, single signal to handle all requests.
-* sparkle_package -> c++.
-* Package reader function.
 * Automake or cmake.
+* SparkleConnection inherit WereSocket?
+* SparkleServer inherit WereServer?
+* Package - stream?
+* WereSignal: disconnection
+

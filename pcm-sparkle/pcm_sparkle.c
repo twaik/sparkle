@@ -11,12 +11,13 @@
 #include <sys/un.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <signal.h> //XXX
 
 //==============================================================================
 
 const char *server_path = "/dev/shm/sparkle-sound.socket";
 
-//#define NONBLOCK
+#define NONBLOCK
 
 //==============================================================================
 
@@ -320,6 +321,12 @@ static int sparkle_hw_constraint(snd_pcm_sparkle_t *sparkle)
 static int sparkle_close(snd_pcm_ioplug_t *io)
 {
 	snd_pcm_sparkle_t *sparkle = io->private_data;
+    
+    if (sparkle->fd != -1)
+    {
+        shutdown(sparkle->fd, SHUT_RDWR);
+        close(sparkle->fd);
+    }
 
 	free(sparkle);
 
@@ -392,8 +399,8 @@ SND_PCM_PLUGIN_DEFINE_FUNC(sparkle)
 
 
     sparkle->fd = -1;
-
     sparkle->play = 0;
+    signal(SIGPIPE, SIG_IGN);
 
 
 	sparkle->io.version = SND_PCM_IOPLUG_VERSION;
@@ -415,7 +422,6 @@ SND_PCM_PLUGIN_DEFINE_FUNC(sparkle)
 	return 0;
 
  error:
-    //FIXME close fd
 	free(sparkle);
 	return err;
 }

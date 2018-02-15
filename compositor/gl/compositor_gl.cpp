@@ -14,7 +14,8 @@
 
 #include "common/sparkle_surface_file.h"
 #include "common/sparkle_server.h"
-
+#include "common/sparkle_protocol.h"
+#include "common/sparkle_connection.h"
 
 #define USE_BLENDING
 
@@ -393,13 +394,15 @@ private:
     void keyDown(int code);
     void keyUp(int code);
 
-    void connection();
+    void connection(SparkleConnection *client);
+    void packet(SparkleConnection *client, SparklePacket packet);
+    
     void registerSurfaceFile(const std::string &name, const std::string &path, int width, int height);
     void unregisterSurface(const std::string &name);
     void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
     void setSurfaceStrata(const std::string &name, int strata);
     void addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2);
-    
+
     CompositorGLSurface *findSurface(const std::string &name);
     void transformCoordinates(int x, int y, CompositorGLSurface *surface, int *_x, int *_y);
     
@@ -475,22 +478,15 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
 
     _platform->draw.connect(_loop, std::bind(&CompositorGL::draw, this));
 
-    _platform->pointerDown.connect(_loop, std::bind(&CompositorGL::pointerDown, this, 
-        _1, _2, _3));
-    _platform->pointerUp.connect(_loop, std::bind(&CompositorGL::pointerUp, this,
-        _1, _2, _3));
-    _platform->pointerMotion.connect(_loop, std::bind(&CompositorGL::pointerMotion, this,
-    _1, _2, _3));
+    _platform->pointerDown.connect(_loop, std::bind(&CompositorGL::pointerDown, this, _1, _2, _3));
+    _platform->pointerUp.connect(_loop, std::bind(&CompositorGL::pointerUp, this, _1, _2, _3));
+    _platform->pointerMotion.connect(_loop, std::bind(&CompositorGL::pointerMotion, this, _1, _2, _3));
     _platform->keyDown.connect(_loop, std::bind(&CompositorGL::keyDown, this, _1));
     _platform->keyUp.connect(_loop, std::bind(&CompositorGL::keyUp, this, _1));
     
     _server = new SparkleServer(_loop, "/dev/shm/sparkle.socket");
-    _server->connection.connect(_loop, std::bind(&CompositorGL::connection, this));
-    _server->registerSurfaceFile.connect(_loop, std::bind(&CompositorGL::registerSurfaceFile, this, _1, _2, _3, _4));
-    _server->unregisterSurface.connect(_loop, std::bind(&CompositorGL::unregisterSurface, this, _1));
-    _server->setSurfacePosition.connect(_loop, std::bind(&CompositorGL::setSurfacePosition, this, _1, _2, _3, _4, _5));
-    _server->setSurfaceStrata.connect(_loop, std::bind(&CompositorGL::setSurfaceStrata, this, _1, _2));
-    _server->addSurfaceDamage.connect(_loop, std::bind(&CompositorGL::addSurfaceDamage, this, _1, _2, _3, _4, _5));
+    _server->signal_connected.connect(_loop, std::bind(&CompositorGL::connection, this, _1));
+    _server->signal_packet.connect(_loop, std::bind(&CompositorGL::packet, this, _1, _2));
 }
 
 int CompositorGL::displayWidth()
@@ -549,7 +545,12 @@ void CompositorGL::draw()
         _gl->_surfaceWidth = width;
         _gl->_surfaceHeight = height;
         glViewport(0, 0, _gl->_surfaceWidth, _gl->_surfaceHeight);
-        _server->displaySize(_gl->_surfaceWidth, _gl->_surfaceHeight);
+        
+        SparklePacket packet;
+        packet.addUint32(SPARKLE_SERVER_DISPLAY_SIZE);
+        packet.addUint32(_gl->_surfaceWidth);
+        packet.addUint32(_gl->_surfaceHeight);
+        _server->broadcast(packet);
     }
     
 #endif
@@ -645,7 +646,13 @@ void CompositorGL::pointerDown(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            _server->pointerDown(surface->name(), slot, _x, _y);
+            SparklePacket packet;
+            packet.addUint32(SPARKLE_SERVER_POINTER_DOWN);
+            packet.addString(surface->name());
+            packet.addUint32(slot);
+            packet.addUint32(_x);
+            packet.addUint32(_y);
+            _server->broadcast(packet);
             return;
         }
     }
@@ -661,7 +668,13 @@ void CompositorGL::pointerUp(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            _server->pointerUp(surface->name(), slot, _x, _y);
+            SparklePacket packet;
+            packet.addUint32(SPARKLE_SERVER_POINTER_UP);
+            packet.addString(surface->name());
+            packet.addUint32(slot);
+            packet.addUint32(_x);
+            packet.addUint32(_y);
+            _server->broadcast(packet);
             return;
         }
     }
@@ -677,7 +690,13 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            _server->pointerMotion(surface->name(), slot, _x, _y);
+            SparklePacket packet;
+            packet.addUint32(SPARKLE_SERVER_POINTER_MOTION);
+            packet.addString(surface->name());
+            packet.addUint32(slot);
+            packet.addUint32(_x);
+            packet.addUint32(_y);
+            _server->broadcast(packet);
             return;
         }
     }
@@ -685,29 +704,90 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
 
 void CompositorGL::keyDown(int code)
 {
-    _server->keyDown(code);
+    SparklePacket packet;
+    packet.addUint32(SPARKLE_SERVER_KEY_DOWN);
+    packet.addUint32(code);
+    _server->broadcast(packet);
 }
 
 void CompositorGL::keyUp(int code)
 {
-    _server->keyUp(code);
+    SparklePacket packet;
+    packet.addUint32(SPARKLE_SERVER_KEY_UP);
+    packet.addUint32(code);
+    _server->broadcast(packet);
 }
 
 //==================================================================================================
 
-
-void CompositorGL::connection()
+void CompositorGL::connection(SparkleConnection *client)
 {
     if (_gl != 0)
-        _server->displaySize(_gl->_surfaceWidth, _gl->_surfaceHeight);
+    {
+        SparklePacket packet;
+        packet.addUint32(SPARKLE_SERVER_DISPLAY_SIZE);
+        packet.addUint32(_gl->_surfaceWidth);
+        packet.addUint32(_gl->_surfaceHeight);
+        client->send(packet);
+    }
     
     were_debug("Connected\n");
 }
 
+void CompositorGL::packet(SparkleConnection *client, SparklePacket packet)
+{   
+    uint32_t operation = packet.getUint32();
+    
+    if (operation == SPARKLE_CLIENT_REGISTER_SURFACE_FILE)
+    {
+        std::string name = packet.getString();
+        std::string path = packet.getString();
+        int width = packet.getUint32();
+        int height = packet.getUint32();
+        registerSurfaceFile(name, path, width, height);
+    }
+    else if (operation == SPARKLE_CLIENT_UNREGISTER_SURFACE)
+    {
+        std::string name = packet.getString();
+        unregisterSurface(name);
+    }
+    else if (operation == SPARKLE_CLIENT_SET_SURFACE_POSITION)
+    {
+        std::string name = packet.getString();
+        int x1 = packet.getUint32();
+        int y1 = packet.getUint32();
+        int x2 = packet.getUint32();
+        int y2 = packet.getUint32();
+        setSurfacePosition(name, x1, y1, x2, y2);
+    }
+    else if (operation == SPARKLE_CLIENT_SET_SURFACE_STRATA)
+    {
+        std::string name = packet.getString();
+        int strata = packet.getUint32();
+        setSurfaceStrata(name, strata);
+    }
+    else if (operation == SPARKLE_CLIENT_ADD_SURFACE_DAMAGE)
+    {
+        std::string name = packet.getString();
+        int x1 = packet.getUint32();
+        int y1 = packet.getUint32();
+        int x2 = packet.getUint32();
+        int y2 = packet.getUint32();
+        addSurfaceDamage(name, x1, y1, x2, y2);
+    }
+    else if (operation == SPARKLE_CLIENT_ECHO)
+    {
+        unsigned int size = packet.size() - sizeof(uint32_t);
+        
+        SparklePacket outgoing;
+        outgoing.addData(packet.getData(size), size);
+        
+        _server->broadcast(outgoing);
+    }
+}
+
 void CompositorGL::registerSurfaceFile(const std::string &name, const std::string &path, int width, int height)
 {
-    //CompositorGLSurface *surface = findSurface(name);
-        
     unregisterSurface(name);
         
     CompositorGLSurface *surface = new CompositorGLSurfaceFile(name, path, width, height);

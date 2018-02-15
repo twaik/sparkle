@@ -1,34 +1,11 @@
 #include "sound_sles.h"
 #include "were/were_event_loop.h"
-#include "were/were_server_unix.h"
-#include "were/were_socket_unix.h"
+#include "common/sparkle_connection.h"
+#include "common/sparkle_server.h"
 #include <SLES/OpenSLES.h>
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>
-
-//==================================================================================================
-
-SoundSLESBuffer::~SoundSLESBuffer()
-{
-    delete[] _data;
-}
-
-SoundSLESBuffer::SoundSLESBuffer(unsigned int size)
-{
-    _size = size;
-    _data = new unsigned char [size];
-}
-
-unsigned char *SoundSLESBuffer::data()
-{
-    return _data;
-}
-
-unsigned int SoundSLESBuffer::size()
-{
-    return _size;
-}
 
 //==================================================================================================
 
@@ -45,9 +22,6 @@ SoundSLES::~SoundSLES()
     (*outputmixObject)->Destroy(outputmixObject);
     (*engineObject)->Destroy(engineObject);
     
-    if (_client != 0)
-        delete _client;
-
     delete _server;
 }
 
@@ -55,12 +29,9 @@ SoundSLES::SoundSLES(WereEventLoop *loop)
 {
     _loop = loop;
     
-    _server = new WereServerUnix(_loop, "/dev/shm/sparkle-sound.socket");
-    _server->newConnection.connect(_loop, std::bind(&SoundSLES::connection, this));
-    
-    _client = 0;
-    
-    
+    _server = new SparkleServer(_loop, "/dev/shm/sparkle-sound.socket");
+    _server->signal_packet.connect(_loop, std::bind(&SoundSLES::packet, this, _1, _2));
+
     SLresult result;
 
     // create engine
@@ -129,8 +100,9 @@ void SoundSLES::checkQueue()
     if (_queue.size() == 0)
         return;
     
-    SoundSLESBuffer *buffer1 = _queue.front();
-    SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, buffer1->data(), buffer1->size());
+    SparklePacket *packet = &_queue.front();
+    unsigned int size = packet->size() - packet->readPosition();
+    SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, packet->getData(size), size);
     checkResult(result);
 
     busy = true;
@@ -138,14 +110,6 @@ void SoundSLES::checkQueue()
 
 void SoundSLES::clearQueue()
 {
-    std::list<SoundSLESBuffer *>::iterator it;
-    
-    for (it = _queue.begin(); it != _queue.end(); ++it)
-    {
-        SoundSLESBuffer *buffer1 = *it;
-        delete buffer1;
-    }
-    
     _queue.clear();
 }
 
@@ -153,8 +117,6 @@ void SoundSLES::callback(BufferQueueItf playerBufferqueue, void *data)
 {
     SoundSLES *sound = reinterpret_cast<SoundSLES *>(data);
     
-    SoundSLESBuffer *buffer1 = sound->_queue.front();
-    delete buffer1;
     sound->_queue.pop_front();
     
     sound->busy = false;
@@ -162,77 +124,34 @@ void SoundSLES::callback(BufferQueueItf playerBufferqueue, void *data)
     sound->checkQueue();
 }
 
-
 //==================================================================================================
 
-void SoundSLES::connection()
-{   
-    if (_client != 0)
-        delete _client;
-    
-    _client = _server->accept();
-    if (_client == 0)
-        return;
-    
-    _client->signal_disconnected.connect(_loop, std::bind(&SoundSLES::disconnection, this));
-    _client->signal_data.connect(_loop, std::bind(&SoundSLES::data, this));
-    
-    were_debug("[%p][%s] Connected.\n", this, __PRETTY_FUNCTION__);
-}
-
-void SoundSLES::disconnection()
+void SoundSLES::packet(SparkleConnection *client, SparklePacket packet)
 {
-    delete _client;
-    _client = 0;
-    
-    were_debug("[%p][%s] Disconnected.\n", this, __PRETTY_FUNCTION__);
-}
-
-void SoundSLES::data()
-{
-    unsigned int bytesAvailable = _client->bytesAvailable();
-    
-    while (bytesAvailable >= sizeof(uint32_t))
+    uint32_t operation = packet.getUint32();
+        
+    if (operation == 0)
     {
-        uint32_t size = 0;
-        _client->peek(&size, sizeof(uint32_t));
-        
-        if (bytesAvailable < sizeof(uint32_t) + size)
-            return;
-        
-        _client->receive(&size, sizeof(uint32_t));
-        bytesAvailable -= sizeof(uint32_t);
-    
-        uint32_t operation = 0;
-        _client->receive(&operation, sizeof(uint32_t));
-        bytesAvailable -= sizeof(uint32_t);
-        
-        if (operation == 0)
-        {
-            SoundSLESBuffer *buffer1 = new SoundSLESBuffer(size - sizeof(uint32_t));
-            _client->receive(buffer1->data(), buffer1->size());
-            bytesAvailable -= buffer1->size();
-            _queue.push_back(buffer1);
-            checkQueue();
+        _queue.push_back(packet);
+        checkQueue();
 
-        }
-        else if (operation == 1)
-        {
-            state = SL_PLAYSTATE_PLAYING;
-            SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
-            checkResult(result);
-            checkQueue();
-        }
-        else if (operation == 2)
-        {
-            state = SL_PLAYSTATE_STOPPED;
-            SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
-            checkResult(result);
-            result = (*playerBufferqueue)->Clear(playerBufferqueue);
-            checkResult(result);
-            clearQueue();
-            busy = 0;
-        }
+    }
+    else if (operation == 1)
+    {
+        state = SL_PLAYSTATE_PLAYING;
+        SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
+        checkResult(result);
+        checkQueue();
+    }
+    else if (operation == 2)
+    {
+        state = SL_PLAYSTATE_STOPPED;
+        SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
+        checkResult(result);
+        result = (*playerBufferqueue)->Clear(playerBufferqueue);
+        checkResult(result);
+        clearQueue();
+        busy = 0;
     }
 }
     

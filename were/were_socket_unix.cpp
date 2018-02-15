@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-//#define NONBLOCK
+#define NONBLOCK
 
 //==================================================================================================
 
@@ -119,7 +119,7 @@ void WereSocketUnix::event(uint32_t events)
 
 //==================================================================================================
 
-int WereSocketUnix::send(void *data, int size)
+int WereSocketUnix::send(const unsigned char *data, unsigned int size)
 {
     if (!_connected)
     {
@@ -127,16 +127,10 @@ int WereSocketUnix::send(void *data, int size)
         return -1;
     }
 
-    int n = write(_fd, data, size);
-    if (n == -1)
-        throw WereException("[%p][%s] Socket error (%s).", this, __PRETTY_FUNCTION__, strerror(errno));
-    else if (n != size)
-        throw WereException("[%p][%s] n != size (%d, %d).", this, __PRETTY_FUNCTION__, n, size);
-    else
-        return n;
+    return write(_fd, data, size);
 }
 
-int WereSocketUnix::receive(void *data, int size)
+int WereSocketUnix::receive(unsigned char *data, unsigned int size)
 {
     if (!_connected)
     {
@@ -144,30 +138,21 @@ int WereSocketUnix::receive(void *data, int size)
         return -1;
     }
 
-    int n = read(_fd, data, size);
-    if (n == -1)
-        throw WereException("[%p][%s] Socket error (%s).", this, __PRETTY_FUNCTION__, strerror(errno));
-    else if (n != size)
-        throw WereException("[%p][%s] n != size (%d, %d).", this, __PRETTY_FUNCTION__, n, size);
-    else
-        return n;
+    return read(_fd, data, size);
 }
 
-int WereSocketUnix::peek(void *data, int size)
+int WereSocketUnix::peek(unsigned char *data, unsigned int size)
 {
     if (!_connected)
+    {
+        were_debug("[%p][%s] Not connected.", this, __PRETTY_FUNCTION__);
         return -1;
+    }
     
-    int n = recv(_fd, data, size, MSG_PEEK);
-    if (n == -1)
-        throw WereException("[%p][%s] Socket error (%s).", this, __PRETTY_FUNCTION__, strerror(errno));
-    else if (n != size)
-        throw WereException("[%p][%s] n != size (%d, %d).", this, __PRETTY_FUNCTION__, n, size);
-    else
-        return n;
+    return recv(_fd, data, size, MSG_PEEK);
 }
 
-int WereSocketUnix::bytesAvailable()
+unsigned int WereSocketUnix::bytesAvailable() const
 {
     if (!_connected)
         return -1;
@@ -214,25 +199,25 @@ int were_socket_unix_connected(were_socket_unix_t *socket)
     return _socket->connected();
 }
 
-int were_socket_unix_send(were_socket_unix_t *socket, void *data, int size)
+int were_socket_unix_send(were_socket_unix_t *socket, const unsigned char *data, unsigned int size)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     return _socket->send(data, size);
 }
 
-int were_socket_unix_receive(were_socket_unix_t *socket, void *data, int size)
+int were_socket_unix_receive(were_socket_unix_t *socket, unsigned char *data, unsigned int size)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     return _socket->receive(data, size);
 }
 
-int were_socket_unix_peek(were_socket_unix_t *socket, void *data, int size)
+int were_socket_unix_peek(were_socket_unix_t *socket, unsigned char *data, unsigned int size)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     return _socket->peek(data, size);
 }
 
-int were_socket_unix_bytes_available(were_socket_unix_t *socket)
+unsigned int were_socket_unix_bytes_available(were_socket_unix_t *socket)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     return _socket->bytesAvailable();

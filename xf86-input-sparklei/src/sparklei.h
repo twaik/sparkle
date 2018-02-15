@@ -12,7 +12,7 @@
 #include <xf86_OSproc.h>
 #include <xkbstr.h>
 #include "were/were_event_loop.h"
-#include "common/sparkle_client.h"
+#include "common/sparkle_connection.h"
 
 
 
@@ -71,9 +71,9 @@ typedef struct {
     ValuatorMask *mt_mask;
     unsigned char btnmap[32];
     
-    OsTimerPtr timer;
+    //OsTimerPtr timer;
     were_event_loop_t *loop;
-    sparkle_client_t *client;
+    sparkle_connection_t *sparkle;
     
     int slot_state[10];
     

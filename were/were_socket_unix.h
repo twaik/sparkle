@@ -22,11 +22,11 @@ public:
     
     bool connected();
     
-    int send(void *data, int size);
-    int receive(void *data, int size);
-    int peek(void *data, int size);
+    int send(const unsigned char *data, unsigned int size);
+    int receive(unsigned char *data, unsigned int size);
+    int peek(unsigned char *data, unsigned int size);
     
-    int bytesAvailable();
+    unsigned int bytesAvailable() const;
     
 werethings:
     WereSignal<void ()> signal_connected;
@@ -57,11 +57,11 @@ void were_socket_unix_connect(were_socket_unix_t *socket, const char *path);
 void were_socket_unix_disconnect(were_socket_unix_t *socket);
 int were_socket_unix_connected(were_socket_unix_t *socket);
 
-int were_socket_unix_send(were_socket_unix_t *socket, void *data, int size);
-int were_socket_unix_receive(were_socket_unix_t *socket, void *data, int size);
-int were_socket_unix_peek(were_socket_unix_t *socket, void *data, int size);
+int were_socket_unix_send(were_socket_unix_t *socket, const unsigned *data, unsigned int size);
+int were_socket_unix_receive(were_socket_unix_t *socket, unsigned char *data, unsigned int size);
+int were_socket_unix_peek(were_socket_unix_t *socket, unsigned char *data, unsigned int size);
 
-int were_socket_unix_bytes_available(were_socket_unix_t *socket);
+unsigned int were_socket_unix_bytes_available(were_socket_unix_t *socket);
 
 void were_socket_unix_set_connection_callback(were_socket_unix_t *socket, were_event_loop_t *loop, void (*f)(void *user), void *user);
 void were_socket_unix_set_disconnection_callback(were_socket_unix_t *socket, were_event_loop_t *loop, void (*f)(void *user), void *user);

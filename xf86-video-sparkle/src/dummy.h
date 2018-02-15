@@ -18,7 +18,7 @@
 #ifdef SPARKLE_MODE
 #include "common/sparkle_surface_file.h"
 #include "were/were_event_loop.h"
-#include "common/sparkle_client.h"
+#include "common/sparkle_connection.h"
 #endif
 
 /* Supported chipsets */
@@ -67,7 +67,7 @@ typedef struct dummyRec
 #ifdef SPARKLE_MODE
     sparkle_surface_file_t *surface;
     were_event_loop_t *were;
-    sparkle_client_t *client;
+    sparkle_connection_t *sparkle;
     int displayWidth;
     int displayHeight;
     int configuredWidth;
@@ -81,7 +81,7 @@ typedef struct dummyRec
     //int desiredWidth;
     //int desiredHeight;
     
-    OsTimerPtr timer;
+    //OsTimerPtr timer;
     
     char *compositor;
     char *surface_name;
