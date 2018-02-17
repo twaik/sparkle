@@ -358,14 +358,16 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     InputInfoPtr      pInfo    = (InputInfoPtr)user;
     EvdevPtr          pEvdev   = pInfo->private;
     
-    uint32_t operation = sparkle_packet_get_uint32(packet);
+    sparkle_packet_stream_t *stream = sparkle_packet_stream_create(sparkle_packet_data(packet), sparkle_packet_size(packet));
+    
+    uint32_t operation = sparkle_packet_stream_get_uint32(stream);
     
     if (operation == SPARKLE_SERVER_POINTER_DOWN)
     {
-        const char *name = sparkle_packet_get_string(packet);
-        int slot = sparkle_packet_get_uint32(packet);
-        int x = sparkle_packet_get_uint32(packet);
-        int y = sparkle_packet_get_uint32(packet);
+        const char *name = sparkle_packet_stream_get_string(stream);
+        int slot = sparkle_packet_stream_get_uint32(stream);
+        int x = sparkle_packet_stream_get_uint32(stream);
+        int y = sparkle_packet_stream_get_uint32(stream);
         
         if (strcmp(name, pEvdev->surface_name) == 0)
         {
@@ -380,10 +382,10 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     }
     else if (operation == SPARKLE_SERVER_POINTER_UP)
     {
-        const char *name = sparkle_packet_get_string(packet);
-        int slot = sparkle_packet_get_uint32(packet);
-        int x = sparkle_packet_get_uint32(packet);
-        int y = sparkle_packet_get_uint32(packet);
+        const char *name = sparkle_packet_stream_get_string(stream);
+        int slot = sparkle_packet_stream_get_uint32(stream);
+        int x = sparkle_packet_stream_get_uint32(stream);
+        int y = sparkle_packet_stream_get_uint32(stream);
         
         if (strcmp(name, pEvdev->surface_name) == 0)
         {
@@ -394,10 +396,10 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     }
     else if (operation == SPARKLE_SERVER_POINTER_MOTION)
     {
-        const char *name = sparkle_packet_get_string(packet);
-        int slot = sparkle_packet_get_uint32(packet);
-        int x = sparkle_packet_get_uint32(packet);
-        int y = sparkle_packet_get_uint32(packet);
+        const char *name = sparkle_packet_stream_get_string(stream);
+        int slot = sparkle_packet_stream_get_uint32(stream);
+        int x = sparkle_packet_stream_get_uint32(stream);
+        int y = sparkle_packet_stream_get_uint32(stream);
         
         if (strcmp(name, pEvdev->surface_name) == 0)
         {
@@ -412,14 +414,17 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     }
     else if (operation == SPARKLE_SERVER_KEY_DOWN)
     {
-        int code = sparkle_packet_get_uint32(packet);
+        int code = sparkle_packet_stream_get_uint32(stream);
         xf86PostKeyboardEvent(pInfo->dev, code, 1);
     }
     else if (operation == SPARKLE_SERVER_KEY_UP)
     {
-        int code = sparkle_packet_get_uint32(packet);
+        int code = sparkle_packet_stream_get_uint32(stream);
         xf86PostKeyboardEvent(pInfo->dev, code, 0);
     }
+    
+    
+    sparkle_packet_stream_destroy(stream);
 }
 
 static int

@@ -323,23 +323,27 @@ static void handle_connection(void *user)
         
     fprintf(stderr, "Connected\n");
     
-    sparkle_packet_t *packet = sparkle_packet_create();
-    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_REGISTER_SURFACE_FILE);
-    sparkle_packet_add_string(packet, dPtr->surface_name);
-    sparkle_packet_add_string(packet, dPtr->surface_file);
-    sparkle_packet_add_uint32(packet, sparkle_surface_file_width(dPtr->surface));
-    sparkle_packet_add_uint32(packet, sparkle_surface_file_height(dPtr->surface));
+    sparkle_packet_t *packet = sparkle_packet_create(64);
+    sparkle_packet_stream_t *stream = sparkle_packet_stream_create(sparkle_packet_data(packet), sparkle_packet_size(packet));
+    sparkle_packet_stream_add_uint32(stream, SPARKLE_CLIENT_REGISTER_SURFACE_FILE);
+    sparkle_packet_stream_add_string(stream, dPtr->surface_name);
+    sparkle_packet_stream_add_string(stream, dPtr->surface_file);
+    sparkle_packet_stream_add_uint32(stream, sparkle_surface_file_width(dPtr->surface));
+    sparkle_packet_stream_add_uint32(stream, sparkle_surface_file_height(dPtr->surface));
     sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_stream_destroy(stream);
     sparkle_packet_destroy(packet);
     
-    packet = sparkle_packet_create();
-    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_SET_SURFACE_POSITION);
-    sparkle_packet_add_string(packet, dPtr->surface_name);
-    sparkle_packet_add_uint32(packet, 0);
-    sparkle_packet_add_uint32(packet, 0);
-    sparkle_packet_add_uint32(packet, dPtr->displayWidth);
-    sparkle_packet_add_uint32(packet, dPtr->displayHeight);
+    packet = sparkle_packet_create(64);
+    stream = sparkle_packet_stream_create(sparkle_packet_data(packet), sparkle_packet_size(packet));
+    sparkle_packet_stream_add_uint32(stream, SPARKLE_CLIENT_SET_SURFACE_POSITION);
+    sparkle_packet_stream_add_string(stream, dPtr->surface_name);
+    sparkle_packet_stream_add_uint32(stream, 0);
+    sparkle_packet_stream_add_uint32(stream, 0);
+    sparkle_packet_stream_add_uint32(stream, dPtr->displayWidth);
+    sparkle_packet_stream_add_uint32(stream, dPtr->displayHeight);
     sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_stream_destroy(stream);
     sparkle_packet_destroy(packet);
 }
 
@@ -357,12 +361,14 @@ static void handle_packet(void *user, sparkle_packet_t *packet)
     ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
     
-    uint32_t operation = sparkle_packet_get_uint32(packet);
+    sparkle_packet_stream_t *stream = sparkle_packet_stream_create(sparkle_packet_data(packet), sparkle_packet_size(packet));
+    
+    uint32_t operation = sparkle_packet_stream_get_uint32(stream);
     
     if (operation == SPARKLE_SERVER_DISPLAY_SIZE)
     {
-        int width = sparkle_packet_get_uint32(packet);
-        int height = sparkle_packet_get_uint32(packet);
+        int width = sparkle_packet_stream_get_uint32(stream);
+        int height = sparkle_packet_stream_get_uint32(stream);
         
         dPtr->displayWidth = width;
         dPtr->displayHeight = height;
@@ -370,14 +376,16 @@ static void handle_packet(void *user, sparkle_packet_t *packet)
         xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DISPLAY SIZE: %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
 
     
-        sparkle_packet_t *packet = sparkle_packet_create();
-        sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_SET_SURFACE_POSITION);
-        sparkle_packet_add_string(packet, dPtr->surface_name);
-        sparkle_packet_add_uint32(packet, 0);
-        sparkle_packet_add_uint32(packet, 0);
-        sparkle_packet_add_uint32(packet, dPtr->displayWidth);
-        sparkle_packet_add_uint32(packet, dPtr->displayHeight);
+        sparkle_packet_t *packet = sparkle_packet_create(64);
+        sparkle_packet_stream_t *stream = sparkle_packet_stream_create(sparkle_packet_data(packet), sparkle_packet_size(packet));
+        sparkle_packet_stream_add_uint32(stream, SPARKLE_CLIENT_SET_SURFACE_POSITION);
+        sparkle_packet_stream_add_string(stream, dPtr->surface_name);
+        sparkle_packet_stream_add_uint32(stream, 0);
+        sparkle_packet_stream_add_uint32(stream, 0);
+        sparkle_packet_stream_add_uint32(stream, dPtr->displayWidth);
+        sparkle_packet_stream_add_uint32(stream, dPtr->displayHeight);
         sparkle_connection_send(dPtr->sparkle, packet);
+        sparkle_packet_stream_destroy(stream);
         sparkle_packet_destroy(packet);
     
 
@@ -402,6 +410,8 @@ static void handle_packet(void *user, sparkle_packet_t *packet)
         }
     
     }
+    
+    sparkle_packet_stream_destroy(stream);
 }
 
 static void handle_event(int fd, int ready, void *data)
@@ -435,10 +445,12 @@ Bool DUMMYCrtc_resize(ScrnInfoPtr pScrn, int width, int height)
     }
 #endif
 
-    sparkle_packet_t *packet = sparkle_packet_create();
-    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_UNREGISTER_SURFACE);
-    sparkle_packet_add_string(packet, dPtr->surface_name);
+    sparkle_packet_t *packet = sparkle_packet_create(64);
+    sparkle_packet_stream_t *stream = sparkle_packet_stream_create(sparkle_packet_data(packet), sparkle_packet_size(packet));
+    sparkle_packet_stream_add_uint32(stream, SPARKLE_CLIENT_UNREGISTER_SURFACE);
+    sparkle_packet_stream_add_string(stream, dPtr->surface_name);
     sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_stream_destroy(stream);
     sparkle_packet_destroy(packet);
 
     if (dPtr->surface != NULL)
@@ -446,23 +458,27 @@ Bool DUMMYCrtc_resize(ScrnInfoPtr pScrn, int width, int height)
 
     dPtr->surface = sparkle_surface_file_create(dPtr->surface_file, width, height, 1);
     
-    packet = sparkle_packet_create();
-    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_REGISTER_SURFACE_FILE);
-    sparkle_packet_add_string(packet, dPtr->surface_name);
-    sparkle_packet_add_string(packet, dPtr->surface_file);
-    sparkle_packet_add_uint32(packet, sparkle_surface_file_width(dPtr->surface));
-    sparkle_packet_add_uint32(packet, sparkle_surface_file_height(dPtr->surface));
+    packet = sparkle_packet_create(64);
+    stream = sparkle_packet_stream_create(sparkle_packet_data(packet), sparkle_packet_size(packet));
+    sparkle_packet_stream_add_uint32(stream, SPARKLE_CLIENT_REGISTER_SURFACE_FILE);
+    sparkle_packet_stream_add_string(stream, dPtr->surface_name);
+    sparkle_packet_stream_add_string(stream, dPtr->surface_file);
+    sparkle_packet_stream_add_uint32(stream, sparkle_surface_file_width(dPtr->surface));
+    sparkle_packet_stream_add_uint32(stream, sparkle_surface_file_height(dPtr->surface));
     sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_stream_destroy(stream);
     sparkle_packet_destroy(packet);
     
-    packet = sparkle_packet_create();
-    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_SET_SURFACE_POSITION);
-    sparkle_packet_add_string(packet, dPtr->surface_name);
-    sparkle_packet_add_uint32(packet, 0);
-    sparkle_packet_add_uint32(packet, 0);
-    sparkle_packet_add_uint32(packet, dPtr->displayWidth);
-    sparkle_packet_add_uint32(packet, dPtr->displayHeight);
+    packet = sparkle_packet_create(64);
+    stream = sparkle_packet_stream_create(sparkle_packet_data(packet), sparkle_packet_size(packet));
+    sparkle_packet_stream_add_uint32(stream, SPARKLE_CLIENT_SET_SURFACE_POSITION);
+    sparkle_packet_stream_add_string(stream, dPtr->surface_name);
+    sparkle_packet_stream_add_uint32(stream, 0);
+    sparkle_packet_stream_add_uint32(stream, 0);
+    sparkle_packet_stream_add_uint32(stream, dPtr->displayWidth);
+    sparkle_packet_stream_add_uint32(stream, dPtr->displayHeight);
     sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_stream_destroy(stream);
     sparkle_packet_destroy(packet);
     
 
@@ -1092,10 +1108,12 @@ DUMMYCloseScreen(CLOSE_SCREEN_ARGS_DECL)
     //TimerFree(dPtr->timer);
     //dPtr->timer = NULL;
 
-    sparkle_packet_t *packet = sparkle_packet_create();
-    sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_UNREGISTER_SURFACE);
-    sparkle_packet_add_string(packet, dPtr->surface_name);
+    sparkle_packet_t *packet = sparkle_packet_create(64);
+    sparkle_packet_stream_t *stream = sparkle_packet_stream_create(sparkle_packet_data(packet), sparkle_packet_size(packet));
+    sparkle_packet_stream_add_uint32(stream, SPARKLE_CLIENT_UNREGISTER_SURFACE);
+    sparkle_packet_stream_add_string(stream, dPtr->surface_name);
     sparkle_connection_send(dPtr->sparkle, packet);
+    sparkle_packet_stream_destroy(stream);
     sparkle_packet_destroy(packet);
 
     
@@ -1265,14 +1283,16 @@ static void DUMMYBlockHandler(BLOCKHANDLER_ARGS_DECL)
 
     if (RegionNotEmpty(pRegion))
     {
-        sparkle_packet_t *packet = sparkle_packet_create();
-        sparkle_packet_add_uint32(packet, SPARKLE_CLIENT_ADD_SURFACE_DAMAGE);
-        sparkle_packet_add_string(packet, dPtr->surface_name);
-        sparkle_packet_add_uint32(packet, pRegion->extents.x1);
-        sparkle_packet_add_uint32(packet, pRegion->extents.y1);
-        sparkle_packet_add_uint32(packet, pRegion->extents.x2);
-        sparkle_packet_add_uint32(packet, pRegion->extents.y2);
+        sparkle_packet_t *packet = sparkle_packet_create(64);
+        sparkle_packet_stream_t *stream = sparkle_packet_stream_create(sparkle_packet_data(packet), sparkle_packet_size(packet));
+        sparkle_packet_stream_add_uint32(stream, SPARKLE_CLIENT_ADD_SURFACE_DAMAGE);
+        sparkle_packet_stream_add_string(stream, dPtr->surface_name);
+        sparkle_packet_stream_add_uint32(stream, pRegion->extents.x1);
+        sparkle_packet_stream_add_uint32(stream, pRegion->extents.y1);
+        sparkle_packet_stream_add_uint32(stream, pRegion->extents.x2);
+        sparkle_packet_stream_add_uint32(stream, pRegion->extents.y2);
         sparkle_connection_send(dPtr->sparkle, packet);
+        sparkle_packet_stream_destroy(stream);
         sparkle_packet_destroy(packet);
 
         DamageEmpty(dPtr->damage);

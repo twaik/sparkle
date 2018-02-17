@@ -5,7 +5,7 @@
 
 #include "common/sparkle_packet.h"
 #include "were/were_function.h"
-#include <vector>
+#include <set>
 #include <string>
 
 //==================================================================================================
@@ -20,22 +20,22 @@ public:
     ~SparkleServer();
     SparkleServer(WereEventLoop *loop, const std::string &path);
     
-    void broadcast(const SparklePacket &packet);
+    void broadcast(SparklePacket *packet);
 
 werethings:
-    WereSignal<void (SparkleConnection *client)> signal_connected;
-    WereSignal<void (SparkleConnection *client, SparklePacket packet)> signal_packet;
+    WereSignal<void (std::shared_ptr<SparkleConnection> client)> signal_connected;
+    WereSignal<void (std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet)> signal_packet;
     
 private:
     void handleConnection();
-    void handleDisconnection(SparkleConnection *client);
-    void handlePacket(SparkleConnection *client, SparklePacket packet);
+    void handleDisconnection(std::shared_ptr<SparkleConnection> client);
+    void handlePacket(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet);
 
 private:
     WereEventLoop *_loop;
     WereServerUnix *_server;
     
-    std::vector<SparkleConnection *> _clients;
+    std::set< std::shared_ptr<SparkleConnection> > _clients;
 };
 
 //==================================================================================================

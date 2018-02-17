@@ -25,12 +25,12 @@
 # _ladir passes a dummy rpath to libtool so the thing will actually link
 # TODO: -nostdlib/-Bstatic/-lgcc platform magic, not installing the .a, etc.
 
-AM_CFLAGS = $(XORG_CFLAGS) -I../..
-AM_CXXFLAGS = $(XORG_CFLAGS) -I../..
+AM_CFLAGS = $(XORG_CFLAGS)
+AM_CPPFLAGS = -I../../were/src -I../..
 
 sparkle_drv_la_LTLIBRARIES = sparkle_drv.la
 sparkle_drv_la_LDFLAGS = -module -avoid-version
-sparkle_drv_la_LIBADD = $(XORG_LIBS) ../../were/libwere.a
+sparkle_drv_la_LIBADD = $(XORG_LIBS) ../../were/src/libwere.la
 sparkle_drv_ladir = @moduledir@/drivers
 
 sparkle_drv_la_SOURCES = \

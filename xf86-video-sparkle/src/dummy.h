@@ -17,7 +17,7 @@
 
 #ifdef SPARKLE_MODE
 #include "common/sparkle_surface_file.h"
-#include "were/were_event_loop.h"
+#include "were_event_loop.h"
 #include "common/sparkle_connection.h"
 #endif
 

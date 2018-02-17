@@ -1,6 +1,6 @@
 #include "sparkle_connection.h"
-#include "were/were_socket_unix.h"
-#include "were/were_timer.h"
+#include "were_socket_unix.h"
+#include "were_timer.h"
 
 //==================================================================================================
 
@@ -9,6 +9,8 @@ SparkleConnection::~SparkleConnection()
     if (_connectTimer)
         delete _connectTimer;
     delete _socket;
+    
+    were_debug("conn %p deleted\n", this);
 }
 
 SparkleConnection::SparkleConnection(WereEventLoop *loop, const std::string &path)
@@ -88,10 +90,9 @@ void SparkleConnection::handleData()
         }
         bytesAvailable -= sizeof(uint32_t);
     
-        SparklePacket _packet;
-        unsigned char *data = _packet.allocate(size);
+        std::shared_ptr<SparklePacket> packet(new SparklePacket(size));
         
-        if (_socket->receive(data, size) != size)
+        if (_socket->receive(packet->data(), size) != size)
         {
             were_debug("[%p][%s] receive 2 failed, DISCONNECTING.\n", this, __PRETTY_FUNCTION__);
             _socket->disconnect();
@@ -99,18 +100,18 @@ void SparkleConnection::handleData()
         }
         bytesAvailable -= size;
         
-        signal_packet(_packet);
+        signal_packet(packet);
     }
 }
 
 //==================================================================================================
 
-void SparkleConnection::send(const SparklePacket &packet)
+void SparkleConnection::send(SparklePacket *packet)
 {
     if (!_socket->connected())
         return;
     
-    uint32_t size = packet.size();
+    uint32_t size = packet->size();
     
     if (_socket->send(reinterpret_cast<unsigned char *>(&size), sizeof(uint32_t)) != sizeof(uint32_t))
     {
@@ -118,7 +119,7 @@ void SparkleConnection::send(const SparklePacket &packet)
         _socket->disconnect();
     }
     
-    if (_socket->send(packet.data(), packet.size()) != packet.size())
+    if (_socket->send(packet->data(), packet->size()) != packet->size())
     {
         were_debug("[%p][%s] n != size, DISCONNECTING.", this, __PRETTY_FUNCTION__);
         _socket->disconnect();
@@ -144,7 +145,7 @@ void sparkle_connection_send(sparkle_connection_t *connection, sparkle_packet_t 
 {
     SparkleConnection *_connection = static_cast<SparkleConnection *>(connection);
     SparklePacket *_packet = static_cast<SparklePacket *>(packet);
-    _connection->send(*_packet);
+    _connection->send(_packet);
 }
 
 void sparkle_connection_add_connection_callback(sparkle_connection_t *connection, were_event_loop_t *loop, void (*f)(void *user), void *user)
@@ -161,9 +162,9 @@ void sparkle_connection_add_disconnection_callback(sparkle_connection_t *connect
     _connection->signal_disconnected.connect(_loop, std::bind(f, user));
 }
 
-static void sparkle_packet_callback(SparklePacket packet, void (*f)(void *user, sparkle_packet_t *packet), void *user)
+static void sparkle_packet_callback(std::shared_ptr<SparklePacket> packet, void (*f)(void *user, sparkle_packet_t *packet), void *user)
 {
-    (*f)(user, static_cast<sparkle_packet_t *>(&packet));
+    (*f)(user, static_cast<sparkle_packet_t *>(packet.get()));
 }
 
 void sparkle_connection_add_packet_callback(sparkle_connection_t *connection, were_event_loop_t *loop, void (*f)(void *user, sparkle_packet_t *packet), void *user)

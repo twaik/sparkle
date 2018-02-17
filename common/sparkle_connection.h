@@ -7,8 +7,9 @@
 
 #ifdef __cplusplus
 
-#include "were/were_function.h"
+#include "were_function.h"
 #include <string>
+#include <memory>
 
 class WereEventLoop;
 class WereSocketUnix;
@@ -23,12 +24,12 @@ public:
     
     bool connected();
     
-    void send(const SparklePacket &packet);
+    void send(SparklePacket *packet);
 
 werethings:
     WereSignal<void ()> signal_connected;
     WereSignal<void ()> signal_disconnected;
-    WereSignal<void (SparklePacket packet)> signal_packet;
+    WereSignal<void (std::shared_ptr<SparklePacket> packet)> signal_packet;
     
 private:
     void connect();

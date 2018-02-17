@@ -155,7 +155,7 @@ am__installdirs = "$(DESTDIR)$(sparkle_drv_ladir)"
 LTLIBRARIES = $(sparkle_drv_la_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 sparkle_drv_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	../../were/libwere.a
+	../../were/src/libwere.la
 am_sparkle_drv_la_OBJECTS = dummy_cursor.lo dummy_driver.lo \
 	sparkle_surface_file.lo sparkle_packet.lo \
 	sparkle_connection.lo
@@ -395,11 +395,11 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CFLAGS = $(XORG_CFLAGS) -I../..
-AM_CXXFLAGS = $(XORG_CFLAGS) -I../..
+AM_CFLAGS = $(XORG_CFLAGS)
+AM_CPPFLAGS = -I../../were/src -I../..
 sparkle_drv_la_LTLIBRARIES = sparkle_drv.la
 sparkle_drv_la_LDFLAGS = -module -avoid-version
-sparkle_drv_la_LIBADD = $(XORG_LIBS) ../../were/libwere.a
+sparkle_drv_la_LIBADD = $(XORG_LIBS) ../../were/src/libwere.la
 sparkle_drv_ladir = @moduledir@/drivers
 sparkle_drv_la_SOURCES = \
          compat-api.h \

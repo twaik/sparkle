@@ -7,11 +7,7 @@
 
 SparkleServer::~SparkleServer()
 {
-    for (unsigned int i = 0; i < _clients.size(); ++i)
-    {
-        SparkleConnection *client = _clients[i];
-        delete client;
-    }
+    _clients.clear();
     
     delete _server;
 }
@@ -33,44 +29,32 @@ void SparkleServer::handleConnection()
     if (socket == 0)
         return;
     
-    SparkleConnection *client = new SparkleConnection(_loop, socket);
+    std::shared_ptr<SparkleConnection> client(new SparkleConnection(_loop, socket));
     
     client->signal_disconnected.connect(_loop, std::bind(&SparkleServer::handleDisconnection, this, client));
     client->signal_packet.connect(_loop, std::bind(&SparkleServer::handlePacket, this, client, _1));
 
-    _clients.push_back(client);
+    _clients.insert(client);
     
     signal_connected(client);
 }
 
-void SparkleServer::handleDisconnection(SparkleConnection *client)
+void SparkleServer::handleDisconnection(std::shared_ptr<SparkleConnection> client)
 {
+    _clients.erase(client);
 }
 
-void SparkleServer::handlePacket(SparkleConnection *client, SparklePacket packet)
+void SparkleServer::handlePacket(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet)
 {
     signal_packet(client, packet);
 }
 
-void SparkleServer::broadcast(const SparklePacket &packet)
+void SparkleServer::broadcast(SparklePacket *packet)
 {
-    std::vector<SparkleConnection *>::iterator it = _clients.begin();
+    std::set< std::shared_ptr<SparkleConnection> >::iterator it;
     
-    while (it != _clients.end())
-    {
-        SparkleConnection *client = *it;
-        
-        if (!client->connected())
-        {
-            delete client;
-            it = _clients.erase(it);
-        }
-        else
-        {
-            client->send(packet);
-            ++it;
-        }
-    }
+    for (it = _clients.begin(); it != _clients.end(); ++it)
+        (*it)->send(packet);
 }
 
 //==================================================================================================
