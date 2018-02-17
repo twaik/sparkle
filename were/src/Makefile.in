@@ -118,7 +118,8 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libwere_la_LIBADD =
 am_libwere_la_OBJECTS = were_call_queue.lo were_event_loop.lo \
 	were_event_source.lo were_exception.lo were_server_unix.lo \
-	were_signal_handler.lo were_socket_unix.lo were_timer.lo
+	were_signal_handler.lo were_socket_unix.lo were_timer.lo \
+	were_signal.lo
 libwere_la_OBJECTS = $(am_libwere_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -345,7 +346,9 @@ libwere_la_SOURCES = \
 	were_socket_unix.cpp		\
 	were_socket_unix.h		\
 	were_timer.cpp			\
-	were_timer.h
+	were_timer.h			\
+	were_signal.cpp			\
+	were_signal.h
 
 all: all-am
 
@@ -406,6 +409,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_event_source.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_exception.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_server_unix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_signal.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_signal_handler.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_socket_unix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_timer.Plo@am__quote@

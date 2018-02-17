@@ -3,7 +3,7 @@
 
 #include "were.h"
 #include "were_event_source.h"
-#include "were_function.h"
+#include "were_signal.h"
 
 class WereTimer : public WereEventSource
 {

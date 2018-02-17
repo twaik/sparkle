@@ -49,7 +49,7 @@ PlatformX11::PlatformX11(WereEventLoop *loop)
     _loop = loop;
 
     _timer = new WereTimer(_loop);
-    _timer->timeout.connect(_loop, std::bind(&PlatformX11::timeout, this));
+    _timer->timeout.connect(WereSimpleQueuer(loop, &PlatformX11::timeout, this));
     
     _display = 0;
     _window = 0;

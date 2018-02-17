@@ -13,7 +13,7 @@ WereBenchmark::WereBenchmark(WereEventLoop *loop)
     _events = 0;
     
     _timer = new WereTimer(_loop);
-    _timer->timeout.connect(_loop, std::bind(&WereBenchmark::timeout, this));
+    _timer->timeout.connect(WereSimpleQueuer(loop, &WereBenchmark::timeout, this));
     
     clock_gettime(CLOCK_MONOTONIC, &_real1);
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &_cpu1);

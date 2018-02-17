@@ -227,21 +227,33 @@ void were_socket_unix_set_connection_callback(were_socket_unix_t *socket, were_e
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    _socket->signal_connected.connect(_loop, std::bind(f, user));
+
+    _socket->signal_connected.connect([_loop, f, user]()
+    {
+        _loop->queue(std::bind(f, user));
+    });
 }
 
 void were_socket_unix_set_disconnection_callback(were_socket_unix_t *socket, were_event_loop_t *loop, void (*f)(void *user), void *user)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    _socket->signal_disconnected.connect(_loop, std::bind(f, user));
+
+    _socket->signal_disconnected.connect([_loop, f, user]()
+    {
+        _loop->queue(std::bind(f, user));
+    });
 }
 
 void were_socket_unix_set_data_callback(were_socket_unix_t *socket, were_event_loop_t *loop, void (*f)(void *user), void *user)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    _socket->signal_data.connect(_loop, std::bind(f, user));
+
+    _socket->signal_data.connect([_loop, f, user]()
+    {
+        _loop->queue(std::bind(f, user));
+    });
 }
 
 //==================================================================================================

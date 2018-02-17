@@ -1,7 +1,7 @@
 #ifndef COMPOSITOR_H
 #define COMPOSITOR_H
 
-#include "were/were_function.h"
+#include "were/were_signal.h"
 
 class Compositor
 {

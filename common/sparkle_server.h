@@ -3,8 +3,9 @@
 
 //==================================================================================================
 
+#include "were/were.h"
 #include "common/sparkle_packet.h"
-#include "were/were_function.h"
+#include "were/were_signal.h"
 #include <set>
 #include <string>
 

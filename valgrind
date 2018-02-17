@@ -1,4 +1,4 @@
 #!/bin/sh
 
-valgrind --leak-check=yes --gen-suppressions=yes --suppressions=./suppressions ./test
+valgrind --leak-check=yes --gen-suppressions=yes --suppressions=./suppressions pc/src/test
 

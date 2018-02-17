@@ -84,7 +84,11 @@ void were_server_unix_set_connection_callback(were_server_unix_t *server, were_e
 {
     WereServerUnix *_server = static_cast<WereServerUnix *>(server);
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    _server->newConnection.connect(_loop, std::bind(f, user));
+
+    _server->newConnection.connect([_loop, f, user]()
+    {
+        _loop->queue(std::bind(f, user));
+    });
 }
 
 were_socket_unix_t *were_server_unix_accept(were_server_unix_t *server)

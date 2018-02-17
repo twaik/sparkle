@@ -19,12 +19,12 @@ SparkleConnection::SparkleConnection(WereEventLoop *loop, const std::string &pat
     _path = path;
     
     _socket = new WereSocketUnix(_loop);
-    _socket->signal_connected.connect(_loop, std::bind(&SparkleConnection::handleConnection, this));
-    _socket->signal_disconnected.connect(_loop, std::bind(&SparkleConnection::handleDisconnection, this));
-    _socket->signal_data.connect(_loop, std::bind(&SparkleConnection::handleData, this));
+    _socket->signal_connected.connect(WereSimpleQueuer(loop, &SparkleConnection::handleConnection, this));
+    _socket->signal_disconnected.connect(WereSimpleQueuer(loop, &SparkleConnection::handleDisconnection, this));
+    _socket->signal_data.connect(WereSimpleQueuer(loop, &SparkleConnection::handleData, this));
     
     _connectTimer = new WereTimer(_loop);
-    _connectTimer->timeout.connect(_loop, std::bind(&SparkleConnection::connect, this));
+    _connectTimer->timeout.connect(WereSimpleQueuer(loop, &SparkleConnection::connect, this));
     
     _connectTimer->start(1000, false);
 }
@@ -34,9 +34,9 @@ SparkleConnection::SparkleConnection(WereEventLoop *loop, WereSocketUnix *socket
     _loop = loop;
     
     _socket = socket;
-    _socket->signal_connected.connect(_loop, std::bind(&SparkleConnection::handleConnection, this));
-    _socket->signal_disconnected.connect(_loop, std::bind(&SparkleConnection::handleDisconnection, this));
-    _socket->signal_data.connect(_loop, std::bind(&SparkleConnection::handleData, this));
+    _socket->signal_connected.connect(WereSimpleQueuer(loop, &SparkleConnection::handleConnection, this));
+    _socket->signal_disconnected.connect(WereSimpleQueuer(loop, &SparkleConnection::handleDisconnection, this));
+    _socket->signal_data.connect(WereSimpleQueuer(loop, &SparkleConnection::handleData, this));
     
     _connectTimer = 0;
 }
@@ -152,14 +152,22 @@ void sparkle_connection_add_connection_callback(sparkle_connection_t *connection
 {
     SparkleConnection *_connection = static_cast<SparkleConnection *>(connection);
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    _connection->signal_connected.connect(_loop, std::bind(f, user));
+
+    _connection->signal_connected.connect([_loop, f, user]()
+    {
+        _loop->queue(std::bind(f, user));
+    });
 }
 
 void sparkle_connection_add_disconnection_callback(sparkle_connection_t *connection, were_event_loop_t *loop, void (*f)(void *user), void *user)
 {
     SparkleConnection *_connection = static_cast<SparkleConnection *>(connection);
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    _connection->signal_disconnected.connect(_loop, std::bind(f, user));
+
+    _connection->signal_disconnected.connect([_loop, f, user]()
+    {
+        _loop->queue(std::bind(f, user));
+    });
 }
 
 static void sparkle_packet_callback(std::shared_ptr<SparklePacket> packet, void (*f)(void *user, sparkle_packet_t *packet), void *user)
@@ -171,7 +179,11 @@ void sparkle_connection_add_packet_callback(sparkle_connection_t *connection, we
 {
     SparkleConnection *_connection = static_cast<SparkleConnection *>(connection);
     WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    _connection->signal_packet.connect(_loop, std::bind(sparkle_packet_callback, _1, f, user));
+
+    _connection->signal_packet.connect([_loop, f, user](std::shared_ptr<SparklePacket> packet)
+    {
+        _loop->queue(std::bind(sparkle_packet_callback, packet, f, user));
+    });
 }
 
 //==================================================================================================

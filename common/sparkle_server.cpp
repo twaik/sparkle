@@ -18,7 +18,7 @@ SparkleServer::SparkleServer(WereEventLoop *loop, const std::string &path)
     
     _server = new WereServerUnix(_loop, path);
     
-    _server->newConnection.connect(_loop, std::bind(&SparkleServer::handleConnection, this));
+    _server->newConnection.connect(WereSimpleQueuer(loop, &SparkleServer::handleConnection, this));
 }
 
 //==================================================================================================
@@ -31,8 +31,18 @@ void SparkleServer::handleConnection()
     
     std::shared_ptr<SparkleConnection> client(new SparkleConnection(_loop, socket));
     
-    client->signal_disconnected.connect(_loop, std::bind(&SparkleServer::handleDisconnection, this, client));
-    client->signal_packet.connect(_loop, std::bind(&SparkleServer::handlePacket, this, client, _1));
+    //client->signal_disconnected.connect(WereSimpleQueuer(_loop, &SparkleServer::handleDisconnection, this, client));
+    //client->signal_packet.connect(WereSimpleQueuer(_loop, &SparkleServer::handlePacket, this, client));
+
+    client->signal_disconnected.connect([this, client]()
+    {
+        _loop->queue(std::bind(&SparkleServer::handleDisconnection, this, client));
+    });
+
+    client->signal_packet.connect([this, client](std::shared_ptr<SparklePacket> packet)
+    {
+        _loop->queue(std::bind(&SparkleServer::handlePacket, this, client, packet));
+    });
 
     _clients.insert(client);
     

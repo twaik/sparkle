@@ -33,7 +33,7 @@ WereEventLoop::WereEventLoop(bool handleSignals)
     if (handleSignals)
     {
         _signal = new WereSignalHandler(this);
-        _signal->terminate.connect(this, std::bind(&WereEventLoop::exit, this));
+        _signal->terminate.connect(WereSimpleQueuer(this, &WereEventLoop::exit, this));
     }
     else
         _signal = 0;

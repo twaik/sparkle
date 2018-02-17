@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     Compositor *compositor = compositor_gl_create(loop, platform);
     
     WereBenchmark *test = new WereBenchmark(loop);
-    compositor->frame.connect(loop, std::bind(&WereBenchmark::event, test));
+    compositor->frame.connect(WereSimpleQueuer(loop, &WereBenchmark::event, test));
 
     platform->start();
     

@@ -471,18 +471,18 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
     
     _redraw = true;
 
-    _platform->initializeForNativeDisplay.connect(_loop, std::bind(&CompositorGL::initializeForNativeDisplay, this, _1));
-    _platform->initializeForNativeWindow.connect(_loop, std::bind(&CompositorGL::initializeForNativeWindow, this, _1));
-    _platform->finishForNativeDisplay.connect(_loop, std::bind(&CompositorGL::finishForNativeDisplay, this));
-    _platform->finishForNativeWindow.connect(_loop, std::bind(&CompositorGL::finishForNativeWindow, this));
+    _platform->initializeForNativeDisplay.connect(WereSimpleQueuer(loop, &CompositorGL::initializeForNativeDisplay, this));
+    _platform->initializeForNativeWindow.connect(WereSimpleQueuer(loop, &CompositorGL::initializeForNativeWindow, this));
+    _platform->finishForNativeDisplay.connect(WereSimpleQueuer(loop, &CompositorGL::finishForNativeDisplay, this));
+    _platform->finishForNativeWindow.connect(WereSimpleQueuer(loop, &CompositorGL::finishForNativeWindow, this));
 
-    _platform->draw.connect(_loop, std::bind(&CompositorGL::draw, this));
+    _platform->draw.connect(WereSimpleQueuer(loop, &CompositorGL::draw, this));
 
-    _platform->pointerDown.connect(_loop, std::bind(&CompositorGL::pointerDown, this, _1, _2, _3));
-    _platform->pointerUp.connect(_loop, std::bind(&CompositorGL::pointerUp, this, _1, _2, _3));
-    _platform->pointerMotion.connect(_loop, std::bind(&CompositorGL::pointerMotion, this, _1, _2, _3));
-    _platform->keyDown.connect(_loop, std::bind(&CompositorGL::keyDown, this, _1));
-    _platform->keyUp.connect(_loop, std::bind(&CompositorGL::keyUp, this, _1));
+    _platform->pointerDown.connect(WereSimpleQueuer(loop, &CompositorGL::pointerDown, this));
+    _platform->pointerUp.connect(WereSimpleQueuer(loop, &CompositorGL::pointerUp, this));
+    _platform->pointerMotion.connect(WereSimpleQueuer(loop, &CompositorGL::pointerMotion, this));
+    _platform->keyDown.connect(WereSimpleQueuer(loop, &CompositorGL::keyDown, this));
+    _platform->keyUp.connect(WereSimpleQueuer(loop, &CompositorGL::keyUp, this));
     
     _server = new SparkleServer(_loop, "/dev/shm/sparkle.socket");
     //_server->signal_connected.connect(_loop, std::bind(&CompositorGL::connection, this, _1));

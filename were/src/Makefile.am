@@ -36,5 +36,7 @@ libwere_la_SOURCES =			\
 	were_socket_unix.cpp		\
 	were_socket_unix.h		\
 	were_timer.cpp			\
-	were_timer.h
+	were_timer.h			\
+	were_signal.cpp			\
+	were_signal.h
 
