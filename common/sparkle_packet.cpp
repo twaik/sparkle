@@ -1,7 +1,7 @@
 #include "sparkle_packet.h"
 #include <string.h>
 
-#include "were.h"
+#include "were/were.h"
 
 //==================================================================================================
 

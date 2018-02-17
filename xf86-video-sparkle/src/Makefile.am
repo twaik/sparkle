@@ -26,7 +26,7 @@
 # TODO: -nostdlib/-Bstatic/-lgcc platform magic, not installing the .a, etc.
 
 AM_CFLAGS = $(XORG_CFLAGS)
-AM_CPPFLAGS = -I../../were/src -I../..
+AM_CPPFLAGS = -I../../were/include -I../..
 
 sparkle_drv_la_LTLIBRARIES = sparkle_drv.la
 sparkle_drv_la_LDFLAGS = -module -avoid-version

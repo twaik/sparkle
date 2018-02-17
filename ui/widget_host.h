@@ -1,7 +1,7 @@
 #ifndef WIDGET_HOST_H
 #define WIDGET_HOST_H
 
-#include "sparkle.h"
+#include "common/utility.h"
 #include "widget.h"
 
 class WereEventLoop;

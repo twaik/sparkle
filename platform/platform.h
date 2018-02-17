@@ -2,7 +2,6 @@
 #define PLATFORM_H
 
 #include "were/were_function.h"
-#include "sparkle.h"
 #include <EGL/egl.h>
 
 class Platform

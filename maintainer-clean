@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+make -C xf86-video-sparkle maintainer-clean
+make -C xf86-input-sparklei maintainer-clean
+make -C were maintainer-clean
+make -C pc maintainer-clean
+

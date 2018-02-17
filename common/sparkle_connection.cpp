@@ -1,6 +1,6 @@
 #include "sparkle_connection.h"
-#include "were_socket_unix.h"
-#include "were_timer.h"
+#include "were/were_socket_unix.h"
+#include "were/were_timer.h"
 
 //==================================================================================================
 

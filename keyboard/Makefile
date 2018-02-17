@@ -3,8 +3,8 @@ all: test
 SOURCES = 
 HEADERS = 
 
-CXXFLAGS = -Wall -O2 -I..
-LIBS = ../were/libwere.a -lpthread
+CXXFLAGS = -Wall -O2 -I../were/include -I..
+LIBS = ../were/src/.libs/libwere.a -lpthread
 
 SOURCES += main.cpp
 

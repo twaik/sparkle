@@ -11,7 +11,7 @@
 #include <string>
 #include <algorithm>
 
-
+#include "common/utility.h"
 #include "common/sparkle_surface_file.h"
 #include "common/sparkle_server.h"
 #include "common/sparkle_protocol.h"

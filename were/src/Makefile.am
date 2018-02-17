@@ -15,6 +15,8 @@
 #_LDFLAGS =
 #_LIBADD =
 
+AM_CPPFLAGS = -I../include/were
+
 noinst_LTLIBRARIES = libwere.la
 libwere_la_SOURCES =			\
 	were.h				\

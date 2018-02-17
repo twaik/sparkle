@@ -11,7 +11,7 @@
 #include <xf86Xinput.h>
 #include <xf86_OSproc.h>
 #include <xkbstr.h>
-#include "were_event_loop.h"
+#include "were/were_event_loop.h"
 #include "common/sparkle_connection.h"
 
 

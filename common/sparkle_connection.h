@@ -7,7 +7,7 @@
 
 #ifdef __cplusplus
 
-#include "were_function.h"
+#include "were/were_function.h"
 #include <string>
 #include <memory>
 
