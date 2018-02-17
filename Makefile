@@ -1,10 +1,13 @@
 
+all:
+	@echo "USAGE: make configure -> make build -> sudo make install"
+
 configure:
-	were/configure --prefix=/usr
-	xf86-video-sparkle/configure --prefix=/usr
-	xf86-input-sparklei/configure --prefix=/usr
-	pcm-sparkle/configure --prefix=/usr
-	pc/configure --prefix=/usr
+	(cd were;			./configure --prefix=/usr)
+	(cd xf86-video-sparkle;		./configure --prefix=/usr)
+	(cd xf86-input-sparklei;	./configure --prefix=/usr)
+	(cd pcm-sparkle; 		./configure --prefix=/usr)
+	(cd pc;				./configure --prefix=/usr)
 
 build:
 	make -C were
@@ -27,8 +30,12 @@ maintainer-clean:
 	-make -C pcm-sparkle maintainer-clean
 	-make -C pc maintainer-clean
 
+install:
+	make -C xf86-video-sparkle install
+	make -C xf86-input-sparklei install
+	make -C pcm-sparkle install
 
 
-.PHONY: all configure build clean maintainer-clean
+.PHONY: all configure build clean maintainer-clean install
 
 
