@@ -26,10 +26,12 @@ AC_INIT([xf86-video-dummy],
         [0.3.8],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         [xf86-video-dummy])
+AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR(.)
 AC_PROG_CXX
+AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
 
 # Initialize Automake
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
@@ -61,7 +63,7 @@ XORG_DRIVER_CHECK_EXT(RANDR, randrproto)
 XORG_DRIVER_CHECK_EXT(RENDER, renderproto)
 
 # Obtain compiler/linker options for the driver dependencies
-PKG_CHECK_MODULES(XORG, [xorg-server >= 1.4.99.901] xproto fontsproto $REQUIRED_MODULES)
+PKG_CHECK_MODULES(XORG, [xorg-server >= 1.19] xproto fontsproto $REQUIRED_MODULES)
 
 # Checks for libraries.
 

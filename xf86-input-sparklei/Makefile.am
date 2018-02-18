@@ -1,3 +1,6 @@
+
+ACLOCAL_AMFLAGS = -I m4
+
 # Provide an sdk location that is writable by the evdev module
 DISTCHECK_CONFIGURE_FLAGS = --with-sdkdir='$${includedir}/xorg'
 

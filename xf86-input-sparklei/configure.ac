@@ -3,10 +3,12 @@ AC_INIT([xf86-input-sparklei],
         [0.2],
         [knight@mail.ua],
         [xf86-input-sparklei])
+AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR(.)
 AC_PROG_CXX
+AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
 
 # Initialize Automake
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
@@ -25,7 +27,7 @@ XORG_MACROS_VERSION(1.8)
 XORG_DEFAULT_OPTIONS
 
 # Obtain compiler/linker options from server and required extensions
-PKG_CHECK_MODULES(XORG, [xorg-server >= 1.12] xproto [inputproto >= 2.1.99.3])
+PKG_CHECK_MODULES(XORG, [xorg-server >= 1.19] xproto [inputproto >= 2.1.99.3])
 
 
 # Define a configure option for an alternate input module directory
