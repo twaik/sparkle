@@ -67,36 +67,3 @@ WereSocketUnix *WereServerUnix::accept()
 
 //==================================================================================================
 
-were_server_unix_t *were_server_unix_create(were_event_loop_t *loop, const char *path)
-{
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    WereServerUnix *_server = new WereServerUnix(_loop, path);
-    return static_cast<were_socket_unix_t *>(_server);
-}
-
-void were_server_unix_destroy(were_socket_unix_t *server)
-{
-    WereServerUnix *_server = static_cast<WereServerUnix *>(server);
-    delete _server;
-}
-
-void were_server_unix_set_connection_callback(were_server_unix_t *server, were_event_loop_t *loop, void (*f)(void *user), void *user)
-{
-    WereServerUnix *_server = static_cast<WereServerUnix *>(server);
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-
-    _server->newConnection.connect([_loop, f, user]()
-    {
-        _loop->queue(std::bind(f, user));
-    });
-}
-
-were_socket_unix_t *were_server_unix_accept(were_server_unix_t *server)
-{
-    WereServerUnix *_server = static_cast<WereServerUnix *>(server);
-    WereSocketUnix *_socket = _server->accept();
-    return static_cast<were_socket_unix_t *>(_socket);
-}
-
-//==================================================================================================
-

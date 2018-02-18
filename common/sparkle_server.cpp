@@ -72,9 +72,7 @@ void SparkleServer::handlePacket(std::shared_ptr<SparkleConnection> client, std:
 
 void SparkleServer::broadcast(SparklePacket *packet)
 {
-    std::set< std::shared_ptr<SparkleConnection> >::iterator it;
-    
-    for (it = _clients.begin(); it != _clients.end(); ++it)
+    for (auto it = _clients.begin(); it != _clients.end(); ++it)
         (*it)->send(packet);
 }
 

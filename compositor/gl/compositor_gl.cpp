@@ -38,27 +38,9 @@ static const char simpleFS[] =
         "    gl_FragColor = texture2D(texture, outTexCoords);\n"
         "}\n\n";
 
-#if 0
-const GLfloat triangleVerticesDataNormal[] = {
-        // X, Y, Z, U, V
-        -1.0f, -1.0f, 0,    0.f, 1.f,
-         1.0f, -1.0f, 0,    1.f, 1.f,
-        -1.0f,  1.0f, 0,    0.f, 0.f,
-         1.0f,  1.0f, 0,    1.f, 0.f,
-};
 
-const GLfloat triangleVerticesDataRotated[] = {
-        // X, Y, Z, U, V
-        -1.0f, -1.0f, 0,    0.f, 0.f,
-         1.0f, -1.0f, 0,    1.f, 0.f,
-        -1.0f,  1.0f, 0,    0.f, 1.f,
-         1.0f,  1.0f, 0,    1.f, 1.f,
-};
-#endif
-
-//const GLint FLOAT_SIZE_BYTES = 4;
-//const GLint TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES;
-const GLint TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 20;
+const GLint FLOAT_SIZE_BYTES = sizeof(float);
+const GLint TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES;
 
 //==================================================================================================
 
@@ -348,6 +330,9 @@ bool CompositorGLSurfaceFile::updateTexture()
     if (_damage.width() > 0 && _damage.height() > 0)
     {
         unsigned char *data = _surface->data();
+        
+        //were_debug("Uploading %d %d %d %d -> %d %d\n", _damage.from.x, _damage.from.y, _damage.to.x, _damage.to.y, _texture.width(), _texture.height());
+
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, _texture.id());
@@ -417,8 +402,8 @@ private:
     SparkleServer *_server;
 
     std::vector<CompositorGLSurface *> _surfaces;
-    
-    GLfloat _plane[20];
+
+    std::array<float, 20> _plane;
     bool _redraw;
 };
 
@@ -445,29 +430,15 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
     _egl = 0;
     _gl = 0;
     
-    _plane[0] = -1.0;
-    _plane[1] = -1.0;
-    _plane[2] = 0.0;
-    _plane[3] = 0.0;
-    _plane[4] = 0.0;
 
-    _plane[5] = 1.0;
-    _plane[6] = -1.0;
-    _plane[7] = 0.0;
-    _plane[8] = 1.0;
-    _plane[9] = 0.0;
-
-    _plane[10] = -1.0;
-    _plane[11] = 1.0;
-    _plane[12] = 0.0;
-    _plane[13] = 0.0;
-    _plane[14] = 1.0;
-
-    _plane[15] = 1.0;
-    _plane[16] = 1.0;
-    _plane[17] = 0.0;
-    _plane[18] = 1.0;
-    _plane[19] = 1.0;
+    
+    _plane = {
+    // X, Y, Z, U, V
+        -1.0f, -1.0f, 0, 0.f, 1.f,
+         1.0f, -1.0f, 0, 1.f, 1.f,
+        -1.0f,  1.0f, 0, 0.f, 0.f,
+         1.0f,  1.0f, 0, 1.f, 0.f,
+    };
     
     _redraw = true;
 
@@ -811,7 +782,7 @@ void CompositorGL::registerSurfaceFile(const std::string &name, const std::strin
 
 void CompositorGL::unregisterSurface(const std::string &name)
 {
-    std::vector<CompositorGLSurface *>::iterator it = _surfaces.begin();
+    auto it = _surfaces.begin();
     while (it != _surfaces.end())
     {
         CompositorGLSurface *surface = *it;
@@ -830,7 +801,7 @@ void CompositorGL::unregisterSurface(const std::string &name)
 
 void CompositorGL::setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2)
 {
-    were_debug("Surface [%s]: position changed.\n", name.c_str());
+    were_debug("Surface [%s]: position changed (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
     
     CompositorGLSurface *surface = findSurface(name);
     if (surface != 0)
@@ -854,6 +825,8 @@ void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
 
 void CompositorGL::addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2)
 {
+    //were_debug("Surface [%s]: damage (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
+    
     CompositorGLSurface *surface = findSurface(name);
     if (surface != 0)
         surface->addDamage(x1, y1, x2, y2);

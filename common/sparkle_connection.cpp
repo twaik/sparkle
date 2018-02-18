@@ -9,8 +9,6 @@ SparkleConnection::~SparkleConnection()
     if (_connectTimer)
         delete _connectTimer;
     delete _socket;
-    
-    were_debug("conn %p deleted\n", this);
 }
 
 SparkleConnection::SparkleConnection(WereEventLoop *loop, const std::string &path)

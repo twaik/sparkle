@@ -320,8 +320,6 @@ static void handle_connection(void *user)
 {
     ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
-        
-    fprintf(stderr, "Connected\n");
     
     sparkle_packet_t *packet = sparkle_packet_create(64);
     sparkle_packet_stream_t *stream = sparkle_packet_stream_create(packet);
@@ -351,8 +349,6 @@ static void handle_disconnection(void *user)
 {   
     ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
-    
-    fprintf(stderr, "Disconnected\n");
 }
 
 static void handle_packet(void *user, sparkle_packet_t *packet)
@@ -452,6 +448,7 @@ Bool DUMMYCrtc_resize(ScrnInfoPtr pScrn, int width, int height)
     sparkle_connection_send(dPtr->sparkle, packet);
     sparkle_packet_stream_destroy(stream);
     sparkle_packet_destroy(packet);
+    usleep(100000);
 
     if (dPtr->surface != NULL)
         sparkle_surface_file_destroy(dPtr->surface);
@@ -1115,6 +1112,7 @@ DUMMYCloseScreen(CLOSE_SCREEN_ARGS_DECL)
     sparkle_connection_send(dPtr->sparkle, packet);
     sparkle_packet_stream_destroy(stream);
     sparkle_packet_destroy(packet);
+    usleep(100000);
 
     
     if (dPtr->surface != NULL)

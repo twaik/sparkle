@@ -2,16 +2,12 @@
 #define WERE_SERVER_UNIX_H
 
 #include "were.h"
+#include "were_event_source.h"
 #include "were_socket_unix.h"
+#include "were_signal.h"
+#include <string>
 
 //==================================================================================================
-
-#ifdef __cplusplus
-
-#include "were_event_source.h"
-#include "were_function.h"
-
-#include <string>
 
 class WereServerUnix : public WereEventSource
 {
@@ -30,26 +26,6 @@ private:
 private:
     std::string _path;
 };
-
-#endif //__cplusplus
-
-typedef void were_server_unix_t;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-were_server_unix_t *were_server_unix_create(were_event_loop_t *loop, const char *path);
-void were_server_unix_destroy(were_server_unix_t *server);
-
-were_socket_unix_t *were_server_unix_accept(were_server_unix_t *server);
-
-void were_server_unix_set_connection_callback(were_server_unix_t *server, were_event_loop_t *loop, void (*f)(void *user), void *user);
-
-
-#ifdef __cplusplus
-}
-#endif
 
 //==================================================================================================
 
