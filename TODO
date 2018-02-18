@@ -1,7 +1,6 @@
 * Good way to create and send packages.
 * WereEventLoop: exit() from another thread.
 * Platforms: new thread to read events.
-* Automake or cmake.
 * SparkleConnection inherit WereSocket?
 * SparkleServer inherit WereServer?
 * Package - stream?
