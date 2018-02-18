@@ -431,14 +431,13 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
     _gl = 0;
     
 
-    
-    _plane = {
+    _plane = {{
     // X, Y, Z, U, V
-        -1.0f, -1.0f, 0, 0.f, 1.f,
-         1.0f, -1.0f, 0, 1.f, 1.f,
-        -1.0f,  1.0f, 0, 0.f, 0.f,
-         1.0f,  1.0f, 0, 1.f, 0.f,
-    };
+        -1.0f, -1.0f, 0, 0.0f, 0.0f,
+         1.0f, -1.0f, 0, 1.0f, 0.0f,
+        -1.0f,  1.0f, 0, 0.0f, 1.0f,
+         1.0f,  1.0f, 0, 1.0f, 1.0f,
+    }};
     
     _redraw = true;
 
@@ -709,8 +708,6 @@ void CompositorGL::connection(std::shared_ptr <SparkleConnection> client)
         stream.addUint32(_gl->_surfaceHeight);
         client->send(&packet);
     }
-    
-    were_debug("Connected\n");
 }
 
 void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet)
