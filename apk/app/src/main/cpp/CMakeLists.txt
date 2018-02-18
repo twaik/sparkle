@@ -18,13 +18,13 @@ set(CMAKE_SHARED_LINKER_FLAGS
 
 add_library(sparkle SHARED
             main.cpp
-            ${SPARKLE_ROOT}/were/were_event_source.cpp
-            ${SPARKLE_ROOT}/were/were_call_queue.cpp
-            ${SPARKLE_ROOT}/were/were_signal_handler.cpp
-            ${SPARKLE_ROOT}/were/were_event_loop.cpp
-            ${SPARKLE_ROOT}/were/were_timer.cpp
-            ${SPARKLE_ROOT}/were/were_socket_unix.cpp
-            ${SPARKLE_ROOT}/were/were_server_unix.cpp
+            ${SPARKLE_ROOT}/were/src/were_event_source.cpp
+            ${SPARKLE_ROOT}/were/src/were_call_queue.cpp
+            ${SPARKLE_ROOT}/were/src/were_signal_handler.cpp
+            ${SPARKLE_ROOT}/were/src/were_event_loop.cpp
+            ${SPARKLE_ROOT}/were/src/were_timer.cpp
+            ${SPARKLE_ROOT}/were/src/were_socket_unix.cpp
+            ${SPARKLE_ROOT}/were/src/were_server_unix.cpp
             ${SPARKLE_ROOT}/platform/na/platform_na.cpp
             ${SPARKLE_ROOT}/compositor/gl/compositor_gl.cpp
             ${SPARKLE_ROOT}/compositor/gl/texture.cpp
@@ -34,12 +34,14 @@ add_library(sparkle SHARED
             ${SPARKLE_ROOT}/common/sparkle_surface_file.cpp
             ${SPARKLE_ROOT}/common/were_benchmark.cpp
             ${SPARKLE_ROOT}/sound/sles/sound_sles.cpp
-            ${SPARKLE_ROOT}/were/were_exception.cpp
+            ${SPARKLE_ROOT}/were/src/were_exception.cpp
 )
 
 target_include_directories(sparkle PRIVATE
     ${ANDROID_NDK}/sources/android/native_app_glue
     ${SPARKLE_ROOT}/
+    ${SPARKLE_ROOT}/were/include
+    ${SPARKLE_ROOT}/were/include/were
 )
 
 # add lib dependencies

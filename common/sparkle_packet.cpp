@@ -10,11 +10,11 @@ SparklePacket::~SparklePacket()
     delete[] _data;
 }
 
-SparklePacket::SparklePacket(unsigned int size)
+SparklePacket::SparklePacket(unsigned int maxSize)
 {
-    _size = size;
-    _data = new unsigned char [size];
-    memset(_data, 0x00, size);
+    _maxSize = maxSize;
+    _data = new unsigned char [maxSize];
+    _size = 0;
 }
 
 unsigned char *SparklePacket::data()
@@ -27,43 +27,43 @@ unsigned int SparklePacket::size() const
     return _size;
 }
 
+unsigned char *SparklePacket::allocate(unsigned int size)
+{
+    unsigned char *p = _data + _size;
+    _size += size;
+    return p;
+}
+
+void SparklePacket::add(const unsigned char *bytes, unsigned int size)
+{
+    memcpy(_data + _size, bytes, size);
+    _size += size;
+}
+
 //==================================================================================================
 
 SparklePacketStream::~SparklePacketStream()
 {
 }
 
-SparklePacketStream::SparklePacketStream(unsigned char *data, unsigned int size)
+SparklePacketStream::SparklePacketStream(SparklePacket *packet)
 {
-    _data = data;
-    _size = size;
-    _writePosition = 0;
+    _packet = packet;
     _readPosition = 0;
-}
-
-//==================================================================================================
-
-unsigned int SparklePacketStream::writePosition() const
-{
-    return _writePosition;
-}
-
-unsigned int SparklePacketStream::readPosition() const
-{
-    return _readPosition;
+    _writePosition = 0;
 }
 
 //==================================================================================================
 
 void SparklePacketStream::addData(const unsigned char *a, unsigned int size)
 {
-    memcpy(_data + _writePosition, a, size);
+    _packet->add(a, size);
     _writePosition += size;
 }
 
 const unsigned char *SparklePacketStream::getData(unsigned int size)
 {
-    const unsigned char *p = _data + _readPosition;
+    const unsigned char *p = _packet->data() + _readPosition;
     _readPosition += size;
     return p;
 }
@@ -118,9 +118,10 @@ unsigned int sparkle_packet_size(sparkle_packet_t *packet)
     return _packet->size();
 }
 
-sparkle_packet_stream_t *sparkle_packet_stream_create(unsigned char *data, unsigned int size)
+sparkle_packet_stream_t *sparkle_packet_stream_create(sparkle_packet_t *packet)
 {
-    SparklePacketStream *_stream = new SparklePacketStream(data, size);
+    SparklePacket *_packet = static_cast<SparklePacket *>(packet);
+    SparklePacketStream *_stream = new SparklePacketStream(_packet);
     return _stream;
 }
 

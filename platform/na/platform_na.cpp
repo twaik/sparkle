@@ -58,7 +58,7 @@ PlatformNA::PlatformNA(WereEventLoop *loop, struct android_app *app)
     _draw = false;
     
     _timer = new WereTimer(_loop);
-    _timer->timeout.connect(_loop, std::bind(&PlatformNA::timeout, this));
+    _timer->timeout.connect(WereSimpleQueuer(loop, &PlatformNA::timeout, this));
 }
 
 int PlatformNA::start()

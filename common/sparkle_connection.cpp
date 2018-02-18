@@ -84,22 +84,24 @@ void SparkleConnection::handleData()
         
         if (_socket->receive(reinterpret_cast<unsigned char *>(&size), sizeof(uint32_t)) != sizeof(uint32_t))
         {
-            were_debug("[%p][%s] receive 1 failed, DISCONNECTING.\n", this, __PRETTY_FUNCTION__);
+            were_debug("[%p][%s] receive (header) failed, DISCONNECTING.\n", this, __PRETTY_FUNCTION__);
             _socket->disconnect();
             return;
         }
         bytesAvailable -= sizeof(uint32_t);
     
         std::shared_ptr<SparklePacket> packet(new SparklePacket(size));
+        unsigned char *data = packet->allocate(size);
         
-        if (_socket->receive(packet->data(), size) != size)
+        if (_socket->receive(data, size) != size)
         {
-            were_debug("[%p][%s] receive 2 failed, DISCONNECTING.\n", this, __PRETTY_FUNCTION__);
+            were_debug("[%p][%s] receive (data) failed, DISCONNECTING.\n", this, __PRETTY_FUNCTION__);
             _socket->disconnect();
             return;
         }
         bytesAvailable -= size;
         
+        //were_debug("RECV %d\n", packet->size());
         signal_packet(packet);
     }
 }
@@ -108,6 +110,8 @@ void SparkleConnection::handleData()
 
 void SparkleConnection::send(SparklePacket *packet)
 {
+    //were_debug("SEND %d\n", packet->size());
+    
     if (!_socket->connected())
         return;
     
@@ -115,13 +119,13 @@ void SparkleConnection::send(SparklePacket *packet)
     
     if (_socket->send(reinterpret_cast<unsigned char *>(&size), sizeof(uint32_t)) != sizeof(uint32_t))
     {
-        were_debug("[%p][%s] n != size, DISCONNECTING.", this, __PRETTY_FUNCTION__);
+        were_debug("[%p][%s] n != size (sending header), DISCONNECTING.", this, __PRETTY_FUNCTION__);
         _socket->disconnect();
     }
     
     if (_socket->send(packet->data(), packet->size()) != packet->size())
     {
-        were_debug("[%p][%s] n != size, DISCONNECTING.", this, __PRETTY_FUNCTION__);
+        were_debug("[%p][%s] n != size (sending data), DISCONNECTING.", this, __PRETTY_FUNCTION__);
         _socket->disconnect();
     }
 }

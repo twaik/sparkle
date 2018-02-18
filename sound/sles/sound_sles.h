@@ -14,6 +14,7 @@
 #include "common/sparkle_packet.h"
 #include <list>
 #include <vector>
+#include <memory> //FIXME
 
 //==================================================================================================
 
@@ -61,7 +62,7 @@ private:
     WereEventLoop *_loop;
     SparkleServer *_server;
 
-    void packet(SparkleConnection *client, SparklePacket packet);
+    void packet(std::shared_ptr <SparkleConnection> client, std::shared_ptr<SparklePacket> packet);
     
     SLObjectItf engineObject;
     SLEngineItf engineEngine;
@@ -76,7 +77,7 @@ private:
     BufferQueueItf playerBufferqueue;
     SLuint32 state;
     
-    std::list<SparklePacket> _queue;
+    std::list< std::shared_ptr<SparklePacket> > _queue;
     bool busy;
 };
 

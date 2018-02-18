@@ -1,6 +1,5 @@
 
-all:
-	@echo "USAGE: make configure -> make build -> sudo make install"
+all: build
 
 configure:
 	(cd were;			./configure --prefix=/usr)
@@ -22,6 +21,7 @@ clean:
 	-make -C xf86-input-sparklei clean
 	-make -C pcm-sparkle clean
 	-make -C pc clean
+	-make -C apk clean
 
 maintainer-clean:
 	-make -C were maintainer-clean
@@ -29,6 +29,7 @@ maintainer-clean:
 	-make -C xf86-input-sparklei maintainer-clean
 	-make -C pcm-sparkle maintainer-clean
 	-make -C pc maintainer-clean
+	-make -C apk clean
 
 install:
 	make -C xf86-video-sparkle install

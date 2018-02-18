@@ -12,12 +12,16 @@ class SparklePacket
 {
 public:
     ~SparklePacket();
-    SparklePacket(unsigned int size);
+    SparklePacket(unsigned int maxSize);
     
     unsigned char *data();
     unsigned int size() const;
     
+    unsigned char *allocate(unsigned int size);
+    void add(const unsigned char *bytes, unsigned int size);
+    
 private:
+    unsigned int _maxSize;
     unsigned char *_data;
     unsigned int _size;
 };
@@ -26,11 +30,8 @@ class SparklePacketStream
 {
 public:
     ~SparklePacketStream();
-    SparklePacketStream(unsigned char *data, unsigned int size);
-    
-    unsigned int writePosition() const;
-    unsigned int readPosition() const;
-    
+    SparklePacketStream(SparklePacket *packet);
+
     void addData(const unsigned char *a, unsigned int size);
     const unsigned char *getData(unsigned int size);
     
@@ -40,10 +41,9 @@ public:
     std::string getString();
     
 private:
-    unsigned char *_data;
-    unsigned int _size;
-    unsigned int _writePosition;
+    SparklePacket *_packet;
     unsigned int _readPosition;
+    unsigned int _writePosition;
 };
 
 #endif
@@ -62,7 +62,7 @@ void sparkle_packet_destroy(sparkle_packet_t *packet);
 unsigned char *sparkle_packet_data(sparkle_packet_t *packet);
 unsigned int sparkle_packet_size(sparkle_packet_t *packet);
 
-sparkle_packet_stream_t *sparkle_packet_stream_create(unsigned char *data, unsigned int size);
+sparkle_packet_stream_t *sparkle_packet_stream_create(sparkle_packet_t *packet);
 void sparkle_packet_stream_destroy(sparkle_packet_stream_t *stream);
 
 uint32_t sparkle_packet_stream_get_uint32(sparkle_packet_stream_t *stream);

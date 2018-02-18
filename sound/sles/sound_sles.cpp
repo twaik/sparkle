@@ -30,7 +30,7 @@ SoundSLES::SoundSLES(WereEventLoop *loop)
     _loop = loop;
     
     _server = new SparkleServer(_loop, "/dev/shm/sparkle-sound.socket");
-    _server->signal_packet.connect(_loop, std::bind(&SoundSLES::packet, this, _1, _2));
+    _server->signal_packet.connect(WereSimpleQueuer(loop, &SoundSLES::packet, this));
 
     SLresult result;
 
@@ -100,9 +100,9 @@ void SoundSLES::checkQueue()
     if (_queue.size() == 0)
         return;
     
-    SparklePacket *packet = &_queue.front();
-    unsigned int size = packet->size() - packet->readPosition();
-    SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, packet->getData(size), size);
+    unsigned char *data = _queue.front()->data() + sizeof(uint32_t);
+    unsigned int size = _queue.front()->size() - sizeof(uint32_t);
+    SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, data, size);
     checkResult(result);
 
     busy = true;
@@ -126,9 +126,11 @@ void SoundSLES::callback(BufferQueueItf playerBufferqueue, void *data)
 
 //==================================================================================================
 
-void SoundSLES::packet(SparkleConnection *client, SparklePacket packet)
+void SoundSLES::packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet)
 {
-    uint32_t operation = packet.getUint32();
+    SparklePacketStream stream(packet.get());
+    
+    uint32_t operation = stream.getUint32();
         
     if (operation == 0)
     {

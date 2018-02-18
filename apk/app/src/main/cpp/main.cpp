@@ -27,7 +27,7 @@ void android_main(struct android_app *app)
 #endif
 
         WereBenchmark *test = new WereBenchmark(loop);
-        compositor->frame.connect(loop, std::bind(&WereBenchmark::event, test));
+        compositor->frame.connect(WereSimpleQueuer(loop, &WereBenchmark::event, test));
 
         platform->start();
         loop->run();

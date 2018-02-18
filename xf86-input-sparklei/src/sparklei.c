@@ -358,7 +358,7 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     InputInfoPtr      pInfo    = (InputInfoPtr)user;
     EvdevPtr          pEvdev   = pInfo->private;
     
-    sparkle_packet_stream_t *stream = sparkle_packet_stream_create(sparkle_packet_data(packet), sparkle_packet_size(packet));
+    sparkle_packet_stream_t *stream = sparkle_packet_stream_create(packet);
     
     uint32_t operation = sparkle_packet_stream_get_uint32(stream);
     
