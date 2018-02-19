@@ -265,25 +265,27 @@ EvdevInit(DeviceIntPtr device)
     return Success;
 }
 
+#if 0
 static CARD32 EvdevTimeout(OsTimerPtr timer, CARD32 time, pointer arg)
 {
-    InputInfoPtr      pInfo    = (InputInfoPtr)arg;
-    EvdevPtr          pEvdev   = pInfo->private;
+    //InputInfoPtr      pInfo    = (InputInfoPtr)arg;
+    //EvdevPtr          pEvdev   = pInfo->private;
     
     //pEvdev->timer = TimerSet(pEvdev->timer, 0, 1000, EvdevTimeout, pInfo);
 
     return 0;
 }
+#endif
 
 static int
 EvdevOn(DeviceIntPtr device)
 {
     InputInfoPtr pInfo;
-    EvdevPtr pEvdev;
+    //EvdevPtr pEvdev;
     int rc = Success;
 
     pInfo = device->public.devicePrivate;
-    pEvdev = pInfo->private;
+    //pEvdev = pInfo->private;
     
     
     /* after PreInit fd is still open */
@@ -384,8 +386,8 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     {
         const char *name = sparkle_packet_stream_get_string(stream);
         int slot = sparkle_packet_stream_get_uint32(stream);
-        int x = sparkle_packet_stream_get_uint32(stream);
-        int y = sparkle_packet_stream_get_uint32(stream);
+        //int x = sparkle_packet_stream_get_uint32(stream);
+        //int y = sparkle_packet_stream_get_uint32(stream);
         
         if (strcmp(name, pEvdev->surface_name) == 0)
         {

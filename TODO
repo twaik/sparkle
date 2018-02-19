@@ -1,8 +1,10 @@
-* Good way to create and send packages.
+* Good way to create and send packages (Packers, unpackers?).
+* Package headers.
 * WereEventLoop: exit() from another thread.
 * Platforms: new thread to read events.
 * SparkleConnection inherit WereSocket?
 * SparkleServer inherit WereServer?
 * Package - stream?
-* WereSignal: disconnection
+* WereSignal: disconnection.
+* utility.h
 

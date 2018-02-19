@@ -43,7 +43,7 @@ SparkleConnection::SparkleConnection(WereEventLoop *loop, WereSocketUnix *socket
 
 bool SparkleConnection::connected()
 {
-    return _socket->connected();
+    return _socket->state() == WereSocketUnix::ConnectedState;
 }
 
 //==================================================================================================
@@ -110,7 +110,7 @@ void SparkleConnection::send(SparklePacket *packet)
 {
     //were_debug("SEND %d\n", packet->size());
     
-    if (!_socket->connected())
+    if (_socket->state() != WereSocketUnix::ConnectedState)
         return;
     
     uint32_t size = packet->size();

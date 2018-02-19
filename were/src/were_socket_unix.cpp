@@ -6,9 +6,17 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#define NONBLOCK
-
 //==================================================================================================
+
+void make_nonblock(int fd)
+{
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1)
+        throw WereException("[%s] Failed to get fd flags.", __PRETTY_FUNCTION__);
+    flags |= O_NONBLOCK;
+    if (fcntl(fd, F_SETFL, flags) == -1)
+        throw WereException("[%s] Failed to set fd flags.", __PRETTY_FUNCTION__);
+}
 
 WereSocketUnix::~WereSocketUnix()
 {
@@ -18,102 +26,116 @@ WereSocketUnix::~WereSocketUnix()
 WereSocketUnix::WereSocketUnix(WereEventLoop *loop) :
     WereEventSource(loop)
 {
-    _connected = false;
+    _fd = -1;
+    _state = UnconnectedState;
 }
 
 WereSocketUnix::WereSocketUnix(WereEventLoop *loop, int fd) :
     WereEventSource(loop)
 {
     _fd = fd;
-    
-#ifdef NONBLOCK
-    int flags = fcntl(_fd, F_GETFL, 0);
-    if (flags == -1)
-        throw WereException("[%p][%s] Failed to get fd flags.", this, __PRETTY_FUNCTION__);
-    flags |= O_NONBLOCK;
-    if (fcntl(_fd, F_SETFL, flags) == -1)
-        throw WereException("[%p][%s] Failed to set fd flags.", this, __PRETTY_FUNCTION__);
-#endif
-    
-    _connected = true;
-    
     _loop->registerEventSource(this, EPOLLIN | EPOLLET);
-
+    _state = ConnectedState;
+    
     were_debug("[%p][%s] Connected (accept).\n", this, __PRETTY_FUNCTION__);
 }
 
 //==================================================================================================
 
-bool WereSocketUnix::connect(const std::string &path)
+void WereSocketUnix::connect(const std::string &path)
 {
-    if (_connected)
-        return true;
+    if (_state != UnconnectedState)
+        return;
 
     //_fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
     _fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (_fd == -1)
         throw WereException("[%p][%s] Failed to create socket.", this, __PRETTY_FUNCTION__);
     
+    make_nonblock(_fd);
+    
     struct sockaddr_un name = {};
+    memset(&name, 0, sizeof(name));
     name.sun_family = AF_UNIX;
     strncpy(name.sun_path, path.c_str(), sizeof(name.sun_path) - 1);
     
     if (::connect(_fd, (const struct sockaddr *)&name, sizeof(struct sockaddr_un)) == -1)
     {
-        close(_fd);
-        return false;
+        //FIXME EINPROGRESS is OK
+        //were_debug("[%p][%s] Connect error (%d, %s).\n", this, __PRETTY_FUNCTION__, errno, strerror(errno));
+        disconnect();
+        return;
     }
     
-#ifdef NONBLOCK
-    int flags = fcntl(_fd, F_GETFL, 0);
-    if (flags == -1)
-        throw WereException("[%p][%s] Failed to get fd flags.", this, __PRETTY_FUNCTION__);
-    flags |= O_NONBLOCK;
-    if (fcntl(_fd, F_SETFL, flags) == -1)
-        throw WereException("[%p][%s] Failed to set fd flags.", this, __PRETTY_FUNCTION__);
-#endif   
-    
-    _connected = true;
-    
-    _loop->registerEventSource(this, EPOLLIN | EPOLLET);
-    
-    signal_connected();
-    
-    were_debug("[%p][%s] Connected (connect).\n", this, __PRETTY_FUNCTION__);
-    
-    return true;
+    _loop->registerEventSource(this, EPOLLIN | EPOLLOUT | EPOLLET);
+    _state = ConnectingState;
 }
 
 void WereSocketUnix::disconnect()
 {
-    if (!_connected)
-        return;
+    if (_state != UnconnectedState)
+        _loop->unregisterEventSource(this);
     
-    _connected = false;
+    if (_fd != -1)
+    {
+        shutdown(_fd, SHUT_RDWR);
+        close(_fd);
+        _fd = -1;
+    }
     
-    _loop->unregisterEventSource(this);
+    if (_state == ConnectedState)
+    {
+        _state = UnconnectedState; 
+        signal_disconnected();
+        were_debug("[%p][%s] Disconnected.\n", this, __PRETTY_FUNCTION__);
+    }
     
-    shutdown(_fd, SHUT_RDWR);
-    close(_fd);
-    
-    were_debug("[%p][%s] Disconnected.\n", this, __PRETTY_FUNCTION__);
+    _state = UnconnectedState; 
 }
 
-bool WereSocketUnix::connected()
+WereSocketUnix::SocketState WereSocketUnix::state()
 {
-    return _connected;
+    return _state;
 }
 
 //==================================================================================================
 
 void WereSocketUnix::event(uint32_t events)
 {
-    if (events == EPOLLIN)
-        signal_data();
-    else
+    if (!(events == EPOLLIN || events == EPOLLOUT || events == (EPOLLIN | EPOLLOUT)))
     {
-        signal_disconnected();
+        were_debug("[%p][%s] Unknown event type (%d), DISCONNECTING.\n", this, __PRETTY_FUNCTION__, events);
         disconnect();
+        return;
+    }
+    
+    if (events & EPOLLIN)
+    {
+        signal_data();
+    }
+    
+    if (events & EPOLLOUT)
+    {
+        if (_state == ConnectingState)
+        {
+            int result;
+            socklen_t resultLength = sizeof(result);
+            
+            if (getsockopt(_fd, SOL_SOCKET, SO_ERROR, &result, &resultLength) == -1)
+                throw WereException("[%p][%s] Failed to get connection result.", this, __PRETTY_FUNCTION__);
+            
+            if (result == 0)
+            {
+                _state = ConnectedState;
+                signal_connected();
+                were_debug("[%p][%s] Connected (connect).\n", this, __PRETTY_FUNCTION__);
+            }
+            else
+            {
+                disconnect();
+                were_debug("[%p][%s] Connection failed (%d, %s).\n", this, __PRETTY_FUNCTION__, result, strerror(result));
+            }
+        }
     }
 }
 
@@ -121,18 +143,18 @@ void WereSocketUnix::event(uint32_t events)
 
 int WereSocketUnix::send(const unsigned char *data, unsigned int size)
 {
-    if (!_connected)
+    if (_state != ConnectedState)
     {
         were_debug("[%p][%s] Not connected.", this, __PRETTY_FUNCTION__);
         return -1;
     }
 
-    return write(_fd, data, size);
+    return ::send(_fd, data, size, MSG_NOSIGNAL);
 }
 
 int WereSocketUnix::receive(unsigned char *data, unsigned int size)
 {
-    if (!_connected)
+    if (_state != ConnectedState)
     {
         were_debug("[%p][%s] Not connected.", this, __PRETTY_FUNCTION__);
         return -1;
@@ -143,7 +165,7 @@ int WereSocketUnix::receive(unsigned char *data, unsigned int size)
 
 int WereSocketUnix::peek(unsigned char *data, unsigned int size)
 {
-    if (!_connected)
+    if (_state != ConnectedState)
     {
         were_debug("[%p][%s] Not connected.", this, __PRETTY_FUNCTION__);
         return -1;
@@ -154,8 +176,8 @@ int WereSocketUnix::peek(unsigned char *data, unsigned int size)
 
 unsigned int WereSocketUnix::bytesAvailable() const
 {
-    if (!_connected)
-        return -1;
+    if (_state != ConnectedState)
+        return 0;
     
     int bytes = 0;
     if (ioctl(_fd, FIONREAD, &bytes) == -1)
@@ -196,7 +218,7 @@ void were_socket_unix_disconnect(were_socket_unix_t *socket)
 int were_socket_unix_connected(were_socket_unix_t *socket)
 {
     WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    return _socket->connected();
+    return _socket->state() == WereSocketUnix::ConnectedState;
 }
 
 int were_socket_unix_send(were_socket_unix_t *socket, const unsigned char *data, unsigned int size)

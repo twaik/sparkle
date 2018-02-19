@@ -13,14 +13,20 @@
 class WereSocketUnix : public WereEventSource
 {
 public:
+    enum SocketState {
+        UnconnectedState,
+        ConnectingState,
+        ConnectedState,
+    };
+public:
     ~WereSocketUnix();
     WereSocketUnix(WereEventLoop *loop);
     WereSocketUnix(WereEventLoop *loop, int fd);
     
-    bool connect(const std::string &path);
+    void connect(const std::string &path);
     void disconnect();
     
-    bool connected();
+    WereSocketUnix::SocketState state();
     
     int send(const unsigned char *data, unsigned int size);
     int receive(unsigned char *data, unsigned int size);
@@ -37,7 +43,7 @@ private:
     void event(uint32_t events);
     
 private:
-    bool _connected;
+    SocketState _state;
 };
 
 #endif //__cplusplus

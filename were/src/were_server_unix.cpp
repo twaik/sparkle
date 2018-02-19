@@ -3,8 +3,12 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 
 //==================================================================================================
+
+void make_nonblock(int fd);
 
 WereServerUnix::~WereServerUnix()
 {
@@ -28,6 +32,8 @@ WereServerUnix::WereServerUnix(WereEventLoop *loop, const std::string &path) :
     if (_fd == -1)
         throw WereException("[%p][%s] Failed to create socket.", this, __PRETTY_FUNCTION__);
     
+    make_nonblock(_fd);
+    
     struct sockaddr_un name = {};
     name.sun_family = AF_UNIX;
     strncpy(name.sun_path, _path.c_str(), sizeof(name.sun_path) - 1);
@@ -37,8 +43,7 @@ WereServerUnix::WereServerUnix(WereEventLoop *loop, const std::string &path) :
 
     if (listen(_fd, 4) == -1)
         throw WereException("[%p][%s] Failed to listen socket.", this, __PRETTY_FUNCTION__);
-    
-    
+
     _loop->registerEventSource(this, EPOLLIN | EPOLLET);
 }
 
@@ -58,7 +63,9 @@ WereSocketUnix *WereServerUnix::accept()
 {
     int fd = ::accept(_fd, NULL, NULL);
     if (fd == -1)
-        throw WereException("[%p][%s] Failed to accept connection.", this, __PRETTY_FUNCTION__);
+        return 0;
+    
+    make_nonblock(_fd);
     
     WereSocketUnix *socket = new WereSocketUnix(_loop, fd);
     

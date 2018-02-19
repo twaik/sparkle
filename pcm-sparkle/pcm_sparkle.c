@@ -55,6 +55,7 @@ static void sparkle_connect(snd_pcm_sparkle_t *sparkle)
     {
         fprintf(stderr, "[Sparkle sound] Failed to connect (%s).\n", strerror(errno));
         close(fd);
+        sparkle->fd = -1;
         return;
     }
 
@@ -82,7 +83,7 @@ static void sparkle_disconnect(snd_pcm_sparkle_t *sparkle)
     fprintf(stderr, "[Sparkle sound] Disconnected.\n");
 }
 
-static int sparkle_write1(snd_pcm_sparkle_t *sparkle, void *buffer, int size)
+static int sparkle_write1(snd_pcm_sparkle_t *sparkle, const void *buffer, int size)
 {
     if (sparkle->fd == -1)
         return size;
@@ -326,6 +327,7 @@ static int sparkle_close(snd_pcm_ioplug_t *io)
     {
         shutdown(sparkle->fd, SHUT_RDWR);
         close(sparkle->fd);
+        sparkle->fd = -1;
     }
 
 	free(sparkle);

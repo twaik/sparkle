@@ -31,7 +31,7 @@ maintainer-clean:
 	-make -C pc maintainer-clean
 	-make -C apk clean
 
-install:
+install: build
 	make -C xf86-video-sparkle install
 	make -C xf86-input-sparklei install
 	make -C pcm-sparkle install
