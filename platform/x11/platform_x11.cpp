@@ -61,6 +61,7 @@ int PlatformX11::start()
         throw std::runtime_error("[PlatformX11::start] Failed to open display.");
 
     initializeForNativeDisplay(_display);
+    //FIXME BUG!
 
     if (createWindow() != 0)
         throw std::runtime_error("[PlatformX11::start] Failed to create window.");
@@ -138,6 +139,7 @@ int PlatformX11::createWindow()
     }
     else
     {
+        were_debug("[%p][%s] Using default visual.\n", this, __PRETTY_FUNCTION__);
         visual = DefaultVisual(_display, scrnum);
         depth = DefaultDepth(_display, scrnum);
     }

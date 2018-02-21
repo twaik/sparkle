@@ -59,6 +59,7 @@ public:
 CompositorGL_EGL::~CompositorGL_EGL()
 {
     eglTerminate(_display);
+    were_debug("EGL destroyed.\n");
 }
 
 CompositorGL_EGL::CompositorGL_EGL(NativeDisplayType nativeDisplay)
@@ -136,6 +137,8 @@ CompositorGL_GL::~CompositorGL_GL()
     eglMakeCurrent(_egl->_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     eglDestroyContext(_egl->_display, _context);
     eglDestroySurface(_egl->_display, _surface);
+    
+    were_debug("GL destroyed.\n");
 }
 
 CompositorGL_GL::CompositorGL_GL(CompositorGL_EGL *egl, NativeWindowType window)
@@ -217,6 +220,7 @@ public:
     
     const std::string &name();
     Texture *texture();
+    void destroyTexture(); //FIXME Temporary solution
     const RectangleA &position();
     int strata();
     
@@ -228,7 +232,7 @@ public:
     
 protected:
     std::string _name;
-    Texture _texture;
+    Texture *_texture;
     RectangleA _position;
     int _strata;
     RectangleA _damage;
@@ -236,11 +240,13 @@ protected:
 
 CompositorGLSurface::~CompositorGLSurface()
 {
+    destroyTexture();
 }
 
 CompositorGLSurface::CompositorGLSurface(const std::string &name)
 {
     _name = name;
+    _texture = 0;
     _strata = 0;
 }
 
@@ -251,7 +257,18 @@ const std::string &CompositorGLSurface::name()
 
 Texture *CompositorGLSurface::texture()
 {
-    return &_texture;
+    if (_texture == 0)
+        _texture = new Texture();
+    return _texture;
+}
+
+void CompositorGLSurface::destroyTexture()
+{
+    if (_texture != 0)
+    {
+        delete _texture;
+        _texture = 0;
+    }
 }
 
 const RectangleA &CompositorGLSurface::position()
@@ -320,10 +337,10 @@ bool CompositorGLSurfaceFile::updateTexture()
 {
     bool result = false;
     
-    if (_texture.width() != _surface->width() || _texture.height() != _surface->height())
+    if (texture()->width() != _surface->width() || texture()->height() != _surface->height())
     {
         texture()->resize(_surface->width(), _surface->height());
-        _damage = RectangleA(PointA(0, 0), PointA(_texture.width(), _texture.height()));
+        _damage = RectangleA(PointA(0, 0), PointA(texture()->width(), texture()->height()));
         result = true;
     }
     
@@ -331,20 +348,20 @@ bool CompositorGLSurfaceFile::updateTexture()
     {
         unsigned char *data = _surface->data();
         
-        //were_debug("Uploading %d %d %d %d -> %d %d\n", _damage.from.x, _damage.from.y, _damage.to.x, _damage.to.y, _texture.width(), _texture.height());
+        //were_debug("Uploading %d %d %d %d -> %d %d\n", _damage.from.x, _damage.from.y, _damage.to.x, _damage.to.y, texture()->width(), texture()->height());
 
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, _texture.id());
+        glBindTexture(GL_TEXTURE_2D, texture()->id());
 
 #if 0
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA_EXT, _texture.width(), _texture.height(), 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA_EXT, texture()->width(), texture()->height(), 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, data);
 #else
         glTexSubImage2D(GL_TEXTURE_2D, 0,
             0, _damage.from.y,
-            _texture.width(), _damage.height(),
+            texture()->width(), _damage.height(),
             GL_BGRA_EXT, GL_UNSIGNED_BYTE,
-            &data[_damage.from.y * _texture.width() * 4]);
+            &data[_damage.from.y * texture()->width() * 4]);
 #endif
         
         _damage = RectangleA(PointA(0, 0), PointA(0, 0));
@@ -429,7 +446,6 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
     
     _egl = 0;
     _gl = 0;
-    
 
     _plane = {{
     // X, Y, Z, U, V
@@ -438,8 +454,6 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
         -1.0f,  1.0f, 0, 0.0f, 1.0f,
          1.0f,  1.0f, 0, 1.0f, 1.0f,
     }};
-    
-    _redraw = true;
 
     _platform->initializeForNativeDisplay.connect(WereSimpleQueuer(loop, &CompositorGL::initializeForNativeDisplay, this));
     _platform->initializeForNativeWindow.connect(WereSimpleQueuer(loop, &CompositorGL::initializeForNativeWindow, this));
@@ -490,12 +504,18 @@ void CompositorGL::finishForNativeDisplay()
 void CompositorGL::initializeForNativeWindow(NativeWindowType window)
 {
     _gl = new CompositorGL_GL(_egl, window);
+    _redraw = true;
 }
 
 void CompositorGL::finishForNativeWindow()
 {
     if (_gl != 0)
+    {
+        for (auto it = _surfaces.begin(); it != _surfaces.end(); ++it)
+            (*it)->destroyTexture();
+        
         delete _gl;
+    }
     _gl = 0;
 }
 
