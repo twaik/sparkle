@@ -355,6 +355,50 @@ EvdevProbe(InputInfoPtr pInfo)
     return Success;
 }
 
+static void SparkleiPointerDown(InputInfoPtr pInfo, int slot, int x, int y)
+{
+    EvdevPtr          pEvdev   = pInfo->private;
+    
+    valuator_mask_set(pEvdev->mt_mask, 0, x);
+    valuator_mask_set(pEvdev->mt_mask, 1, y);
+    valuator_mask_set(pEvdev->mt_mask, 2, 1);
+    valuator_mask_set(pEvdev->mt_mask, 3, 1);
+    xf86PostTouchEvent(pInfo->dev, slot + 1, 18, 0, pEvdev->mt_mask);
+    pEvdev->slot_state[slot + 1] = 1;
+    valuator_mask_zero(pEvdev->mt_mask);
+}
+
+static void SparkleiPointerUp(InputInfoPtr pInfo, int slot)
+{
+    EvdevPtr          pEvdev   = pInfo->private;
+    
+    xf86PostTouchEvent(pInfo->dev, slot + 1, 20, 0, pEvdev->mt_mask);
+    pEvdev->slot_state[slot + 1] = 0;
+    valuator_mask_zero(pEvdev->mt_mask);
+}
+
+static void SparkleiPointerMotion(InputInfoPtr pInfo, int slot, int x, int y)
+{
+    EvdevPtr          pEvdev   = pInfo->private;
+    
+    valuator_mask_set(pEvdev->mt_mask, 0, x);
+    valuator_mask_set(pEvdev->mt_mask, 1, y);
+    if (pEvdev->slot_state[slot + 1] == 1)
+    {
+        xf86PostTouchEvent(pInfo->dev, slot + 1, 19, 0, pEvdev->mt_mask);
+    }
+    valuator_mask_zero(pEvdev->mt_mask);
+}
+
+static void SparkleiRMB(InputInfoPtr pInfo, int x, int y)
+{
+    EvdevPtr          pEvdev   = pInfo->private;
+
+    //xf86PostMotionEventM(pInfo->dev, Absolute, pEvdev->mt_mask);
+    xf86PostButtonEvent(pInfo->dev, Absolute, 3, 1, 0, 0);
+    xf86PostButtonEvent(pInfo->dev, Absolute, 3, 0, 0, 0);
+}
+
 static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
 {
     InputInfoPtr      pInfo    = (InputInfoPtr)user;
@@ -373,13 +417,7 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
         
         if (strcmp(name, pEvdev->surface_name) == 0)
         {
-            valuator_mask_set(pEvdev->mt_mask, 0, x);
-            valuator_mask_set(pEvdev->mt_mask, 1, y);
-            valuator_mask_set(pEvdev->mt_mask, 2, 1);
-            valuator_mask_set(pEvdev->mt_mask, 3, 1);
-            xf86PostTouchEvent(pInfo->dev, slot + 1, 18, 0, pEvdev->mt_mask);
-            pEvdev->slot_state[1] = 1;
-            valuator_mask_zero(pEvdev->mt_mask);
+            SparkleiPointerDown(pInfo, slot, x, y);
         }
     }
     else if (operation == SPARKLE_SERVER_POINTER_UP)
@@ -391,9 +429,7 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
         
         if (strcmp(name, pEvdev->surface_name) == 0)
         {
-            xf86PostTouchEvent(pInfo->dev, slot + 1, 20, 0, pEvdev->mt_mask);
-            pEvdev->slot_state[1] = 0;
-            valuator_mask_zero(pEvdev->mt_mask);
+            SparkleiPointerUp(pInfo, slot);
         }
     }
     else if (operation == SPARKLE_SERVER_POINTER_MOTION)
@@ -405,13 +441,7 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
         
         if (strcmp(name, pEvdev->surface_name) == 0)
         {
-            valuator_mask_set(pEvdev->mt_mask, 0, x);
-            valuator_mask_set(pEvdev->mt_mask, 1, y);
-            if (pEvdev->slot_state[1] == 1)
-            {
-                xf86PostTouchEvent(pInfo->dev, slot + 1, 19, 0, pEvdev->mt_mask);
-            }
-            valuator_mask_zero(pEvdev->mt_mask);
+            SparkleiPointerMotion(pInfo, slot, x, y);
         }
     }
     else if (operation == SPARKLE_SERVER_KEY_DOWN)
@@ -423,6 +453,16 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     {
         int code = sparkle_packet_stream_get_uint32(stream);
         xf86PostKeyboardEvent(pInfo->dev, code, 0);
+    }
+    else if (operation == SPARKLE_SERVER_RMB)
+    {
+        int x = sparkle_packet_stream_get_uint32(stream);
+        int y = sparkle_packet_stream_get_uint32(stream);
+
+        SparkleiRMB(pInfo, x, y);
+    }
+    else if (operation == SPARKLE_SERVER_ENABLE_RMB)
+    {
     }
     
     
