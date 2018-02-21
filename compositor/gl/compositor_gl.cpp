@@ -699,23 +699,11 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
 
 void CompositorGL::keyDown(int code)
 {
-    if (code == 122)
-    {
-        SparklePacket packet(64);
-        SparklePacketStream stream(&packet);
-        stream.addUint32(SPARKLE_SERVER_RMB);
-        stream.addUint32(0);
-        stream.addUint32(0);
-        _server->broadcast(&packet);
-    }
-    else
-    {
-        SparklePacket packet(64);
-        SparklePacketStream stream(&packet);
-        stream.addUint32(SPARKLE_SERVER_KEY_DOWN);
-        stream.addUint32(code);
-        _server->broadcast(&packet);
-    }
+    SparklePacket packet(64);
+    SparklePacketStream stream(&packet);
+    stream.addUint32(SPARKLE_SERVER_KEY_DOWN);
+    stream.addUint32(code);
+    _server->broadcast(&packet);
 }
 
 void CompositorGL::keyUp(int code)

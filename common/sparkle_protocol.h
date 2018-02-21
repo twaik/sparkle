@@ -1,7 +1,6 @@
 #ifndef SPARKLE_PROTOCOL_H
 #define SPARKLE_PROTOCOL_H
 
-
 #define SPARKLE_CLIENT_REGISTER_SURFACE_FILE    0x00
 #define SPARKLE_CLIENT_UNREGISTER_SURFACE       0x01
 #define SPARKLE_CLIENT_SET_SURFACE_POSITION     0x02
@@ -18,9 +17,6 @@
 #define SPARKLE_SERVER_POINTER_MOTION           0x0a
 #define SPARKLE_SERVER_KEY_DOWN                 0x0b
 #define SPARKLE_SERVER_KEY_UP                   0x0c
-#define SPARKLE_SERVER_RMB                      0x0e
-#define SPARKLE_SERVER_ENABLE_RMB               0x0f
-
 
 #endif //SPARKLE_PROTOCOL_H
 
