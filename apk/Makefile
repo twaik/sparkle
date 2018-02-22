@@ -12,7 +12,7 @@ sign:
 	/home/sion/android/sdk/build-tools/25.0.2/apksigner sign --ks ~/android/sion.keystore --ks-key-alias sion ./app/build/outputs/apk/sparkle.apk
 
 install: debug
-	./gradlew uninstallDebug
+	adb uninstall com.sion.sparkle
 	adb install app/build/outputs/apk/app-debug.apk
 
 installRelease:

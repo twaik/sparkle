@@ -699,20 +699,46 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
 
 void CompositorGL::keyDown(int code)
 {
-    SparklePacket packet(64);
-    SparklePacketStream stream(&packet);
-    stream.addUint32(SPARKLE_SERVER_KEY_DOWN);
-    stream.addUint32(code);
-    _server->broadcast(&packet);
+    if (code == 122)
+    {
+        SparklePacket packet(64);
+        SparklePacketStream stream(&packet);
+        stream.addUint32(SPARKLE_SERVER_RMB);
+        stream.addUint32(0);
+        stream.addUint32(0);
+        stream.addUint32(1);
+        _server->broadcast(&packet);
+    }
+    else
+    {
+        SparklePacket packet(64);
+        SparklePacketStream stream(&packet);
+        stream.addUint32(SPARKLE_SERVER_KEY_DOWN);
+        stream.addUint32(code);
+        _server->broadcast(&packet);
+    }
 }
 
 void CompositorGL::keyUp(int code)
 {
-    SparklePacket packet(64);
-    SparklePacketStream stream(&packet);
-    stream.addUint32(SPARKLE_SERVER_KEY_UP);
-    stream.addUint32(code);
-    _server->broadcast(&packet);
+    if (code == 122)
+    {
+        SparklePacket packet(64);
+        SparklePacketStream stream(&packet);
+        stream.addUint32(SPARKLE_SERVER_RMB);
+        stream.addUint32(0);
+        stream.addUint32(0);
+        stream.addUint32(0);
+        _server->broadcast(&packet);
+    }
+    else
+    {
+        SparklePacket packet(64);
+        SparklePacketStream stream(&packet);
+        stream.addUint32(SPARKLE_SERVER_KEY_UP);
+        stream.addUint32(code);
+        _server->broadcast(&packet);
+    }
 }
 
 //==================================================================================================

@@ -76,6 +76,7 @@ typedef struct {
     sparkle_connection_t *sparkle;
     
     int slot_state[10];
+    int rmb_state;
     
     char *compositor;
     char *surface_name;
