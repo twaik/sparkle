@@ -392,7 +392,7 @@ static void SparkleiPointerMotion(InputInfoPtr pInfo, int slot, int x, int y)
     valuator_mask_zero(pEvdev->mt_mask);
 }
 
-static void SparkleiRMB(InputInfoPtr pInfo, int x, int y, int state)
+static void SparkleiRMB(InputInfoPtr pInfo, int state)
 {
     EvdevPtr          pEvdev   = pInfo->private;
     
@@ -452,25 +452,19 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     else if (operation == SPARKLE_SERVER_KEY_DOWN)
     {
         int code = sparkle_packet_stream_get_uint32(stream);
-        xf86PostKeyboardEvent(pInfo->dev, code, 1);
+        if (code == 122)
+            SparkleiRMB(pInfo, 1);
+        else
+            xf86PostKeyboardEvent(pInfo->dev, code, 1);
     }
     else if (operation == SPARKLE_SERVER_KEY_UP)
     {
         int code = sparkle_packet_stream_get_uint32(stream);
-        xf86PostKeyboardEvent(pInfo->dev, code, 0);
+        if (code == 122)
+            SparkleiRMB(pInfo, 0);
+        else
+            xf86PostKeyboardEvent(pInfo->dev, code, 0);
     }
-    else if (operation == SPARKLE_SERVER_RMB)
-    {
-        int x = sparkle_packet_stream_get_uint32(stream);
-        int y = sparkle_packet_stream_get_uint32(stream);
-        int state = sparkle_packet_stream_get_uint32(stream);
-
-        SparkleiRMB(pInfo, x, y, state);
-    }
-    else if (operation == SPARKLE_SERVER_ENABLE_RMB)
-    {
-    }
-    
     
     sparkle_packet_stream_destroy(stream);
 }

@@ -18,8 +18,6 @@
 #define SPARKLE_SERVER_POINTER_MOTION           0x0a
 #define SPARKLE_SERVER_KEY_DOWN                 0x0b
 #define SPARKLE_SERVER_KEY_UP                   0x0c
-#define SPARKLE_SERVER_RMB                      0x0e
-#define SPARKLE_SERVER_ENABLE_RMB               0x0f
 
 
 #endif //SPARKLE_PROTOCOL_H
