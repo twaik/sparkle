@@ -145,7 +145,7 @@ EvdevAddAbsValuatorClass(DeviceIntPtr device)
     pInfo = device->public.devicePrivate;
     pEvdev = pInfo->private;
 
-    pEvdev->mt_mask = valuator_mask_new(4);
+    pEvdev->mt_mask = valuator_mask_new(2);
 
     if (!pEvdev->mt_mask) {
         xf86Msg(X_ERROR, "%s: failed to allocate MT valuator mask.\n",
@@ -153,17 +153,17 @@ EvdevAddAbsValuatorClass(DeviceIntPtr device)
         goto out;
     }
 
-    atoms = malloc(4 * sizeof(Atom));
+    atoms = malloc(2 * sizeof(Atom));
 
-    EvdevInitAxesLabels(pEvdev, Absolute, 4, atoms);
+    EvdevInitAxesLabels(pEvdev, Absolute, 2, atoms);
 
-    if (!InitValuatorClassDeviceStruct(device, 4, atoms,
+    if (!InitValuatorClassDeviceStruct(device, 2, atoms,
                                        GetMotionHistorySize(), Absolute)) {
         xf86IDrvMsg(pInfo, X_ERROR, "failed to initialize valuator class device.\n");
         goto out;
     }
 
-    if (!InitTouchClassDeviceStruct(device, 10, XIDirectTouch, 4)) {
+    if (!InitTouchClassDeviceStruct(device, 10, XIDirectTouch, 2)) {
         xf86Msg(X_ERROR, "%s: failed to initialize touch class device.\n",
                 device->name);
         goto out;
@@ -185,21 +185,6 @@ EvdevAddAbsValuatorClass(DeviceIntPtr device)
                                    resolution, 0, resolution, Absolute);
     xf86InitValuatorDefaults(device, axnum);
 
-    axnum = 2;
-    xf86InitValuatorAxisStruct(device, axnum,
-                                   atoms[axnum],
-                                   0,
-                                   255, //XXX
-                                   resolution, 0, resolution,
-                                   Absolute);
-
-    axnum = 3;
-    xf86InitValuatorAxisStruct(device, axnum,
-                                   atoms[axnum],
-                                   0,
-                                   200, //XXX
-                                   resolution, 0, resolution,
-                                   Absolute);
 
     free(atoms);
 
@@ -362,8 +347,6 @@ static void SparkleiPointerDown(InputInfoPtr pInfo, int slot, int x, int y)
     
     valuator_mask_set(pEvdev->mt_mask, 0, x);
     valuator_mask_set(pEvdev->mt_mask, 1, y);
-    valuator_mask_set(pEvdev->mt_mask, 2, 1);
-    valuator_mask_set(pEvdev->mt_mask, 3, 1);
     xf86PostTouchEvent(pInfo->dev, slot + 1, 18, 0, pEvdev->mt_mask);
     pEvdev->slot_state[slot + 1] = 1;
     valuator_mask_zero(pEvdev->mt_mask);
@@ -451,7 +434,7 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     else if (operation == SPARKLE_SERVER_KEY_DOWN)
     {
         int code = sparkle_packet_stream_get_uint32(stream);
-        if (code == 122)
+        if (code == 122) //122
             SparkleiRMB(pInfo, 1);
         else
             xf86PostKeyboardEvent(pInfo->dev, code, 1);
@@ -459,7 +442,7 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     else if (operation == SPARKLE_SERVER_KEY_UP)
     {
         int code = sparkle_packet_stream_get_uint32(stream);
-        if (code == 122)
+        if (code == 122) //122
             SparkleiRMB(pInfo, 0);
         else
             xf86PostKeyboardEvent(pInfo->dev, code, 0);
@@ -617,8 +600,6 @@ static void EvdevInitAxesLabels(EvdevPtr pEvdev, int mode, int natoms, Atom *ato
 {
     atoms[0] = XIGetKnownProperty(AXIS_LABEL_PROP_ABS_X);
     atoms[1] = XIGetKnownProperty(AXIS_LABEL_PROP_ABS_Y);
-    atoms[2] = XIGetKnownProperty(AXIS_LABEL_PROP_ABS_MT_TOUCH_MAJOR);
-    atoms[3] = XIGetKnownProperty(AXIS_LABEL_PROP_ABS_MT_TOUCH_MINOR);
 }
 
 static void EvdevInitButtonLabels(EvdevPtr pEvdev, int natoms, Atom *atoms)
@@ -639,4 +620,5 @@ static void EvdevInitButtonLabels(EvdevPtr pEvdev, int natoms, Atom *atoms)
     atoms[2] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_2);
 #endif
 }
+
 
