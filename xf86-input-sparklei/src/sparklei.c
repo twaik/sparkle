@@ -348,7 +348,7 @@ static void SparkleiPointerDown(InputInfoPtr pInfo, int slot, int x, int y)
     valuator_mask_set(pEvdev->mt_mask, 0, x);
     valuator_mask_set(pEvdev->mt_mask, 1, y);
     xf86PostTouchEvent(pInfo->dev, slot + 1, 18, 0, pEvdev->mt_mask);
-    pEvdev->slot_state[slot + 1] = 1;
+    pEvdev->slot_state[slot] = 1;
     valuator_mask_zero(pEvdev->mt_mask);
 }
 
@@ -357,7 +357,7 @@ static void SparkleiPointerUp(InputInfoPtr pInfo, int slot)
     EvdevPtr          pEvdev   = pInfo->private;
     
     xf86PostTouchEvent(pInfo->dev, slot + 1, 20, 0, pEvdev->mt_mask);
-    pEvdev->slot_state[slot + 1] = 0;
+    pEvdev->slot_state[slot] = 0;
     valuator_mask_zero(pEvdev->mt_mask);
 }
 
@@ -367,10 +367,8 @@ static void SparkleiPointerMotion(InputInfoPtr pInfo, int slot, int x, int y)
     
     valuator_mask_set(pEvdev->mt_mask, 0, x);
     valuator_mask_set(pEvdev->mt_mask, 1, y);
-    if (pEvdev->slot_state[slot + 1] == 1)
-    {
+    if (pEvdev->slot_state[slot] == 1)
         xf86PostTouchEvent(pInfo->dev, slot + 1, 19, 0, pEvdev->mt_mask);
-    }
     valuator_mask_zero(pEvdev->mt_mask);
 }
 
