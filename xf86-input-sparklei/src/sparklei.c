@@ -223,12 +223,11 @@ EvdevAddButtonClass(DeviceIntPtr device)
     InputInfoPtr pInfo;
     EvdevPtr pEvdev;
     Atom *labels;
+    int n_buttons = 3;
 
     pInfo = device->public.devicePrivate;
     pEvdev = pInfo->private;
     
-    int n_buttons = 3;
-
     labels = malloc(n_buttons * sizeof(Atom)); // NUM_BUTTONS * ATOM
     EvdevInitButtonLabels(pEvdev, n_buttons, labels); // NUM_BUTTONS
 
@@ -624,7 +623,7 @@ static void EvdevInitAxesLabels(EvdevPtr pEvdev, int mode, int natoms, Atom *ato
 
 static void EvdevInitButtonLabels(EvdevPtr pEvdev, int natoms, Atom *atoms)
 {
-#if 0
+#if 1
     Atom atom;
     int button = 0;
 

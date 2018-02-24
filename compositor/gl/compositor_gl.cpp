@@ -223,6 +223,7 @@ public:
     void destroyTexture(); //FIXME Temporary solution
     const RectangleA &position();
     int strata();
+    bool blending();
     
     void setPosition(int x1, int y1, int x2, int y2);
     void setStrata(int strata);
@@ -235,6 +236,7 @@ protected:
     Texture *_texture;
     RectangleA _position;
     int _strata;
+    bool _blending;
     RectangleA _damage;
 };
 
@@ -248,6 +250,7 @@ CompositorGLSurface::CompositorGLSurface(const std::string &name)
     _name = name;
     _texture = 0;
     _strata = 0;
+    _blending = false;
 }
 
 const std::string &CompositorGLSurface::name()
@@ -279,6 +282,11 @@ const RectangleA &CompositorGLSurface::position()
 int CompositorGLSurface::strata()
 {
     return _strata;
+}
+
+bool CompositorGLSurface::blending()
+{
+    return _blending;
 }
 
 void CompositorGLSurface::setPosition(int x1, int y1, int x2, int y2)
@@ -405,10 +413,10 @@ private:
     void setSurfaceStrata(const std::string &name, int strata);
     void addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2);
 
-    CompositorGLSurface *findSurface(const std::string &name);
-    void transformCoordinates(int x, int y, CompositorGLSurface *surface, int *_x, int *_y);
+    std::shared_ptr<CompositorGLSurface> findSurface(const std::string &name);
+    void transformCoordinates(int x, int y, std::shared_ptr<CompositorGLSurface> surface, int *_x, int *_y);
     
-    static bool sortFunction(CompositorGLSurface *a1, CompositorGLSurface *a2);
+    static bool sortFunction(std::shared_ptr<CompositorGLSurface> a1, std::shared_ptr<CompositorGLSurface> a2);
 
 private:
     WereEventLoop *_loop;
@@ -418,7 +426,7 @@ private:
 
     SparkleServer *_server;
 
-    std::vector<CompositorGLSurface *> _surfaces;
+    std::vector< std::shared_ptr<CompositorGLSurface> > _surfaces;
 
     std::array<float, 20> _plane;
     bool _redraw;
@@ -428,9 +436,6 @@ private:
 
 CompositorGL::~CompositorGL()
 {
-    for (unsigned int i = 0; i < _surfaces.size(); ++i)
-        delete _surfaces[i];
-    
     delete _server;
     
     if (_gl)
@@ -555,10 +560,9 @@ void CompositorGL::draw()
     
 #endif
 
-    for (unsigned int i = 0; i < _surfaces.size(); ++i)
+    for (auto it = _surfaces.begin(); it != _surfaces.end(); ++it)
     {
-        CompositorGLSurface *surface = _surfaces[i];
-        _redraw |= surface->updateTexture();
+        _redraw |= (*it)->updateTexture();
     }
     
     if (_redraw)
@@ -571,9 +575,9 @@ void CompositorGL::draw()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glUseProgram(_gl->_textureProgram);
 
-        for (unsigned int i = 0; i < _surfaces.size(); ++i)
+        for (auto it = _surfaces.begin(); it != _surfaces.end(); ++it)
         {
-            CompositorGLSurface *surface = _surfaces[i];
+            std::shared_ptr<CompositorGLSurface> surface = (*it);
 
             //XXX Ignore disabled layers
 
@@ -609,16 +613,21 @@ void CompositorGL::draw()
             glEnableVertexAttribArray(_gl->_textureTexCoordsHandle);
 
 #ifdef USE_BLENDING
-            if (i >= 1)
+            if (surface->blending())
             {
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
 #endif
+
             glBindTexture(GL_TEXTURE_2D, surface->texture()->id());
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            
 #ifdef USE_BLENDING
-            glDisable(GL_BLEND);
+            if (surface->blending())
+            {
+                glDisable(GL_BLEND);
+            }
 #endif
 
             glDisableVertexAttribArray(_gl->_texturePositionHandle);
@@ -638,9 +647,9 @@ void CompositorGL::draw()
 
 void CompositorGL::pointerDown(int slot, int x, int y)
 {
-    for (unsigned int i = _surfaces.size(); i > 0; --i)
+    for (auto rit = _surfaces.rbegin(); rit != _surfaces.rend(); ++rit)
     {
-        CompositorGLSurface *surface = _surfaces[i - 1];
+        std::shared_ptr<CompositorGLSurface> surface = (*rit);
         int _x;
         int _y;
         transformCoordinates(x, y, surface, &_x, &_y);
@@ -661,9 +670,9 @@ void CompositorGL::pointerDown(int slot, int x, int y)
 
 void CompositorGL::pointerUp(int slot, int x, int y)
 {
-    for (unsigned int i = _surfaces.size(); i > 0; --i)
+    for (auto rit = _surfaces.rbegin(); rit != _surfaces.rend(); ++rit)
     {
-        CompositorGLSurface *surface = _surfaces[i - 1];
+        std::shared_ptr<CompositorGLSurface> surface = (*rit);
         int _x;
         int _y;
         transformCoordinates(x, y, surface, &_x, &_y);
@@ -684,9 +693,9 @@ void CompositorGL::pointerUp(int slot, int x, int y)
 
 void CompositorGL::pointerMotion(int slot, int x, int y)
 {
-    for (unsigned int i = _surfaces.size(); i > 0; --i)
+    for (auto rit = _surfaces.rbegin(); rit != _surfaces.rend(); ++rit)
     {
-        CompositorGLSurface *surface = _surfaces[i - 1];
+        std::shared_ptr<CompositorGLSurface> surface = (*rit);
         int _x;
         int _y;
         transformCoordinates(x, y, surface, &_x, &_y);
@@ -797,7 +806,7 @@ void CompositorGL::registerSurfaceFile(const std::string &name, const std::strin
 {
     unregisterSurface(name);
         
-    CompositorGLSurface *surface = new CompositorGLSurfaceFile(name, path, width, height);
+    std::shared_ptr<CompositorGLSurface> surface(new CompositorGLSurfaceFile(name, path, width, height));
     _surfaces.push_back(surface);
     std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
     were_debug("Surface [%s] registered.\n", name.c_str());
@@ -810,10 +819,9 @@ void CompositorGL::unregisterSurface(const std::string &name)
     auto it = _surfaces.begin();
     while (it != _surfaces.end())
     {
-        CompositorGLSurface *surface = *it;
+        std::shared_ptr<CompositorGLSurface> surface = (*it);
         if (surface->name() == name)
         {
-            delete surface;
             it = _surfaces.erase(it);
             were_debug("Surface [%s] unregistered.\n", name.c_str());
         }
@@ -828,7 +836,7 @@ void CompositorGL::setSurfacePosition(const std::string &name, int x1, int y1, i
 {
     were_debug("Surface [%s]: position changed (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
     
-    CompositorGLSurface *surface = findSurface(name);
+    std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
     {
         surface->setPosition(x1, y1, x2, y2);
@@ -840,7 +848,7 @@ void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
 {
     were_debug("Surface [%s]: strata changed.\n", name.c_str());
     
-    CompositorGLSurface *surface = findSurface(name);
+    std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
     {
         surface->setStrata(strata);
@@ -852,19 +860,19 @@ void CompositorGL::addSurfaceDamage(const std::string &name, int x1, int y1, int
 {
     //were_debug("Surface [%s]: damage (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
     
-    CompositorGLSurface *surface = findSurface(name);
+    std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
         surface->addDamage(x1, y1, x2, y2);
 }
 
 //==================================================================================================
 
-CompositorGLSurface *CompositorGL::findSurface(const std::string &name)
+std::shared_ptr<CompositorGLSurface> CompositorGL::findSurface(const std::string &name)
 {
-    for (unsigned int i = 0; i < _surfaces.size(); ++i)
+    for (auto it = _surfaces.begin(); it != _surfaces.end(); ++it)
     {
-        if (_surfaces[i]->name() == name)
-            return _surfaces[i];
+        if ((*it)->name() == name)
+            return (*it);
     }
     
     were_debug("Surface [%s]: not registered.\n", name.c_str());
@@ -872,7 +880,7 @@ CompositorGLSurface *CompositorGL::findSurface(const std::string &name)
     return 0;
 }
 
-void CompositorGL::transformCoordinates(int x, int y, CompositorGLSurface *surface, int *_x, int *_y)
+void CompositorGL::transformCoordinates(int x, int y, std::shared_ptr<CompositorGLSurface> surface, int *_x, int *_y)
 {
     *_x = -1;
     *_y = -1;
@@ -889,7 +897,7 @@ void CompositorGL::transformCoordinates(int x, int y, CompositorGLSurface *surfa
     *_y = (y - y1a) * surface->texture()->height() / (y2a - y1a);
 }
 
-bool CompositorGL::sortFunction(CompositorGLSurface *a1, CompositorGLSurface *a2)
+bool CompositorGL::sortFunction(std::shared_ptr<CompositorGLSurface> a1, std::shared_ptr<CompositorGLSurface> a2)
 {
     return a1->strata() < a2->strata();
 }

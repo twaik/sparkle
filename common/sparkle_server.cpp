@@ -7,8 +7,6 @@
 
 SparkleServer::~SparkleServer()
 {
-    _clients.clear();
-    
     delete _server;
 }
 
@@ -30,18 +28,7 @@ void SparkleServer::handleConnection()
         return;
     
     std::shared_ptr<SparkleConnection> client(new SparkleConnection(_loop, socket));
-
-#if 0
-    client->signal_disconnected.connect([this, client]()
-    {
-        _loop->queue(std::bind(&SparkleServer::handleDisconnection, this, client));
-    });
-
-    client->signal_packet.connect([this, client](std::shared_ptr<SparklePacket> packet)
-    {
-        _loop->queue(std::bind(&SparkleServer::handlePacket, this, client, packet));
-    });
-#else
+    
     std::weak_ptr<SparkleConnection> client_weak = client;
     
     client->signal_disconnected.connect([this, client_weak]()
@@ -53,7 +40,6 @@ void SparkleServer::handleConnection()
     {
         _loop->queue(std::bind(&SparkleServer::handlePacket, this, client_weak.lock(), packet));
     });
-#endif
 
     _clients.insert(client);
     

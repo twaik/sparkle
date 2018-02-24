@@ -58,10 +58,12 @@ install-drivers: build-drivers
 	make -C xf86-input-sparklei install
 	make -C pcm-sparkle install
 
+install: install-drivers
+
 #===============================================================================
 
 .PHONY: all \
 configure-were configure-drivers configure-pc configure \
 build-were build-drivers build-pc build \
-clean maintainer-clean install-drivers
+clean maintainer-clean install-drivers install
 
