@@ -504,6 +504,14 @@ void CompositorGL::finishForNativeDisplay()
 void CompositorGL::initializeForNativeWindow(NativeWindowType window)
 {
     _gl = new CompositorGL_GL(_egl, window);
+    
+    SparklePacket packet(64);
+    SparklePacketStream stream(&packet);
+    stream.addUint32(SPARKLE_SERVER_DISPLAY_SIZE);
+    stream.addUint32(_gl->_surfaceWidth);
+    stream.addUint32(_gl->_surfaceHeight);
+    _server->broadcast(&packet);
+    
     _redraw = true;
 }
 

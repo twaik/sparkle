@@ -10,6 +10,8 @@
 
 void android_main(struct android_app *app)
 {
+    were_message("android_main started.\n");
+
     umask(0);
 
     try
