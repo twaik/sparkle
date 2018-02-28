@@ -82,22 +82,33 @@ void SparkleConnection::handleData()
         
         if (_socket->receive(reinterpret_cast<unsigned char *>(&size), sizeof(uint32_t)) != sizeof(uint32_t))
         {
-            were_debug("[%p][%s] receive (header) failed, DISCONNECTING.\n", this, __PRETTY_FUNCTION__);
+            were_debug("[%p][%s] receive (size) failed, DISCONNECTING.\n", this, __PRETTY_FUNCTION__);
             _socket->disconnect();
             return;
         }
         bytesAvailable -= sizeof(uint32_t);
-    
-        std::shared_ptr<SparklePacket> packet(new SparklePacket(size));
-        unsigned char *data = packet->allocate(size);
         
-        if (_socket->receive(data, size) != size)
+        uint32_t dataSize = size - sizeof(SparklePacketHeader);
+    
+        std::shared_ptr<SparklePacket> packet(new SparklePacket(dataSize));
+        
+        if (_socket->receive(reinterpret_cast<unsigned char *>(packet->header()), sizeof(SparklePacketHeader)) != sizeof(SparklePacketHeader))
+        {
+            were_debug("[%p][%s] receive (header) failed, DISCONNECTING.\n", this, __PRETTY_FUNCTION__);
+            _socket->disconnect();
+            return;
+        }
+        bytesAvailable -= sizeof(SparklePacketHeader);
+        
+        unsigned char *data = packet->allocate(dataSize);
+        
+        if (_socket->receive(data, dataSize) != dataSize)
         {
             were_debug("[%p][%s] receive (data) failed, DISCONNECTING.\n", this, __PRETTY_FUNCTION__);
             _socket->disconnect();
             return;
         }
-        bytesAvailable -= size;
+        bytesAvailable -= dataSize;
         
         //were_debug("RECV %d\n", packet->size());
         signal_packet(packet);
@@ -113,9 +124,15 @@ void SparkleConnection::send(SparklePacket *packet)
     if (_socket->state() != WereSocketUnix::ConnectedState)
         return;
     
-    uint32_t size = packet->size();
+    uint32_t size = sizeof(SparklePacketHeader) + packet->size();
     
     if (_socket->send(reinterpret_cast<unsigned char *>(&size), sizeof(uint32_t)) != sizeof(uint32_t))
+    {
+        were_debug("[%p][%s] n != size (sending size), DISCONNECTING.", this, __PRETTY_FUNCTION__);
+        _socket->disconnect();
+    }
+    
+    if (_socket->send(reinterpret_cast<unsigned char *>(packet->header()), sizeof(SparklePacketHeader)) != sizeof(SparklePacketHeader))
     {
         were_debug("[%p][%s] n != size (sending header), DISCONNECTING.", this, __PRETTY_FUNCTION__);
         _socket->disconnect();
@@ -126,6 +143,20 @@ void SparkleConnection::send(SparklePacket *packet)
         were_debug("[%p][%s] n != size (sending data), DISCONNECTING.", this, __PRETTY_FUNCTION__);
         _socket->disconnect();
     }
+}
+
+void SparkleConnection::send1(const packet_type_t *packetType, void *data)
+{
+    SparklePacket packet(64);
+    packet.header()->operation = packetType->code;
+    packetType->pack(&packet, data);
+    
+    send(&packet);
+}
+
+void SparkleConnection::unpack1(const packet_type_t *packetType, SparklePacket *packet, void *data)
+{
+    packetType->unpack(packet, data);
 }
 
 //==================================================================================================
@@ -149,6 +180,19 @@ void sparkle_connection_send(sparkle_connection_t *connection, sparkle_packet_t 
     SparklePacket *_packet = static_cast<SparklePacket *>(packet);
     _connection->send(_packet);
 }
+
+void sparkle_connection_send1(sparkle_connection_t *connection, const packet_type_t *packetType, void *data)
+{
+    SparkleConnection *_connection = static_cast<SparkleConnection *>(connection);
+    _connection->send1(packetType, data);
+}
+
+void sparkle_connection_unpack1(const packet_type_t *packetType, sparkle_packet_t *packet, void *data)
+{
+    SparklePacket *_packet = static_cast<SparklePacket *>(packet);
+    SparkleConnection::unpack1(packetType, _packet, data);
+}
+
 
 void sparkle_connection_add_connection_callback(sparkle_connection_t *connection, were_event_loop_t *loop, void (*f)(void *user), void *user)
 {

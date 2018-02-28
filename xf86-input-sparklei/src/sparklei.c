@@ -395,58 +395,52 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     InputInfoPtr      pInfo    = (InputInfoPtr)user;
     EvdevPtr          pEvdev   = pInfo->private;
     
-    sparkle_packet_stream_t *stream = sparkle_packet_stream_create(packet);
+    uint32_t operation = sparkle_packet_header(packet)->operation;
     
-    uint32_t operation = sparkle_packet_stream_get_uint32(stream);
-    
-    if (operation == SPARKLE_SERVER_POINTER_DOWN)
+    if (operation == operation1(&pointer_down_notification))
     {
-        const char *name = sparkle_packet_stream_get_string(stream);
-        int slot = sparkle_packet_stream_get_uint32(stream);
-        int x = sparkle_packet_stream_get_uint32(stream);
-        int y = sparkle_packet_stream_get_uint32(stream);
-        
-        if (strcmp(name, pEvdev->surface_name) == 0)
-            SparkleiPointerDown(pInfo, slot, x, y);
+        struct _pointer_down_notification r1;
+        sparkle_connection_unpack1(&pointer_down_notification, packet, &r1);
+
+        if (strcmp(r1.surface, pEvdev->surface_name) == 0)
+            SparkleiPointerDown(pInfo, r1.slot, r1.x, r1.y);
     }
-    else if (operation == SPARKLE_SERVER_POINTER_UP)
+    else if (operation == operation1(&pointer_up_notification))
     {
-        const char *name = sparkle_packet_stream_get_string(stream);
-        int slot = sparkle_packet_stream_get_uint32(stream);
-        //int x = sparkle_packet_stream_get_uint32(stream);
-        //int y = sparkle_packet_stream_get_uint32(stream);
+        struct _pointer_up_notification r1;
+        sparkle_connection_unpack1(&pointer_up_notification, packet, &r1);
         
-        if (strcmp(name, pEvdev->surface_name) == 0)
-            SparkleiPointerUp(pInfo, slot);
+        if (strcmp(r1.surface, pEvdev->surface_name) == 0)
+            SparkleiPointerUp(pInfo, r1.slot);
     }
-    else if (operation == SPARKLE_SERVER_POINTER_MOTION)
+    else if (operation == operation1(&pointer_motion_notification))
     {
-        const char *name = sparkle_packet_stream_get_string(stream);
-        int slot = sparkle_packet_stream_get_uint32(stream);
-        int x = sparkle_packet_stream_get_uint32(stream);
-        int y = sparkle_packet_stream_get_uint32(stream);
+        struct _pointer_motion_notification r1;
+        sparkle_connection_unpack1(&pointer_motion_notification, packet, &r1);
         
-        if (strcmp(name, pEvdev->surface_name) == 0)
-            SparkleiPointerMotion(pInfo, slot, x, y);
+        if (strcmp(r1.surface, pEvdev->surface_name) == 0)
+            SparkleiPointerMotion(pInfo, r1.slot, r1.x, r1.y);
     }
-    else if (operation == SPARKLE_SERVER_KEY_DOWN)
+    else if (operation == operation1(&key_down_notification))
     {
-        int code = sparkle_packet_stream_get_uint32(stream);
-        if (code == 122) //122
+        struct _key_down_notification r1;
+        sparkle_connection_unpack1(&key_down_notification, packet, &r1);
+        
+        if (r1.code == 122) //122
             SparkleiRMB(pInfo, 1);
         else
-            xf86PostKeyboardEvent(pInfo->dev, code, 1);
+            xf86PostKeyboardEvent(pInfo->dev, r1.code, 1);
     }
-    else if (operation == SPARKLE_SERVER_KEY_UP)
+    else if (operation == operation1(&key_up_notification))
     {
-        int code = sparkle_packet_stream_get_uint32(stream);
-        if (code == 122) //122
+        struct _key_up_notification r1;
+        sparkle_connection_unpack1(&key_up_notification, packet, &r1);
+        
+        if (r1.code == 122) //122
             SparkleiRMB(pInfo, 0);
         else
-            xf86PostKeyboardEvent(pInfo->dev, code, 0);
+            xf86PostKeyboardEvent(pInfo->dev, r1.code, 0);
     }
-    
-    sparkle_packet_stream_destroy(stream);
 }
 
 static int

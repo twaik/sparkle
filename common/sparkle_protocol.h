@@ -1,24 +1,68 @@
 #ifndef SPARKLE_PROTOCOL_H
 #define SPARKLE_PROTOCOL_H
 
+//==================================================================================================
 
-#define SPARKLE_CLIENT_REGISTER_SURFACE_FILE    0x00
-#define SPARKLE_CLIENT_UNREGISTER_SURFACE       0x01
-#define SPARKLE_CLIENT_SET_SURFACE_POSITION     0x02
-#define SPARKLE_CLIENT_ADD_SURFACE_DAMAGE       0x03
-#define SPARKLE_CLIENT_KEY_PRESS                0x04
-#define SPARKLE_CLIENT_KEY_RELEASE              0x05
-#define SPARKLE_CLIENT_SET_SURFACE_STRATA       0x06
-#define SPARKLE_CLIENT_ECHO                     0x0d
+struct _packet_type_t;
+typedef struct _packet_type_t packet_type_t;
 
+#ifdef __cplusplus
 
-#define SPARKLE_SERVER_DISPLAY_SIZE             0x07
-#define SPARKLE_SERVER_POINTER_DOWN             0x08
-#define SPARKLE_SERVER_POINTER_UP               0x09
-#define SPARKLE_SERVER_POINTER_MOTION           0x0a
-#define SPARKLE_SERVER_KEY_DOWN                 0x0b
-#define SPARKLE_SERVER_KEY_UP                   0x0c
+class SparklePacket;
 
+struct _packet_type_t
+{
+    int code;
+    void (*pack)(SparklePacket *packet, void *data);
+    void (*unpack)(SparklePacket *packet, void *data);
+};
+
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+int operation1(const packet_type_t *packetType);
+#ifdef __cplusplus
+}
+#endif
+
+//==================================================================================================
+
+struct _register_surface_file_request {const char *name; const char *path; int width; int height;};
+extern const packet_type_t register_surface_file_request;
+
+struct _unregister_surface_request {const char *name;};
+extern const packet_type_t unregister_surface_request;
+
+struct _set_surface_position_request {const char *name; int x1; int y1; int x2; int y2;};
+extern const packet_type_t set_surface_position_request;
+
+struct _set_surface_strata_request {const char *name; int strata;};
+extern const packet_type_t set_surface_strata_request;
+
+struct _add_surface_damage_request {const char *name; int x1; int y1; int x2; int y2;};
+extern const packet_type_t add_surface_damage_request;
+
+struct _display_size_notification {int width; int height;};
+extern const packet_type_t display_size_notification;
+
+struct _pointer_down_notification {const char *surface; int slot; int x; int y;};
+extern const packet_type_t pointer_down_notification;
+
+struct _pointer_up_notification {const char *surface; int slot; int x; int y;};
+extern const packet_type_t pointer_up_notification;
+
+struct _pointer_motion_notification {const char *surface; int slot; int x; int y;};
+extern const packet_type_t pointer_motion_notification;
+
+struct _key_down_notification {int code;};
+extern const packet_type_t key_down_notification;
+
+struct _key_up_notification {int code;};
+extern const packet_type_t key_up_notification;
+
+//==================================================================================================
 
 #endif //SPARKLE_PROTOCOL_H
 

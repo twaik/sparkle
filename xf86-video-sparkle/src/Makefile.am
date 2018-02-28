@@ -43,5 +43,7 @@ sparkle_drv_la_SOURCES = \
          ../../common/sparkle_packet.cpp \
          ../../common/sparkle_packet.h \
          ../../common/sparkle_connection.cpp \
-         ../../common/sparkle_connection.h
+         ../../common/sparkle_connection.h \
+         ../../common/sparkle_protocol.cpp \
+         ../../common/sparkle_protocol.h
 

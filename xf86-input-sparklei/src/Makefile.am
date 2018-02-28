@@ -11,5 +11,7 @@ AM_CPPFLAGS =-I$(top_srcdir)/include -I../../were/include -I../..
                                ../../common/sparkle_connection.cpp \
 			                   ../../common/sparkle_connection.h \
                                ../../common/sparkle_packet.cpp \
-			                   ../../common/sparkle_packet.h
+			                   ../../common/sparkle_packet.h \
+                               ../../common/sparkle_protocol.cpp \
+			                   ../../common/sparkle_protocol.h
 

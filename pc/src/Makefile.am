@@ -28,6 +28,8 @@ test_SOURCES = \
 	../../common/were_benchmark.h		\
 	../../common/sparkle_packet.cpp		\
 	../../common/sparkle_packet.h		\
+	../../common/sparkle_protocol.cpp   \
+	../../common/sparkle_protocol.h		\
 	../../common/sparkle_server.cpp		\
 	../../common/sparkle_server.h		\
 	../../common/sparkle_connection.cpp	\

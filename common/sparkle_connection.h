@@ -2,6 +2,7 @@
 #define SPARKLE_CONNECTION_H
 
 #include "common/sparkle_packet.h"
+#include "sparkle_protocol.h" //FIXME
 
 //==================================================================================================
 
@@ -26,6 +27,8 @@ public:
     bool connected();
     
     void send(SparklePacket *packet);
+    void send1(const packet_type_t *packetType, void *data);
+    static void unpack1(const packet_type_t *packetType, SparklePacket *packet, void *data);
 
 werethings:
     WereSignal<void ()> signal_connected;
@@ -60,6 +63,8 @@ sparkle_connection_t *sparkle_connection_create(were_event_loop_t *loop, const c
 void sparkle_connection_destroy(sparkle_connection_t *connection);
 
 void sparkle_connection_send(sparkle_connection_t *connection, sparkle_packet_t *packet);
+void sparkle_connection_send1(sparkle_connection_t *connection, const packet_type_t *packetType, void *data);
+void sparkle_connection_unpack1(const packet_type_t *packetType, sparkle_packet_t *packet, void *data);
 
 void sparkle_connection_add_connection_callback(sparkle_connection_t *connection, were_event_loop_t *loop, void (*f)(void *user), void *user);
 void sparkle_connection_add_disconnection_callback(sparkle_connection_t *connection, were_event_loop_t *loop, void (*f)(void *user), void *user);

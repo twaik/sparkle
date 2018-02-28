@@ -8,6 +8,7 @@
 #include "were/were_signal.h"
 #include <set>
 #include <string>
+#include "sparkle_protocol.h" //FIXME
 
 //==================================================================================================
 
@@ -22,6 +23,7 @@ public:
     SparkleServer(WereEventLoop *loop, const std::string &path);
     
     void broadcast(SparklePacket *packet);
+    void broadcast1(const packet_type_t *packetType, void *data);
 
 werethings:
     WereSignal<void (std::shared_ptr<SparkleConnection> client)> signal_connected;

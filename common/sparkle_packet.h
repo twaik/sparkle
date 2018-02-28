@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+struct SparklePacketHeader
+{
+    int operation;
+};
+
 //==================================================================================================
 #ifdef __cplusplus
 
@@ -16,6 +21,7 @@ public:
     
     unsigned char *data();
     unsigned int size() const;
+    SparklePacketHeader *header();
     
     unsigned char *allocate(unsigned int size);
     void add(const unsigned char *bytes, unsigned int size);
@@ -24,6 +30,7 @@ private:
     unsigned int _maxSize;
     unsigned char *_data;
     unsigned int _size;
+    SparklePacketHeader _header;
 };
 
 class SparklePacketStream
@@ -39,6 +46,7 @@ public:
     uint32_t getUint32();
     void addString(const std::string &a);
     std::string getString();
+    const char *getStringPointer();
     
 private:
     SparklePacket *_packet;
@@ -61,6 +69,7 @@ void sparkle_packet_destroy(sparkle_packet_t *packet);
 
 unsigned char *sparkle_packet_data(sparkle_packet_t *packet);
 unsigned int sparkle_packet_size(sparkle_packet_t *packet);
+struct SparklePacketHeader *sparkle_packet_header(sparkle_packet_t *packet);
 
 sparkle_packet_stream_t *sparkle_packet_stream_create(sparkle_packet_t *packet);
 void sparkle_packet_stream_destroy(sparkle_packet_stream_t *stream);

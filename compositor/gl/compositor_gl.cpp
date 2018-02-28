@@ -510,12 +510,8 @@ void CompositorGL::initializeForNativeWindow(NativeWindowType window)
 {
     _gl = new CompositorGL_GL(_egl, window);
     
-    SparklePacket packet(64);
-    SparklePacketStream stream(&packet);
-    stream.addUint32(SPARKLE_SERVER_DISPLAY_SIZE);
-    stream.addUint32(_gl->_surfaceWidth);
-    stream.addUint32(_gl->_surfaceHeight);
-    _server->broadcast(&packet);
+    _display_size_notification r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
+    _server->broadcast1(&display_size_notification, &r1);
     
     _redraw = true;
 }
@@ -550,12 +546,8 @@ void CompositorGL::draw()
         _gl->_surfaceHeight = height;
         glViewport(0, 0, _gl->_surfaceWidth, _gl->_surfaceHeight);
         
-        SparklePacket packet(64);
-        SparklePacketStream stream(&packet);
-        stream.addUint32(SPARKLE_SERVER_DISPLAY_SIZE);
-        stream.addUint32(_gl->_surfaceWidth);
-        stream.addUint32(_gl->_surfaceHeight);
-        _server->broadcast(&packet);
+        _display_size_notification r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
+        _server->broadcast1(&display_size_notification, &r1);
     }
     
 #endif
@@ -655,14 +647,8 @@ void CompositorGL::pointerDown(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            SparklePacket packet(64);
-            SparklePacketStream stream(&packet);
-            stream.addUint32(SPARKLE_SERVER_POINTER_DOWN);
-            stream.addString(surface->name());
-            stream.addUint32(slot);
-            stream.addUint32(_x);
-            stream.addUint32(_y);
-            _server->broadcast(&packet);
+            _pointer_down_notification r1 = {surface->name().c_str(), slot, _x, _y};
+            _server->broadcast1(&pointer_down_notification, &r1);
             return;
         }
     }
@@ -678,14 +664,8 @@ void CompositorGL::pointerUp(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            SparklePacket packet(64);
-            SparklePacketStream stream(&packet);
-            stream.addUint32(SPARKLE_SERVER_POINTER_UP);
-            stream.addString(surface->name());
-            stream.addUint32(slot);
-            stream.addUint32(_x);
-            stream.addUint32(_y);
-            _server->broadcast(&packet);
+            _pointer_up_notification r1 = {surface->name().c_str(), slot, _x, _y};
+            _server->broadcast1(&pointer_up_notification, &r1);
             return;
         }
     }
@@ -701,14 +681,8 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            SparklePacket packet(64);
-            SparklePacketStream stream(&packet);
-            stream.addUint32(SPARKLE_SERVER_POINTER_MOTION);
-            stream.addString(surface->name());
-            stream.addUint32(slot);
-            stream.addUint32(_x);
-            stream.addUint32(_y);
-            _server->broadcast(&packet);
+            _pointer_motion_notification r1 = {surface->name().c_str(), slot, _x, _y};
+            _server->broadcast1(&pointer_motion_notification, &r1);
             return;
         }
     }
@@ -716,20 +690,14 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
 
 void CompositorGL::keyDown(int code)
 {
-    SparklePacket packet(64);
-    SparklePacketStream stream(&packet);
-    stream.addUint32(SPARKLE_SERVER_KEY_DOWN);
-    stream.addUint32(code);
-    _server->broadcast(&packet);
+    _key_down_notification r1 = {code};
+    _server->broadcast1(&key_down_notification, &r1);
 }
 
 void CompositorGL::keyUp(int code)
 {
-    SparklePacket packet(64);
-    SparklePacketStream stream(&packet);
-    stream.addUint32(SPARKLE_SERVER_KEY_UP);
-    stream.addUint32(code);
-    _server->broadcast(&packet);
+    _key_up_notification r1 = {code};
+    _server->broadcast1(&key_up_notification, &r1);
 }
 
 //==================================================================================================
@@ -738,67 +706,44 @@ void CompositorGL::connection(std::shared_ptr <SparkleConnection> client)
 {
     if (_gl != 0)
     {
-        SparklePacket packet(64);
-        SparklePacketStream stream(&packet);
-        stream.addUint32(SPARKLE_SERVER_DISPLAY_SIZE);
-        stream.addUint32(_gl->_surfaceWidth);
-        stream.addUint32(_gl->_surfaceHeight);
-        client->send(&packet);
+        _display_size_notification r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
+        client->send1(&display_size_notification, &r1);
     }
 }
 
 void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet)
 {
-    SparklePacketStream stream(packet.get());
+    uint32_t operation = packet->header()->operation;
     
-    uint32_t operation = stream.getUint32();
-    
-    if (operation == SPARKLE_CLIENT_REGISTER_SURFACE_FILE)
+    if (operation == register_surface_file_request.code)
     {
-        std::string name = stream.getString();
-        std::string path = stream.getString();
-        int width = stream.getUint32();
-        int height = stream.getUint32();
-        registerSurfaceFile(name, path, width, height);
+        _register_surface_file_request r1;
+        SparkleConnection::unpack1(&register_surface_file_request, packet.get(), &r1);
+        registerSurfaceFile(r1.name, r1.path, r1.width, r1.height);
     }
-    else if (operation == SPARKLE_CLIENT_UNREGISTER_SURFACE)
+    else if (operation == unregister_surface_request.code)
     {
-        std::string name = stream.getString();
-        unregisterSurface(name);
+        _unregister_surface_request r1;
+        SparkleConnection::unpack1(&unregister_surface_request, packet.get(), &r1);
+        unregisterSurface(r1.name);
     }
-    else if (operation == SPARKLE_CLIENT_SET_SURFACE_POSITION)
+    else if (operation == set_surface_position_request.code)
     {
-        std::string name = stream.getString();
-        int x1 = stream.getUint32();
-        int y1 = stream.getUint32();
-        int x2 = stream.getUint32();
-        int y2 = stream.getUint32();
-        setSurfacePosition(name, x1, y1, x2, y2);
+        _set_surface_position_request r1;
+        SparkleConnection::unpack1(&set_surface_position_request, packet.get(), &r1);
+        setSurfacePosition(r1.name, r1.x1, r1.y1, r1.x2, r1.y2);
     }
-    else if (operation == SPARKLE_CLIENT_SET_SURFACE_STRATA)
+    else if (operation == set_surface_strata_request.code)
     {
-        std::string name = stream.getString();
-        int strata = stream.getUint32();
-        setSurfaceStrata(name, strata);
+        _set_surface_strata_request r1;
+        SparkleConnection::unpack1(&set_surface_strata_request, packet.get(), &r1);
+        setSurfaceStrata(r1.name, r1.strata);
     }
-    else if (operation == SPARKLE_CLIENT_ADD_SURFACE_DAMAGE)
+    else if (operation == add_surface_damage_request.code)
     {
-        std::string name = stream.getString();
-        int x1 = stream.getUint32();
-        int y1 = stream.getUint32();
-        int x2 = stream.getUint32();
-        int y2 = stream.getUint32();
-        addSurfaceDamage(name, x1, y1, x2, y2);
-    }
-    else if (operation == SPARKLE_CLIENT_ECHO)
-    {
-        unsigned int size = packet->size() - sizeof(uint32_t);
-        
-        SparklePacket out_packet(64);
-        SparklePacketStream out_stream(&out_packet);
-        out_stream.addData(stream.getData(size), size);
-        
-        _server->broadcast(&out_packet);
+        _add_surface_damage_request r1;
+        SparkleConnection::unpack1(&add_surface_damage_request, packet.get(), &r1);
+        addSurfaceDamage(r1.name, r1.x1, r1.y1, r1.x2, r1.y2);
     }
 }
 

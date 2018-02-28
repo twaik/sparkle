@@ -27,6 +27,11 @@ unsigned int SparklePacket::size() const
     return _size;
 }
 
+SparklePacketHeader *SparklePacket::header()
+{
+    return &_header;
+}
+
 unsigned char *SparklePacket::allocate(unsigned int size)
 {
     unsigned char *p = _data + _size;
@@ -91,6 +96,13 @@ std::string SparklePacketStream::getString()
     const char *p = reinterpret_cast<const char*>(getData(length + 1));
     return std::string(p, length);
 }
+
+const char *SparklePacketStream::getStringPointer()
+{
+    uint32_t length = getUint32();
+    const char *p = reinterpret_cast<const char*>(getData(length + 1));
+    return p;
+}
     
 //==================================================================================================
 
@@ -118,6 +130,12 @@ unsigned int sparkle_packet_size(sparkle_packet_t *packet)
     return _packet->size();
 }
 
+SparklePacketHeader *sparkle_packet_header(sparkle_packet_t *packet)
+{
+    SparklePacket *_packet = static_cast<SparklePacket *>(packet);
+    return _packet->header();
+}
+
 sparkle_packet_stream_t *sparkle_packet_stream_create(sparkle_packet_t *packet)
 {
     SparklePacket *_packet = static_cast<SparklePacket *>(packet);
@@ -140,8 +158,7 @@ uint32_t sparkle_packet_stream_get_uint32(sparkle_packet_stream_t *stream)
 const char *sparkle_packet_stream_get_string(sparkle_packet_stream_t *stream)
 {
     SparklePacketStream *_stream = static_cast<SparklePacketStream *>(stream);
-    uint32_t length = _stream->getUint32();
-    return reinterpret_cast<const char *>(_stream->getData(length + 1));
+    return _stream->getStringPointer();
 }
 
 void sparkle_packet_stream_add_uint32(sparkle_packet_stream_t *stream, uint32_t a)
