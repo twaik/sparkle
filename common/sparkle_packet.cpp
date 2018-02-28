@@ -5,6 +5,39 @@
 
 //==================================================================================================
 
+const packer_t p_uint32 =
+{
+    .pack = [](SparklePacketStream *stream, void *data)
+    {
+        stream->write(data, sizeof(uint32_t));
+    },
+    .unpack = [](SparklePacketStream *stream, void *data)
+    {
+        stream->read(data, sizeof(uint32_t));
+    },
+};
+
+const packer_t p_string =
+{
+    .pack = [](SparklePacketStream *stream, void *data)
+    {
+        char **_data = reinterpret_cast<char **>(data);
+        uint32_t length;
+        length = strlen(*_data);
+        stream->write(&length, sizeof(uint32_t));
+        stream->write(*_data, length + 1);
+    },
+    .unpack = [](SparklePacketStream *stream, void *data)
+    {
+        const char **_data = reinterpret_cast<const char **>(data);
+        uint32_t length;
+        stream->read(&length, sizeof(uint32_t));
+        *_data = reinterpret_cast<const char *>(stream->getData(length + 1));
+    },
+};
+
+//==================================================================================================
+
 SparklePacket::~SparklePacket()
 {
     delete[] _data;
@@ -73,37 +106,28 @@ const unsigned char *SparklePacketStream::getData(unsigned int size)
     return p;
 }
 
-void SparklePacketStream::addUint32(uint32_t a)
+void SparklePacketStream::write(void *data, unsigned int size)
 {
-    addData(reinterpret_cast<const unsigned char *>(&a), sizeof(uint32_t));
+    _packet->add(reinterpret_cast<unsigned char *>(data), size);
+    _writePosition += size;
 }
 
-uint32_t SparklePacketStream::getUint32()
+void SparklePacketStream::read(void *data, unsigned int size)
 {
-    const uint32_t *p = reinterpret_cast<const uint32_t *>(getData(sizeof(uint32_t)));
-    return *p;
+    memcpy(data, _packet->data() + _readPosition, size);
+    _readPosition += size;
 }
 
-void SparklePacketStream::addString(const std::string &a)
+void SparklePacketStream::pWrite(const packer_t *packer, void *data)
 {
-    addUint32(a.length());
-    addData(reinterpret_cast<const unsigned char *>(a.c_str()), a.length() + 1);
+    packer->pack(this, data);
 }
 
-std::string SparklePacketStream::getString()
+void SparklePacketStream::pRead(const packer_t *packer, void *data)
 {
-    uint32_t length = getUint32();
-    const char *p = reinterpret_cast<const char*>(getData(length + 1));
-    return std::string(p, length);
+    packer->unpack(this, data);
 }
 
-const char *SparklePacketStream::getStringPointer()
-{
-    uint32_t length = getUint32();
-    const char *p = reinterpret_cast<const char*>(getData(length + 1));
-    return p;
-}
-    
 //==================================================================================================
 
 sparkle_packet_t *sparkle_packet_create(unsigned int size)
@@ -147,30 +171,6 @@ void sparkle_packet_stream_destroy(sparkle_packet_stream_t *stream)
 {
     SparklePacketStream *_stream = static_cast<SparklePacketStream *>(stream);
     delete _stream;
-}
-
-uint32_t sparkle_packet_stream_get_uint32(sparkle_packet_stream_t *stream)
-{
-    SparklePacketStream *_stream = static_cast<SparklePacketStream *>(stream);
-    return _stream->getUint32();
-}
-
-const char *sparkle_packet_stream_get_string(sparkle_packet_stream_t *stream)
-{
-    SparklePacketStream *_stream = static_cast<SparklePacketStream *>(stream);
-    return _stream->getStringPointer();
-}
-
-void sparkle_packet_stream_add_uint32(sparkle_packet_stream_t *stream, uint32_t a)
-{
-    SparklePacketStream *_stream = static_cast<SparklePacketStream *>(stream);
-    _stream->addUint32(a);
-}
-
-void sparkle_packet_stream_add_string(sparkle_packet_stream_t *stream, const char *a)
-{
-    SparklePacketStream *_stream = static_cast<SparklePacketStream *>(stream);
-    _stream->addString(a);
 }
 
 //==================================================================================================

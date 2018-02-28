@@ -149,14 +149,16 @@ void SparkleConnection::send1(const packet_type_t *packetType, void *data)
 {
     SparklePacket packet(64);
     packet.header()->operation = packetType->code;
-    packetType->pack(&packet, data);
+    SparklePacketStream stream(&packet);
+    packetType->packer.pack(&stream, data);
     
     send(&packet);
 }
 
 void SparkleConnection::unpack1(const packet_type_t *packetType, SparklePacket *packet, void *data)
 {
-    packetType->unpack(packet, data);
+    SparklePacketStream stream(packet);
+    packetType->packer.unpack(&stream, data);
 }
 
 //==================================================================================================

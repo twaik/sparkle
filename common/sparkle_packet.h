@@ -3,6 +3,25 @@
 
 #include <stdint.h>
 
+//==================================================================================================
+
+struct _packer_t;
+typedef struct _packer_t packer_t;
+
+#ifdef __cplusplus
+class SparklePacketStream;
+struct _packer_t
+{
+    void (*pack)(SparklePacketStream *stream, void *data);
+    void (*unpack)(SparklePacketStream *stream, void *data);
+};
+#endif
+
+extern const packer_t p_uint32;
+extern const packer_t p_string;
+
+//==================================================================================================
+
 struct SparklePacketHeader
 {
     int operation;
@@ -42,11 +61,10 @@ public:
     void addData(const unsigned char *a, unsigned int size);
     const unsigned char *getData(unsigned int size);
     
-    void addUint32(uint32_t a);
-    uint32_t getUint32();
-    void addString(const std::string &a);
-    std::string getString();
-    const char *getStringPointer();
+    void write(void *data, unsigned int size);
+    void read(void *data, unsigned int size);
+    void pWrite(const packer_t *packer, void *data);
+    void pRead(const packer_t *packer, void *data);
     
 private:
     SparklePacket *_packet;
@@ -73,11 +91,6 @@ struct SparklePacketHeader *sparkle_packet_header(sparkle_packet_t *packet);
 
 sparkle_packet_stream_t *sparkle_packet_stream_create(sparkle_packet_t *packet);
 void sparkle_packet_stream_destroy(sparkle_packet_stream_t *stream);
-
-uint32_t sparkle_packet_stream_get_uint32(sparkle_packet_stream_t *stream);
-const char *sparkle_packet_stream_get_string(sparkle_packet_stream_t *stream);
-void sparkle_packet_stream_add_uint32(sparkle_packet_stream_t *stream, uint32_t a);
-void sparkle_packet_stream_add_string(sparkle_packet_stream_t *stream, const char *a);
 
 #ifdef __cplusplus
 }

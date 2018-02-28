@@ -8,13 +8,14 @@ typedef struct _packet_type_t packet_type_t;
 
 #ifdef __cplusplus
 
-class SparklePacket;
+#include "sparkle_packet.h"
+
+class SparklePacketStream;
 
 struct _packet_type_t
 {
     int code;
-    void (*pack)(SparklePacket *packet, void *data);
-    void (*unpack)(SparklePacket *packet, void *data);
+    packer_t packer;
 };
 
 #endif
