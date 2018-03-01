@@ -1,8 +1,9 @@
 #ifndef SPARKLE_KEYBOARD_H
 #define SPARKLE_KEYBOARD_H
 
-#include <string>
 #include "common/sparkle_packet.h"
+#include <string>
+#include <memory>
 
 class WereEventLoop;
 class SparkleSurfaceFile;
@@ -23,7 +24,7 @@ public:
 private:
     void hostDamage(int x1, int y1, int x2, int y2);
     
-    void packet(SparklePacket packet);
+    void packet(std::shared_ptr<SparklePacket> packet);
     
     void keyPressed(int code);
     void keyReleased(int code);

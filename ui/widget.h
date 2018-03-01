@@ -1,7 +1,7 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
-#include "were/were_function.h"
+#include "were/were_signal.h"
 
 class Widget
 {

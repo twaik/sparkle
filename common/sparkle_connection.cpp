@@ -90,7 +90,7 @@ void SparkleConnection::handleData()
         
         uint32_t dataSize = size - sizeof(SparklePacketHeader);
     
-        std::shared_ptr<SparklePacket> packet(new SparklePacket(dataSize));
+        std::shared_ptr<SparklePacket> packet(new SparklePacket());
         
         if (_socket->receive(reinterpret_cast<unsigned char *>(packet->header()), sizeof(SparklePacketHeader)) != sizeof(SparklePacketHeader))
         {
@@ -147,10 +147,11 @@ void SparkleConnection::send(SparklePacket *packet)
 
 void SparkleConnection::send1(const packet_type_t *packetType, void *data)
 {
-    SparklePacket packet(64);
+    SparklePacket packet;
     packet.header()->operation = packetType->code;
+    
     SparklePacketStream stream(&packet);
-    packetType->packer.pack(&stream, data);
+    stream.pWrite(&packetType->packer, data);
     
     send(&packet);
 }
@@ -158,7 +159,7 @@ void SparkleConnection::send1(const packet_type_t *packetType, void *data)
 void SparkleConnection::unpack1(const packet_type_t *packetType, SparklePacket *packet, void *data)
 {
     SparklePacketStream stream(packet);
-    packetType->packer.unpack(&stream, data);
+    stream.pRead(&packetType->packer, data);
 }
 
 //==================================================================================================

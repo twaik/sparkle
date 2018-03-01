@@ -1,32 +1,16 @@
 #ifndef SPARKLE_PROTOCOL_H
 #define SPARKLE_PROTOCOL_H
 
-//==================================================================================================
-
-struct _packet_type_t;
-typedef struct _packet_type_t packet_type_t;
-
-#ifdef __cplusplus
-
 #include "sparkle_packet.h"
 
-class SparklePacketStream;
+//==================================================================================================
 
 struct _packet_type_t
 {
     int code;
     packer_t packer;
 };
-
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-int operation1(const packet_type_t *packetType);
-#ifdef __cplusplus
-}
-#endif
+typedef struct _packet_type_t packet_type_t;
 
 //==================================================================================================
 

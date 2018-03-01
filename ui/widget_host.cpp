@@ -32,10 +32,8 @@ void WidgetHost::setBuffer(unsigned char *buffer, int stride, int width, int hei
     _width = width;
     _height = height;
     
-    for (unsigned int i = 0; i < _widgets.size(); ++i)
-    {
-        redrawWidget(_widgets[i]._widget);
-    }
+    for (auto it = _widgets.begin(); it != _widgets.end(); ++it)
+        redrawWidget((*it)._widget);
 }
 
 void WidgetHost::addWidget(Widget *widget, const RectangleC &position)
@@ -45,7 +43,12 @@ void WidgetHost::addWidget(Widget *widget, const RectangleC &position)
     widgetData._position = position;
     _widgets.push_back(widgetData);
 
-    widget->damage.connect(_loop, std::bind(&WidgetHost::redrawWidget, this, widget));    
+    widget->damage.connect([this, widget]()
+    {
+        _loop->queue(std::bind(&WidgetHost::redrawWidget, this, widget));
+    });
+    
+    
     redrawWidget(widgetData._widget);
 }
 

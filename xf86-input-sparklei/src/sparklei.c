@@ -397,7 +397,7 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
     
     uint32_t operation = sparkle_packet_header(packet)->operation;
     
-    if (operation == operation1(&pointer_down_notification))
+    if (operation == pointer_down_notification.code)
     {
         struct _pointer_down_notification r1;
         sparkle_connection_unpack1(&pointer_down_notification, packet, &r1);
@@ -405,7 +405,7 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
         if (strcmp(r1.surface, pEvdev->surface_name) == 0)
             SparkleiPointerDown(pInfo, r1.slot, r1.x, r1.y);
     }
-    else if (operation == operation1(&pointer_up_notification))
+    else if (operation == pointer_up_notification.code)
     {
         struct _pointer_up_notification r1;
         sparkle_connection_unpack1(&pointer_up_notification, packet, &r1);
@@ -413,7 +413,7 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
         if (strcmp(r1.surface, pEvdev->surface_name) == 0)
             SparkleiPointerUp(pInfo, r1.slot);
     }
-    else if (operation == operation1(&pointer_motion_notification))
+    else if (operation == pointer_motion_notification.code)
     {
         struct _pointer_motion_notification r1;
         sparkle_connection_unpack1(&pointer_motion_notification, packet, &r1);
@@ -421,7 +421,7 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
         if (strcmp(r1.surface, pEvdev->surface_name) == 0)
             SparkleiPointerMotion(pInfo, r1.slot, r1.x, r1.y);
     }
-    else if (operation == operation1(&key_down_notification))
+    else if (operation == key_down_notification.code)
     {
         struct _key_down_notification r1;
         sparkle_connection_unpack1(&key_down_notification, packet, &r1);
@@ -431,7 +431,7 @@ static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
         else
             xf86PostKeyboardEvent(pInfo->dev, r1.code, 1);
     }
-    else if (operation == operation1(&key_up_notification))
+    else if (operation == key_up_notification.code)
     {
         struct _key_up_notification r1;
         sparkle_connection_unpack1(&key_up_notification, packet, &r1);

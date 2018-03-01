@@ -40,24 +40,21 @@ const packer_t p_string =
 
 SparklePacket::~SparklePacket()
 {
-    delete[] _data;
 }
 
-SparklePacket::SparklePacket(unsigned int maxSize)
+SparklePacket::SparklePacket()
 {
-    _maxSize = maxSize;
-    _data = new unsigned char [maxSize];
-    _size = 0;
+    _header = {};
 }
 
 unsigned char *SparklePacket::data()
 {
-    return _data;
+    return _data.data();
 }
 
 unsigned int SparklePacket::size() const
 {
-    return _size;
+    return _data.size();
 }
 
 SparklePacketHeader *SparklePacket::header()
@@ -67,15 +64,15 @@ SparklePacketHeader *SparklePacket::header()
 
 unsigned char *SparklePacket::allocate(unsigned int size)
 {
-    unsigned char *p = _data + _size;
-    _size += size;
+    _data.resize(_data.size() + size);
+    unsigned char *p = _data.data() + (_data.size() - size);
     return p;
 }
 
 void SparklePacket::add(const unsigned char *bytes, unsigned int size)
 {
-    memcpy(_data + _size, bytes, size);
-    _size += size;
+    unsigned char *p = allocate(size);
+    memcpy(p, bytes, size);
 }
 
 //==================================================================================================
@@ -130,9 +127,9 @@ void SparklePacketStream::pRead(const packer_t *packer, void *data)
 
 //==================================================================================================
 
-sparkle_packet_t *sparkle_packet_create(unsigned int size)
+sparkle_packet_t *sparkle_packet_create()
 {
-    SparklePacket *_packet = new SparklePacket(size);
+    SparklePacket *_packet = new SparklePacket();
     return _packet;
 }
 
@@ -158,19 +155,6 @@ SparklePacketHeader *sparkle_packet_header(sparkle_packet_t *packet)
 {
     SparklePacket *_packet = static_cast<SparklePacket *>(packet);
     return _packet->header();
-}
-
-sparkle_packet_stream_t *sparkle_packet_stream_create(sparkle_packet_t *packet)
-{
-    SparklePacket *_packet = static_cast<SparklePacket *>(packet);
-    SparklePacketStream *_stream = new SparklePacketStream(_packet);
-    return _stream;
-}
-
-void sparkle_packet_stream_destroy(sparkle_packet_stream_t *stream)
-{
-    SparklePacketStream *_stream = static_cast<SparklePacketStream *>(stream);
-    delete _stream;
 }
 
 //==================================================================================================

@@ -29,6 +29,9 @@ HEADERS += sparkle_keyboard.h
 SOURCES += ../ui/widget_button.cpp
 HEADERS += ../ui/widget_button.h
 
+SOURCES += ../common/sparkle_protocol.cpp
+HEADERS += ../common/sparkle_protocol.h
+
 
 test: ${SOURCES} ${HEADERS}
 	${CXX} -o test ${CXXFLAGS} ${SOURCES} ${LIBS}

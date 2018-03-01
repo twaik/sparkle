@@ -64,10 +64,11 @@ void SparkleServer::broadcast(SparklePacket *packet)
 
 void SparkleServer::broadcast1(const packet_type_t *packetType, void *data)
 {
-    SparklePacket packet(64);
+    SparklePacket packet;
     packet.header()->operation = packetType->code;
+    
     SparklePacketStream stream(&packet);
-    packetType->packer.pack(&stream, data);
+    stream.pWrite(&packetType->packer, data);
     
     broadcast(&packet);
 }

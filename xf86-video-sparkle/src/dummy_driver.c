@@ -342,7 +342,7 @@ static void handle_packet(void *user, sparkle_packet_t *packet)
     
     uint32_t operation = sparkle_packet_header(packet)->operation;
     
-    if (operation == operation1(&display_size_notification))
+    if (operation == display_size_notification.code)
     {
         struct _display_size_notification r1;
         sparkle_connection_unpack1(&display_size_notification, packet, &r1);

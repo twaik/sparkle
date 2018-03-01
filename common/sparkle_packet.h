@@ -1,21 +1,23 @@
 #ifndef SPARKLE_PACKET_H
 #define SPARKLE_PACKET_H
 
-#include <stdint.h>
-
 //==================================================================================================
-
-struct _packer_t;
-typedef struct _packer_t packer_t;
 
 #ifdef __cplusplus
 class SparklePacketStream;
+#endif
+
 struct _packer_t
 {
+#ifdef __cplusplus
     void (*pack)(SparklePacketStream *stream, void *data);
     void (*unpack)(SparklePacketStream *stream, void *data);
-};
+#else
+    void *pack;
+    void *unpack;
 #endif
+};
+typedef struct _packer_t packer_t;
 
 extern const packer_t p_uint32;
 extern const packer_t p_string;
@@ -30,13 +32,13 @@ struct SparklePacketHeader
 //==================================================================================================
 #ifdef __cplusplus
 
-#include <string>
+#include <vector>
 
 class SparklePacket
 {
 public:
     ~SparklePacket();
-    SparklePacket(unsigned int maxSize);
+    SparklePacket();
     
     unsigned char *data();
     unsigned int size() const;
@@ -46,9 +48,7 @@ public:
     void add(const unsigned char *bytes, unsigned int size);
     
 private:
-    unsigned int _maxSize;
-    unsigned char *_data;
-    unsigned int _size;
+    std::vector<unsigned char> _data;
     SparklePacketHeader _header;
 };
 
@@ -76,21 +76,17 @@ private:
 //==================================================================================================
 
 typedef void sparkle_packet_t;
-typedef void sparkle_packet_stream_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-sparkle_packet_t *sparkle_packet_create(unsigned int size);
+sparkle_packet_t *sparkle_packet_create();
 void sparkle_packet_destroy(sparkle_packet_t *packet);
 
 unsigned char *sparkle_packet_data(sparkle_packet_t *packet);
 unsigned int sparkle_packet_size(sparkle_packet_t *packet);
 struct SparklePacketHeader *sparkle_packet_header(sparkle_packet_t *packet);
-
-sparkle_packet_stream_t *sparkle_packet_stream_create(sparkle_packet_t *packet);
-void sparkle_packet_stream_destroy(sparkle_packet_stream_t *stream);
 
 #ifdef __cplusplus
 }

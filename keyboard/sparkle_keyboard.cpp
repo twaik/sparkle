@@ -11,7 +11,9 @@
 
 //==================================================================================================
 
+const char *compositor = "/dev/shm/sparkle.socket";
 const char *surface_name = "keyboard";
+const char *surface_path = "/dev/shm/keyboard";
 
 struct ButtonData
 {
@@ -63,11 +65,6 @@ const int layoutHeight = 26;
 
 SparkleKeyboard::~SparkleKeyboard()
 {    
-    SparklePacket packet;
-    packet.addUint32(SPARKLE_CLIENT_UNREGISTER_SURFACE);
-    packet.addString(surface_name);
-    _sparkle->send(packet);
-    
     delete[] _buttons;
     delete _host;
     if (_surface != 0)
@@ -78,17 +75,17 @@ SparkleKeyboard::~SparkleKeyboard()
 
 SparkleKeyboard::SparkleKeyboard()
 {
-    _loop = new WereEventLoop(true);
+    _loop = new WereEventLoop();
     _surface = 0;
     _displayWidth = 0;
     _displayHeight = 0;
     
-    _sparkle = new SparkleConnection(_loop, "/dev/shm/sparkle.socket");
-    _sparkle->signal_packet.connect(_loop, std::bind(&SparkleKeyboard::packet, this, _1));
+    _sparkle = new SparkleConnection(_loop, compositor);
+    _sparkle->signal_packet.connect(WereSimpleQueuer(_loop, &SparkleKeyboard::packet, this));
 
     
     _host = new WidgetHost(_loop);
-    _host->damage.connect(_loop, std::bind(&SparkleKeyboard::hostDamage, this, _1, _2, _3, _4));
+    _host->damage.connect(WereSimpleQueuer(_loop, &SparkleKeyboard::hostDamage, this));
 
     unsigned int n = sizeof(layout) / sizeof(ButtonData);
     
@@ -107,8 +104,17 @@ SparkleKeyboard::SparkleKeyboard()
             RectangleC(PointC(x1, y1), PointC(x2, y2))
         );
         
-        _buttons[i].pressed.connect(_loop, std::bind(&SparkleKeyboard::keyPressed, this, layout[i].code));
-        _buttons[i].released.connect(_loop, std::bind(&SparkleKeyboard::keyReleased, this, layout[i].code));
+        int code = layout[i].code;
+        
+        _buttons[i].pressed.connect([this, code]()
+        {
+            _loop->queue(std::bind(&SparkleKeyboard::keyPressed, this, code));
+        });
+        
+        _buttons[i].released.connect([this, code]()
+        {
+            _loop->queue(std::bind(&SparkleKeyboard::keyReleased, this, code));
+        });
     }
 }
 
@@ -140,126 +146,73 @@ void SparkleKeyboard::show()
     
     if (_surface == 0)
     {
-        _surface = new SparkleSurfaceFile("/dev/shm/keyboard", sw, sh, true);
+        _surface = new SparkleSurfaceFile(surface_path, sw, sh, true);
         _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
     }
     else if (_surface->width() != sw || _surface->height() != sh)
     {
-        
-        SparklePacket packet;
-        packet.addUint32(SPARKLE_CLIENT_UNREGISTER_SURFACE);
-        packet.addString(surface_name);
-        _sparkle->send(packet);
-        
         delete _surface;
-        
-        _surface = new SparkleSurfaceFile("/dev/shm/keyboard", sw, sh, true);
+        _surface = new SparkleSurfaceFile(surface_path, sw, sh, true);
         _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
     }
     
-    
-    SparklePacket packet;
-    packet.addUint32(SPARKLE_CLIENT_REGISTER_SURFACE_FILE);
-    packet.addString(surface_name);
-    packet.addString("/dev/shm/keyboard");
-    packet.addUint32(_surface->width());
-    packet.addUint32(_surface->height());
-    _sparkle->send(packet);
-    
-    packet = SparklePacket();
-    packet.addUint32(SPARKLE_CLIENT_SET_SURFACE_POSITION);
-    packet.addString(surface_name);
-    packet.addUint32(0);
-    packet.addUint32(_displayHeight - _surface->height());
-    packet.addUint32(_displayWidth);
-    packet.addUint32(_displayHeight);
-    _sparkle->send(packet);
-    
-    packet = SparklePacket();
-    packet.addUint32(SPARKLE_CLIENT_SET_SURFACE_STRATA);
-    packet.addString(surface_name);
-    packet.addUint32(0xFF);
-    _sparkle->send(packet);
-    
-    packet = SparklePacket();
-    packet.addUint32(SPARKLE_CLIENT_ADD_SURFACE_DAMAGE);
-    packet.addString(surface_name);
-    packet.addUint32(0);
-    packet.addUint32(0);
-    packet.addUint32(_displayWidth);
-    packet.addUint32(_displayHeight);
-    _sparkle->send(packet);
+
 }
 
 void SparkleKeyboard::hide()
 {
-    SparklePacket packet;
-    packet.addUint32(SPARKLE_CLIENT_UNREGISTER_SURFACE);
-    packet.addString(surface_name);
-    _sparkle->send(packet);
 }
 
 //==================================================================================================
 
 void SparkleKeyboard::hostDamage(int x1, int y1, int x2, int y2)
 {
-    SparklePacket packet = SparklePacket();
-    packet.addUint32(SPARKLE_CLIENT_ADD_SURFACE_DAMAGE);
-    packet.addString(surface_name);
-    packet.addUint32(x1);
-    packet.addUint32(y1);
-    packet.addUint32(x2);
-    packet.addUint32(y2);
-    _sparkle->send(packet);
 }
 
 //==================================================================================================
 
-void SparkleKeyboard::packet(SparklePacket packet)
+void SparkleKeyboard::packet(std::shared_ptr<SparklePacket> packet)
 {
-    uint32_t operation = packet.getUint32();
+    int operation = packet->header()->operation;
       
-    if (operation == SPARKLE_SERVER_POINTER_DOWN)
+    if (operation == pointer_down_notification.code)
     {
-        std::string name = packet.getString();
-        int slot = packet.getUint32();
-        int x = packet.getUint32();
-        int y = packet.getUint32();
-        if (name == surface_name)
-            _host->pointerDown(slot, x, y);
+        struct _pointer_down_notification r1;
+        SparkleConnection::unpack1(&pointer_down_notification, packet.get(), &r1);
+        if (strcmp(r1.surface, surface_name) == 0)
+            _host->pointerDown(r1.slot, r1.x, r1.y);
     }
-    else if (operation == SPARKLE_SERVER_POINTER_UP)
+    else if (operation == pointer_up_notification.code)
     {
-        std::string name = packet.getString();
-        int slot = packet.getUint32();
-        int x = packet.getUint32();
-        int y = packet.getUint32();
-        if (name == surface_name)
-            _host->pointerUp(slot, x, y);
+        struct _pointer_up_notification r1;
+        SparkleConnection::unpack1(&pointer_up_notification, packet.get(), &r1);
+        if (strcmp(r1.surface, surface_name) == 0)
+            _host->pointerUp(r1.slot, r1.x, r1.y);
     }
-    else if (operation == SPARKLE_SERVER_POINTER_MOTION)
+    else if (operation == pointer_motion_notification.code)
     {
-        std::string name = packet.getString();
+        struct _pointer_motion_notification r1;
+        SparkleConnection::unpack1(&pointer_motion_notification, packet.get(), &r1);
+        if (strcmp(r1.surface, surface_name) == 0)
+            _host->pointerMotion(r1.slot, r1.x, r1.y);
     }
-    else if (operation == SPARKLE_SERVER_KEY_DOWN)
+    else if (operation == key_down_notification.code)
     {
-        int code = packet.getUint32();
-        if (code == 122)
+        struct _key_down_notification r1;
+        SparkleConnection::unpack1(&key_down_notification, packet.get(), &r1);
+        if (r1.code == 123)
             show();
-        else if (code == 123)
-            hide();
     }
-    else if (operation == SPARKLE_SERVER_DISPLAY_SIZE)
+    else if (operation == display_size_notification.code)
     {
-        int width = packet.getUint32();
-        int height = packet.getUint32();
-        
-        if (_displayWidth != width || _displayHeight != height)
+        struct _display_size_notification r1;
+        SparkleConnection::unpack1(&display_size_notification, packet.get(), &r1);
+        if (_displayWidth != r1.width || _displayHeight != r1.height)
         {
             hide();
-            _displayWidth = width;
-            _displayHeight = height;
-            //show();
+            _displayWidth = r1.width;
+            _displayHeight = r1.height;
+            show();
         }
     }
 }
@@ -268,20 +221,10 @@ void SparkleKeyboard::packet(SparklePacket packet)
 
 void SparkleKeyboard::keyPressed(int code)
 {
-    SparklePacket packet;
-    packet.addUint32(SPARKLE_CLIENT_ECHO);
-    packet.addUint32(SPARKLE_SERVER_KEY_DOWN);
-    packet.addUint32(code);
-    _sparkle->send(packet);
 }
 
 void SparkleKeyboard::keyReleased(int code)
 {
-    SparklePacket packet;
-    packet.addUint32(SPARKLE_CLIENT_ECHO);
-    packet.addUint32(SPARKLE_SERVER_KEY_UP);
-    packet.addUint32(code);
-    _sparkle->send(packet);
 }
 
 //==================================================================================================
