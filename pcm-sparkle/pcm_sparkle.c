@@ -34,6 +34,11 @@ typedef struct snd_pcm_sparkle
 
 } snd_pcm_sparkle_t;
 
+struct sparkle_packet_header
+{
+    int operation;
+};
+
 //==============================================================================
 
 static void sparkle_connect(snd_pcm_sparkle_t *sparkle)
@@ -125,10 +130,14 @@ static snd_pcm_sframes_t sparkle_write(snd_pcm_ioplug_t *io,
     if (size > 32768)
         size = 32768;
 
-    uint32_t __size = sizeof(uint32_t) + size;
+    uint32_t __size = sizeof(struct sparkle_packet_header) + size;
     sparkle_write1(sparkle, &__size, sizeof(uint32_t));
-    uint32_t __operation = 0;
-    sparkle_write1(sparkle, &__operation, sizeof(uint32_t));
+    
+    struct sparkle_packet_header _header = {0x2000};
+    sparkle_write1(sparkle, &_header, sizeof(struct sparkle_packet_header));
+    
+    uint32_t _dataSize = size;
+    sparkle_write1(sparkle, &_dataSize, sizeof(uint32_t));
 
     int n = sparkle_write1(sparkle, buf, size);
 
@@ -195,10 +204,11 @@ static int sparkle_start(snd_pcm_ioplug_t *io)
 
     sparkle_connect(sparkle);
 
-    uint32_t __size = sizeof(uint32_t);
+    uint32_t __size = sizeof(struct sparkle_packet_header);
     sparkle_write1(sparkle, &__size, sizeof(uint32_t));
-    uint32_t __operation = 1;
-    sparkle_write1(sparkle, &__operation, sizeof(uint32_t));
+    
+    struct sparkle_packet_header _header = {0x2001};
+    sparkle_write1(sparkle, &_header, sizeof(struct sparkle_packet_header));
 
 	return 0;
 }
@@ -209,10 +219,11 @@ static int sparkle_stop(snd_pcm_ioplug_t *io)
 
     sparkle->play = 0;
 
-    uint32_t __size = sizeof(uint32_t);
+    uint32_t __size = sizeof(struct sparkle_packet_header);
     sparkle_write1(sparkle, &__size, sizeof(uint32_t));
-    uint32_t __operation = 2;
-    sparkle_write1(sparkle, &__operation, sizeof(uint32_t));
+    
+    struct sparkle_packet_header _header = {0x2002};
+    sparkle_write1(sparkle, &_header, sizeof(struct sparkle_packet_header));
 
 	return 0;
 }
