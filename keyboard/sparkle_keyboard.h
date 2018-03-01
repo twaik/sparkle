@@ -6,6 +6,7 @@
 #include <memory>
 
 class WereEventLoop;
+class WereSignalHandler;
 class SparkleSurfaceFile;
 class WidgetHost;
 class SparkleConnection;
@@ -18,8 +19,9 @@ public:
     SparkleKeyboard();
     
     void start();
-    void show();
-    void hide();
+    void reg();
+    void unreg();
+    void check();
     
 private:
     void hostDamage(int x1, int y1, int x2, int y2);
@@ -31,6 +33,7 @@ private:
     
 private:
     WereEventLoop *_loop;
+    WereSignalHandler *_sig;
     SparkleSurfaceFile *_surface;
     WidgetHost *_host;
     SparkleConnection *_sparkle;
@@ -39,6 +42,8 @@ private:
     
     int _displayWidth;
     int _displayHeight;
+    bool _show;
+    bool _registered;
 };
 
 #endif //SPARKLE_KEYBOARD_H

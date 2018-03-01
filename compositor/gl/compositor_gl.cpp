@@ -227,6 +227,7 @@ public:
     
     void setPosition(int x1, int y1, int x2, int y2);
     void setStrata(int strata);
+    void setBlending(int blending);
     void addDamage(int x1, int y1, int x2, int y2);
     
     virtual bool updateTexture() = 0;
@@ -297,6 +298,11 @@ void CompositorGLSurface::setPosition(int x1, int y1, int x2, int y2)
 void CompositorGLSurface::setStrata(int strata)
 {
     _strata = strata;
+}
+
+void CompositorGLSurface::setBlending(int blending)
+{
+    _blending = blending;
 }
 
 void CompositorGLSurface::addDamage(int x1, int y1, int x2, int y2)
@@ -411,6 +417,7 @@ private:
     void unregisterSurface(const std::string &name);
     void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
     void setSurfaceStrata(const std::string &name, int strata);
+    void setSurfaceBlending(const std::string &name, int blending);
     void addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2);
 
     std::shared_ptr<CompositorGLSurface> findSurface(const std::string &name);
@@ -739,11 +746,29 @@ void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared
         SparkleConnection::unpack1(&set_surface_strata_request, packet.get(), &r1);
         setSurfaceStrata(r1.name, r1.strata);
     }
+    else if (operation == set_surface_blending_request.code)
+    {
+        _set_surface_blending_request r1;
+        SparkleConnection::unpack1(&set_surface_blending_request, packet.get(), &r1);
+        setSurfaceBlending(r1.name, r1.blending);
+    }
     else if (operation == add_surface_damage_request.code)
     {
         _add_surface_damage_request r1;
         SparkleConnection::unpack1(&add_surface_damage_request, packet.get(), &r1);
         addSurfaceDamage(r1.name, r1.x1, r1.y1, r1.x2, r1.y2);
+    }
+    else if (operation == key_down_request.code)
+    {
+        _key_down_request r1;
+        SparkleConnection::unpack1(&key_down_request, packet.get(), &r1);
+        keyDown(r1.code);
+    }
+    else if (operation == key_up_request.code)
+    {
+        _key_up_request r1;
+        SparkleConnection::unpack1(&key_up_request, packet.get(), &r1);
+        keyUp(r1.code);
     }
 }
 
@@ -797,6 +822,18 @@ void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
     if (surface != 0)
     {
         surface->setStrata(strata);
+        _redraw = true;
+    }
+}
+
+void CompositorGL::setSurfaceBlending(const std::string &name, int blending)
+{
+    were_debug("Surface [%s]: blending changed.\n", name.c_str());
+    
+    std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
+    if (surface != 0)
+    {
+        surface->setBlending(blending);
         _redraw = true;
     }
 }

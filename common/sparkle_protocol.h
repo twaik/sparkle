@@ -26,6 +26,9 @@ extern const packet_type_t set_surface_position_request;
 struct _set_surface_strata_request {const char *name; int strata;};
 extern const packet_type_t set_surface_strata_request;
 
+struct _set_surface_blending_request {const char *name; int blending;};
+extern const packet_type_t set_surface_blending_request;
+
 struct _add_surface_damage_request {const char *name; int x1; int y1; int x2; int y2;};
 extern const packet_type_t add_surface_damage_request;
 
@@ -51,6 +54,12 @@ struct _sound_data {unsigned int size; const unsigned char *data;};
 extern const packet_type_t sound_data;
 extern const packet_type_t sound_start;
 extern const packet_type_t sound_stop;
+
+struct _key_down_request {int code;};
+extern const packet_type_t key_down_request;
+
+struct _key_up_request {int code;};
+extern const packet_type_t key_up_request;
 
 //==================================================================================================
 

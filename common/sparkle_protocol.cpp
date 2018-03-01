@@ -79,9 +79,26 @@ const packet_type_t set_surface_strata_request =
     },
 };
 
-const packet_type_t add_surface_damage_request =
+const packet_type_t set_surface_blending_request =
 {
     .code = 0x0004,
+    {
+        .pack = [](SparklePacketStream *stream, void *data) {
+            _set_surface_blending_request *_data = static_cast<_set_surface_blending_request *>(data);
+            stream->pWrite(&p_string, &_data->name);
+            stream->pWrite(&p_uint32, &_data->blending);
+        },
+        .unpack = [](SparklePacketStream *stream, void *data) {
+            _set_surface_blending_request *_data = static_cast<_set_surface_blending_request *>(data);
+            stream->pRead(&p_string, &_data->name);
+            stream->pRead(&p_uint32, &_data->blending);
+        },
+    },
+};
+
+const packet_type_t add_surface_damage_request =
+{
+    .code = 0x0005,
     {
         .pack = [](SparklePacketStream *stream, void *data) {
             _add_surface_damage_request *_data = static_cast<_add_surface_damage_request *>(data);
@@ -246,6 +263,38 @@ const packet_type_t sound_stop =
     {
         .pack = [](SparklePacketStream *stream, void *data) {},
         .unpack = [](SparklePacketStream *stream, void *data) {},
+    },
+};
+
+//==================================================================================================
+
+const packet_type_t key_down_request =
+{
+    .code = 0x0006,
+    {
+        .pack = [](SparklePacketStream *stream, void *data) {
+            _key_down_request *_data = static_cast<_key_down_request *>(data);
+            stream->pWrite(&p_uint32, &_data->code);
+        },
+        .unpack = [](SparklePacketStream *stream, void *data) {
+            _key_down_request *_data = static_cast<_key_down_request *>(data);
+            stream->pRead(&p_uint32, &_data->code);
+        },
+    },
+};
+
+const packet_type_t key_up_request =
+{
+    .code = 0x0007,
+    {
+        .pack = [](SparklePacketStream *stream, void *data) {
+            _key_up_request *_data = static_cast<_key_up_request *>(data);
+            stream->pWrite(&p_uint32, &_data->code);
+        },
+        .unpack = [](SparklePacketStream *stream, void *data) {
+            _key_up_request *_data = static_cast<_key_up_request *>(data);
+            stream->pRead(&p_uint32, &_data->code);
+        },
     },
 };
 

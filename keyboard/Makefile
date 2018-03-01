@@ -36,3 +36,6 @@ HEADERS += ../common/sparkle_protocol.h
 test: ${SOURCES} ${HEADERS}
 	${CXX} -o test ${CXXFLAGS} ${SOURCES} ${LIBS}
 
+clean:
+	rm -rf test
+

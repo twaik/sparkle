@@ -1,11 +1,13 @@
 #include "sparkle_keyboard.h"
 #include "were/were_event_loop.h"
+#include "were/were_signal_handler.h"
 #include "common/sparkle_surface_file.h"
 #include "ui/widget_host.h"
 #include "common/sparkle_connection.h"
 #include "were/were_socket_unix.h"
 #include "ui/widget_button.h"
 #include "common/sparkle_protocol.h"
+#include <unistd.h>
 
 #include <string.h>
 
@@ -67,18 +69,24 @@ SparkleKeyboard::~SparkleKeyboard()
 {    
     delete[] _buttons;
     delete _host;
+    unreg();
     if (_surface != 0)
         delete _surface;
     delete _sparkle;
+    delete _sig;
     delete _loop;
 }
 
 SparkleKeyboard::SparkleKeyboard()
 {
     _loop = new WereEventLoop();
+    _sig = new WereSignalHandler(_loop);
+    _sig->terminate.connect(WereSimpleQueuer(_loop, &WereEventLoop::exit, _loop));
     _surface = 0;
     _displayWidth = 0;
     _displayHeight = 0;
+    _show = true;
+    _registered = false;
     
     _sparkle = new SparkleConnection(_loop, compositor);
     _sparkle->signal_packet.connect(WereSimpleQueuer(_loop, &SparkleKeyboard::packet, this));
@@ -125,48 +133,86 @@ void SparkleKeyboard::start()
     _loop->run();
 }
 
-void SparkleKeyboard::show()
+void SparkleKeyboard::reg()
 {
-    if (_displayWidth == 0 || _displayHeight == 0)
+    if (_registered || _surface == 0)
         return;
     
-    int sw = 0;
-    int sh = 0;
+    _register_surface_file_request r1 = {surface_name, surface_path, _surface->width(), _surface->height()};
+    _sparkle->send1(&register_surface_file_request, &r1);
     
-    if (_displayWidth > _displayHeight) //Landscape
-    {
-        sw = _displayWidth;
-        sh = _displayHeight / 2;
-    }
-    else //Portrait
-    {
-        sw = _displayWidth;
-        sh = _displayHeight / 3;
-    }
+    _set_surface_position_request r2 = {surface_name, 0, _displayHeight - _surface->height(), _displayWidth, _displayHeight};
+    _sparkle->send1(&set_surface_position_request, &r2);
     
-    if (_surface == 0)
-    {
-        _surface = new SparkleSurfaceFile(surface_path, sw, sh, true);
-        _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
-    }
-    else if (_surface->width() != sw || _surface->height() != sh)
-    {
-        delete _surface;
-        _surface = new SparkleSurfaceFile(surface_path, sw, sh, true);
-        _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
-    }
+    _set_surface_strata_request r3 = {surface_name, 0xff};
+    _sparkle->send1(&set_surface_strata_request, &r3);
     
-
+    _set_surface_blending_request r4 = {surface_name, 1};
+    _sparkle->send1(&set_surface_blending_request, &r4);
+    
+    _registered = true;
 }
 
-void SparkleKeyboard::hide()
+void SparkleKeyboard::unreg()
 {
+    if (!_registered || _surface == 0)
+        return;
+    
+    _unregister_surface_request x = {surface_name};
+    _sparkle->send1(&unregister_surface_request, &x);
+    usleep(100000);
+    _registered = false;
+}
+
+void SparkleKeyboard::check()
+{
+    if (_displayWidth > 0 && _displayHeight > 0)
+    {
+        int sw = 0;
+        int sh = 0;
+    
+        if (_displayWidth > _displayHeight) //Landscape
+        {
+            sw = _displayWidth;
+            sh = _displayHeight / 2;
+        }
+        else //Portrait
+        {
+            sw = _displayWidth;
+            sh = _displayHeight / 3;
+        }
+        
+        if (_surface == 0)
+        {
+            unreg();
+            _surface = new SparkleSurfaceFile(surface_path, sw, sh, true);
+            _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
+        }
+        else if (_surface->width() != sw || _surface->height() != sh)
+        {
+            unreg();
+            delete _surface;
+            _surface = new SparkleSurfaceFile(surface_path, sw, sh, true);
+            _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
+        }
+    }
+    
+    if (_show && !_registered)
+    {
+        reg();
+    }
+    else if (!_show && _registered)
+    {
+        unreg();
+    }
 }
 
 //==================================================================================================
 
 void SparkleKeyboard::hostDamage(int x1, int y1, int x2, int y2)
 {
+    _add_surface_damage_request r1 = {surface_name, x1, y1, x2, y2};
+    _sparkle->send1(&add_surface_damage_request, &r1);
 }
 
 //==================================================================================================
@@ -200,20 +246,20 @@ void SparkleKeyboard::packet(std::shared_ptr<SparklePacket> packet)
     {
         struct _key_down_notification r1;
         SparkleConnection::unpack1(&key_down_notification, packet.get(), &r1);
-        if (r1.code == 123)
-            show();
+        if (r1.code == 123) //123
+        {
+            _show = !_show;
+            check();
+        }
+
     }
     else if (operation == display_size_notification.code)
     {
         struct _display_size_notification r1;
         SparkleConnection::unpack1(&display_size_notification, packet.get(), &r1);
-        if (_displayWidth != r1.width || _displayHeight != r1.height)
-        {
-            hide();
-            _displayWidth = r1.width;
-            _displayHeight = r1.height;
-            show();
-        }
+        _displayWidth = r1.width;
+        _displayHeight = r1.height;
+        check();
     }
 }
     
@@ -221,10 +267,14 @@ void SparkleKeyboard::packet(std::shared_ptr<SparklePacket> packet)
 
 void SparkleKeyboard::keyPressed(int code)
 {
+    struct _key_down_request r1 = {code};
+    _sparkle->send1(&key_down_request, &r1);
 }
 
 void SparkleKeyboard::keyReleased(int code)
 {
+    struct _key_up_request r1 = {code};
+    _sparkle->send1(&key_up_request, &r1);
 }
 
 //==================================================================================================
