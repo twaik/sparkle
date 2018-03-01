@@ -130,7 +130,7 @@ static snd_pcm_sframes_t sparkle_write(snd_pcm_ioplug_t *io,
     if (size > 32768)
         size = 32768;
 
-    uint32_t __size = sizeof(struct sparkle_packet_header) + size;
+    uint32_t __size = sizeof(struct sparkle_packet_header) + sizeof(uint32_t) + size;
     sparkle_write1(sparkle, &__size, sizeof(uint32_t));
     
     struct sparkle_packet_header _header = {0x2000};
