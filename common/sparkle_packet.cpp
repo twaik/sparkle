@@ -103,9 +103,9 @@ const unsigned char *SparklePacketStream::getData(unsigned int size)
     return p;
 }
 
-void SparklePacketStream::write(void *data, unsigned int size)
+void SparklePacketStream::write(const void *data, unsigned int size)
 {
-    _packet->add(reinterpret_cast<unsigned char *>(data), size);
+    _packet->add(reinterpret_cast<const unsigned char *>(data), size);
     _writePosition += size;
 }
 

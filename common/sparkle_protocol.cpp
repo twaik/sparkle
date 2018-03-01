@@ -214,4 +214,40 @@ const packet_type_t key_up_notification =
 
 //==================================================================================================
 
+const packet_type_t sound_data =
+{
+    .code = 0x2000,
+    {
+        .pack = [](SparklePacketStream *stream, void *data) {
+            _sound_data *_data = static_cast<_sound_data *>(data);
+            stream->pWrite(&p_uint32, &_data->size);
+            stream->write(_data->data, _data->size);
+        },
+        .unpack = [](SparklePacketStream *stream, void *data) {
+            _sound_data *_data = static_cast<_sound_data *>(data);
+            stream->pRead(&p_uint32, &_data->size);
+            _data->data = reinterpret_cast<const unsigned char *>(stream->getData(_data->size));
+        },
+    },
+};
+
+const packet_type_t sound_start =
+{
+    .code = 0x2001,
+    {
+        .pack = [](SparklePacketStream *stream, void *data) {},
+        .unpack = [](SparklePacketStream *stream, void *data) {},
+    },
+};
+
+const packet_type_t sound_stop =
+{
+    .code = 0x2002,
+    {
+        .pack = [](SparklePacketStream *stream, void *data) {},
+        .unpack = [](SparklePacketStream *stream, void *data) {},
+    },
+};
+
+//==================================================================================================
 

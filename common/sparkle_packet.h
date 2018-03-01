@@ -61,7 +61,7 @@ public:
     void addData(const unsigned char *a, unsigned int size);
     const unsigned char *getData(unsigned int size);
     
-    void write(void *data, unsigned int size);
+    void write(const void *data, unsigned int size);
     void read(void *data, unsigned int size);
     void pWrite(const packer_t *packer, void *data);
     void pRead(const packer_t *packer, void *data);

@@ -100,9 +100,9 @@ void SoundSLES::checkQueue()
     if (_queue.size() == 0)
         return;
     
-    unsigned char *data = _queue.front()->data() + sizeof(uint32_t);
-    unsigned int size = _queue.front()->size() - sizeof(uint32_t);
-    SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, data, size);
+    struct _sound_data r1;
+    SparkleConnection::unpack1(&sound_data, _queue.front().get(), &r1);
+    SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, r1.data, r1.size);
     checkResult(result);
 
     busy = true;
@@ -128,24 +128,22 @@ void SoundSLES::callback(BufferQueueItf playerBufferqueue, void *data)
 
 void SoundSLES::packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet)
 {
-    SparklePacketStream stream(packet.get());
-    
-    uint32_t operation = stream.getUint32();
+    int operation = packet->header()->operation;
         
-    if (operation == 0)
+    if (operation == sound_data.code)
     {
         _queue.push_back(packet);
         checkQueue();
 
     }
-    else if (operation == 1)
+    else if (operation == sound_start.code)
     {
         state = SL_PLAYSTATE_PLAYING;
         SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
         checkResult(result);
         checkQueue();
     }
-    else if (operation == 2)
+    else if (operation == sound_stop.code)
     {
         state = SL_PLAYSTATE_STOPPED;
         SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);

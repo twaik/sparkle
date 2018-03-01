@@ -47,6 +47,11 @@ extern const packet_type_t key_down_notification;
 struct _key_up_notification {int code;};
 extern const packet_type_t key_up_notification;
 
+struct _sound_data {unsigned int size; const unsigned char *data;};
+extern const packet_type_t sound_data;
+extern const packet_type_t sound_start;
+extern const packet_type_t sound_stop;
+
 //==================================================================================================
 
 #endif //SPARKLE_PROTOCOL_H
