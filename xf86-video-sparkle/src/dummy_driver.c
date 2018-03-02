@@ -334,7 +334,7 @@ static void handle_disconnection(void *user)
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
 }
 
-static void handle_packet(void *user, sparkle_packet_t *packet)
+static void handle_packet(void *user, SparklePacket *packet)
 {
     ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
     ScreenPtr pScreen = xf86ScrnToScreen(pScrn);

@@ -5,7 +5,7 @@
 
 //==================================================================================================
 
-const packer_t p_uint32 =
+const WerePacker p_uint32 =
 {
     .pack = [](SparklePacketStream *stream, void *data)
     {
@@ -17,7 +17,7 @@ const packer_t p_uint32 =
     },
 };
 
-const packer_t p_string =
+const WerePacker p_string =
 {
     .pack = [](SparklePacketStream *stream, void *data)
     {
@@ -115,46 +115,41 @@ void SparklePacketStream::read(void *data, unsigned int size)
     _readPosition += size;
 }
 
-void SparklePacketStream::pWrite(const packer_t *packer, void *data)
+void SparklePacketStream::pWrite(const WerePacker *packer, void *data)
 {
     packer->pack(this, data);
 }
 
-void SparklePacketStream::pRead(const packer_t *packer, void *data)
+void SparklePacketStream::pRead(const WerePacker *packer, void *data)
 {
     packer->unpack(this, data);
 }
 
 //==================================================================================================
 
-sparkle_packet_t *sparkle_packet_create()
+SparklePacket *sparkle_packet_create()
 {
-    SparklePacket *_packet = new SparklePacket();
-    return _packet;
+    return new SparklePacket();
 }
 
-void sparkle_packet_destroy(sparkle_packet_t *packet)
+void sparkle_packet_destroy(SparklePacket *packet)
 {
-    SparklePacket *_packet = static_cast<SparklePacket *>(packet);
-    delete _packet;
+    delete packet;
 }
 
-unsigned char *sparkle_packet_data(sparkle_packet_t *packet)
+unsigned char *sparkle_packet_data(SparklePacket *packet)
 {
-    SparklePacket *_packet = static_cast<SparklePacket *>(packet);
-    return _packet->data();
+    return packet->data();
 }
 
-unsigned int sparkle_packet_size(sparkle_packet_t *packet)
+unsigned int sparkle_packet_size(SparklePacket *packet)
 {
-    SparklePacket *_packet = static_cast<SparklePacket *>(packet);
-    return _packet->size();
+    return packet->size();
 }
 
-SparklePacketHeader *sparkle_packet_header(sparkle_packet_t *packet)
+SparklePacketHeader *sparkle_packet_header(SparklePacket *packet)
 {
-    SparklePacket *_packet = static_cast<SparklePacket *>(packet);
-    return _packet->header();
+    return packet->header();
 }
 
 //==================================================================================================

@@ -5,6 +5,7 @@
 #include "were_event_source.h"
 #include "were_signal.h"
 
+
 class WereTimer : public WereEventSource
 {
 public:
@@ -19,6 +20,7 @@ public:
 private:
     void event(uint32_t events);
 };
+
 
 #endif //WERE_TIMER_H
 

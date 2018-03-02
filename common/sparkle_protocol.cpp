@@ -3,7 +3,7 @@
 
 //==================================================================================================
 
-const packet_type_t register_surface_file_request =
+const SparklePacketType register_surface_file_request =
 {
     .code = 0x0000,
     {
@@ -24,7 +24,7 @@ const packet_type_t register_surface_file_request =
     },
 };
 
-const packet_type_t unregister_surface_request =
+const SparklePacketType unregister_surface_request =
 {
     .code = 0x0001,
     {
@@ -39,7 +39,7 @@ const packet_type_t unregister_surface_request =
     },
 };
 
-const packet_type_t set_surface_position_request =
+const SparklePacketType set_surface_position_request =
 {
     .code = 0x0002,
     {
@@ -62,7 +62,7 @@ const packet_type_t set_surface_position_request =
     },
 };
 
-const packet_type_t set_surface_strata_request =
+const SparklePacketType set_surface_strata_request =
 {
     .code = 0x0003,
     {
@@ -79,7 +79,7 @@ const packet_type_t set_surface_strata_request =
     },
 };
 
-const packet_type_t set_surface_blending_request =
+const SparklePacketType set_surface_blending_request =
 {
     .code = 0x0004,
     {
@@ -96,7 +96,7 @@ const packet_type_t set_surface_blending_request =
     },
 };
 
-const packet_type_t add_surface_damage_request =
+const SparklePacketType add_surface_damage_request =
 {
     .code = 0x0005,
     {
@@ -119,7 +119,7 @@ const packet_type_t add_surface_damage_request =
     },
 };
 
-const packet_type_t display_size_notification =
+const SparklePacketType display_size_notification =
 {
     .code = 0x1000,
     {
@@ -136,7 +136,7 @@ const packet_type_t display_size_notification =
     },
 };
 
-const packet_type_t pointer_down_notification =
+const SparklePacketType pointer_down_notification =
 {
     .code = 0x1001,
     {
@@ -157,7 +157,7 @@ const packet_type_t pointer_down_notification =
     },
 };
 
-const packet_type_t pointer_up_notification =
+const SparklePacketType pointer_up_notification =
 {
     .code = 0x1002,
     {
@@ -178,7 +178,7 @@ const packet_type_t pointer_up_notification =
     },
 };
 
-const packet_type_t pointer_motion_notification =
+const SparklePacketType pointer_motion_notification =
 {
     .code = 0x1003,
     {
@@ -199,7 +199,7 @@ const packet_type_t pointer_motion_notification =
     },
 };
 
-const packet_type_t key_down_notification =
+const SparklePacketType key_down_notification =
 {
     .code = 0x1004,
     {
@@ -214,7 +214,7 @@ const packet_type_t key_down_notification =
     },
 };
 
-const packet_type_t key_up_notification =
+const SparklePacketType key_up_notification =
 {
     .code = 0x1005,
     {
@@ -231,7 +231,7 @@ const packet_type_t key_up_notification =
 
 //==================================================================================================
 
-const packet_type_t sound_data =
+const SparklePacketType sound_data =
 {
     .code = 0x2000,
     {
@@ -248,7 +248,7 @@ const packet_type_t sound_data =
     },
 };
 
-const packet_type_t sound_start =
+const SparklePacketType sound_start =
 {
     .code = 0x2001,
     {
@@ -257,7 +257,7 @@ const packet_type_t sound_start =
     },
 };
 
-const packet_type_t sound_stop =
+const SparklePacketType sound_stop =
 {
     .code = 0x2002,
     {
@@ -268,7 +268,7 @@ const packet_type_t sound_stop =
 
 //==================================================================================================
 
-const packet_type_t key_down_request =
+const SparklePacketType key_down_request =
 {
     .code = 0x0006,
     {
@@ -283,7 +283,7 @@ const packet_type_t key_down_request =
     },
 };
 
-const packet_type_t key_up_request =
+const SparklePacketType key_up_request =
 {
     .code = 0x0007,
     {

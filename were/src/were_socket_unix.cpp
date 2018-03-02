@@ -3,20 +3,9 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <fcntl.h>
 #include <sys/ioctl.h>
 
 //==================================================================================================
-
-void make_nonblock(int fd)
-{
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags == -1)
-        throw WereException("[%s] Failed to get fd flags.", __PRETTY_FUNCTION__);
-    flags |= O_NONBLOCK;
-    if (fcntl(fd, F_SETFL, flags) == -1)
-        throw WereException("[%s] Failed to set fd flags.", __PRETTY_FUNCTION__);
-}
 
 WereSocketUnix::~WereSocketUnix()
 {
@@ -37,6 +26,8 @@ WereSocketUnix::WereSocketUnix(WereEventLoop *loop, int fd) :
     _loop->registerEventSource(this, EPOLLIN | EPOLLET);
     _state = ConnectedState;
     
+    setBlocking(false);
+    
     were_debug("[%p][%s] Connected (accept).\n", this, __PRETTY_FUNCTION__);
 }
 
@@ -52,7 +43,7 @@ void WereSocketUnix::connect(const std::string &path)
     if (_fd == -1)
         throw WereException("[%p][%s] Failed to create socket.", this, __PRETTY_FUNCTION__);
     
-    make_nonblock(_fd);
+    setBlocking(false);
     
     struct sockaddr_un name = {};
     memset(&name, 0, sizeof(name));
@@ -186,96 +177,6 @@ unsigned int WereSocketUnix::bytesAvailable() const
     //were_debug("Bytes available: %d\n", bytes);
 
     return bytes;
-}
-
-//==================================================================================================
-
-were_socket_unix_t *were_socket_unix_create(were_event_loop_t *loop)
-{
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    WereSocketUnix *_socket = new WereSocketUnix(_loop);
-    return static_cast<were_socket_unix_t *>(_socket);
-}
-
-void were_socket_unix_destroy(were_socket_unix_t *socket)
-{
-    WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    delete _socket;
-}
-
-void were_socket_unix_connect(were_socket_unix_t *socket, const char *path)
-{
-    WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    _socket->connect(path);
-}
-
-void were_socket_unix_disconnect(were_socket_unix_t *socket)
-{
-    WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    _socket->disconnect();
-}
-
-int were_socket_unix_connected(were_socket_unix_t *socket)
-{
-    WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    return _socket->state() == WereSocketUnix::ConnectedState;
-}
-
-int were_socket_unix_send(were_socket_unix_t *socket, const unsigned char *data, unsigned int size)
-{
-    WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    return _socket->send(data, size);
-}
-
-int were_socket_unix_receive(were_socket_unix_t *socket, unsigned char *data, unsigned int size)
-{
-    WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    return _socket->receive(data, size);
-}
-
-int were_socket_unix_peek(were_socket_unix_t *socket, unsigned char *data, unsigned int size)
-{
-    WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    return _socket->peek(data, size);
-}
-
-unsigned int were_socket_unix_bytes_available(were_socket_unix_t *socket)
-{
-    WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    return _socket->bytesAvailable();
-}
-
-void were_socket_unix_set_connection_callback(were_socket_unix_t *socket, were_event_loop_t *loop, void (*f)(void *user), void *user)
-{
-    WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-
-    _socket->signal_connected.connect([_loop, f, user]()
-    {
-        _loop->queue(std::bind(f, user));
-    });
-}
-
-void were_socket_unix_set_disconnection_callback(were_socket_unix_t *socket, were_event_loop_t *loop, void (*f)(void *user), void *user)
-{
-    WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-
-    _socket->signal_disconnected.connect([_loop, f, user]()
-    {
-        _loop->queue(std::bind(f, user));
-    });
-}
-
-void were_socket_unix_set_data_callback(were_socket_unix_t *socket, were_event_loop_t *loop, void (*f)(void *user), void *user)
-{
-    WereSocketUnix *_socket = static_cast<WereSocketUnix *>(socket);
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-
-    _socket->signal_data.connect([_loop, f, user]()
-    {
-        _loop->queue(std::bind(f, user));
-    });
 }
 
 //==================================================================================================

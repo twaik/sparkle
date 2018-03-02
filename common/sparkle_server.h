@@ -23,7 +23,7 @@ public:
     SparkleServer(WereEventLoop *loop, const std::string &path);
     
     void broadcast(SparklePacket *packet);
-    void broadcast1(const packet_type_t *packetType, void *data);
+    void broadcast1(const SparklePacketType *packetType, void *data);
 
 werethings:
     WereSignal<void (std::shared_ptr<SparkleConnection> client)> signal_connected;

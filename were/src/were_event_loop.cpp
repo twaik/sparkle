@@ -110,28 +110,24 @@ void WereEventLoop::queue(const std::function<void ()> &f)
 
 //==================================================================================================
 
-were_event_loop_t *were_event_loop_create()
+WereEventLoop *were_event_loop_create()
 {
-    WereEventLoop *_loop = new WereEventLoop();
-    return static_cast<were_event_loop_t *>(_loop);
+    return new WereEventLoop();
 }
 
-void were_event_loop_destroy(were_event_loop_t *loop)
+void were_event_loop_destroy(WereEventLoop *loop)
 {
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    delete _loop;
+    delete loop;
 }
 
-void were_event_loop_process_events(were_event_loop_t *loop)
+void were_event_loop_process_events(WereEventLoop *loop)
 {
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    _loop->processEvents();
+    loop->processEvents();
 }
 
-int were_event_loop_fd(were_event_loop_t *loop)
+int were_event_loop_fd(WereEventLoop *loop)
 {
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    return _loop->fd();
+    return loop->fd();
 }
 
 //==================================================================================================

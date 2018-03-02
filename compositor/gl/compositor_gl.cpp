@@ -822,6 +822,7 @@ void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
     if (surface != 0)
     {
         surface->setStrata(strata);
+        std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
         _redraw = true;
     }
 }

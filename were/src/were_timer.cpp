@@ -18,6 +18,8 @@ WereTimer::WereTimer(WereEventLoop *loop) :
     if (_fd == -1)
         throw WereException("[%p][%s] Failed to create timer fd.", this, __PRETTY_FUNCTION__);
     
+    setBlocking(false);
+    
     _loop->registerEventSource(this, EPOLLIN | EPOLLET);
 }
 

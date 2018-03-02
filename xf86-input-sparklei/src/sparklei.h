@@ -72,8 +72,8 @@ typedef struct {
     unsigned char btnmap[32];
     
     //OsTimerPtr timer;
-    were_event_loop_t *loop;
-    sparkle_connection_t *sparkle;
+    WereEventLoop *loop;
+    SparkleConnection *sparkle;
     
     int slot_state[10];
     int rmb_state;

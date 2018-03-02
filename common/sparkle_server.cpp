@@ -62,7 +62,7 @@ void SparkleServer::broadcast(SparklePacket *packet)
         (*it)->send(packet);
 }
 
-void SparkleServer::broadcast1(const packet_type_t *packetType, void *data)
+void SparkleServer::broadcast1(const SparklePacketType *packetType, void *data)
 {
     SparklePacket packet;
     packet.header()->operation = packetType->code;

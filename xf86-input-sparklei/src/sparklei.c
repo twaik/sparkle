@@ -390,7 +390,7 @@ static void SparkleiRMB(InputInfoPtr pInfo, int state)
     }
 }
 
-static void SparkleiPacketHandler(void *user, sparkle_packet_t *packet)
+static void SparkleiPacketHandler(void *user, SparklePacket *packet)
 {
     InputInfoPtr      pInfo    = (InputInfoPtr)user;
     EvdevPtr          pEvdev   = pInfo->private;

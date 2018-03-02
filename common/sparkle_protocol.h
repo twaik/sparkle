@@ -5,61 +5,61 @@
 
 //==================================================================================================
 
-struct _packet_type_t
+struct _SparklePacketType
 {
     int code;
-    packer_t packer;
+    WerePacker packer;
 };
-typedef struct _packet_type_t packet_type_t;
+typedef struct _SparklePacketType SparklePacketType;
 
 //==================================================================================================
 
 struct _register_surface_file_request {const char *name; const char *path; int width; int height;};
-extern const packet_type_t register_surface_file_request;
+extern const SparklePacketType register_surface_file_request;
 
 struct _unregister_surface_request {const char *name;};
-extern const packet_type_t unregister_surface_request;
+extern const SparklePacketType unregister_surface_request;
 
 struct _set_surface_position_request {const char *name; int x1; int y1; int x2; int y2;};
-extern const packet_type_t set_surface_position_request;
+extern const SparklePacketType set_surface_position_request;
 
 struct _set_surface_strata_request {const char *name; int strata;};
-extern const packet_type_t set_surface_strata_request;
+extern const SparklePacketType set_surface_strata_request;
 
 struct _set_surface_blending_request {const char *name; int blending;};
-extern const packet_type_t set_surface_blending_request;
+extern const SparklePacketType set_surface_blending_request;
 
 struct _add_surface_damage_request {const char *name; int x1; int y1; int x2; int y2;};
-extern const packet_type_t add_surface_damage_request;
+extern const SparklePacketType add_surface_damage_request;
 
 struct _display_size_notification {int width; int height;};
-extern const packet_type_t display_size_notification;
+extern const SparklePacketType display_size_notification;
 
 struct _pointer_down_notification {const char *surface; int slot; int x; int y;};
-extern const packet_type_t pointer_down_notification;
+extern const SparklePacketType pointer_down_notification;
 
 struct _pointer_up_notification {const char *surface; int slot; int x; int y;};
-extern const packet_type_t pointer_up_notification;
+extern const SparklePacketType pointer_up_notification;
 
 struct _pointer_motion_notification {const char *surface; int slot; int x; int y;};
-extern const packet_type_t pointer_motion_notification;
+extern const SparklePacketType pointer_motion_notification;
 
 struct _key_down_notification {int code;};
-extern const packet_type_t key_down_notification;
+extern const SparklePacketType key_down_notification;
 
 struct _key_up_notification {int code;};
-extern const packet_type_t key_up_notification;
+extern const SparklePacketType key_up_notification;
 
 struct _sound_data {unsigned int size; const unsigned char *data;};
-extern const packet_type_t sound_data;
-extern const packet_type_t sound_start;
-extern const packet_type_t sound_stop;
+extern const SparklePacketType sound_data;
+extern const SparklePacketType sound_start;
+extern const SparklePacketType sound_stop;
 
 struct _key_down_request {int code;};
-extern const packet_type_t key_down_request;
+extern const SparklePacketType key_down_request;
 
 struct _key_up_request {int code;};
-extern const packet_type_t key_up_request;
+extern const SparklePacketType key_up_request;
 
 //==================================================================================================
 

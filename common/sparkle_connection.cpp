@@ -145,7 +145,7 @@ void SparkleConnection::send(SparklePacket *packet)
     }
 }
 
-void SparkleConnection::send1(const packet_type_t *packetType, void *data)
+void SparkleConnection::send1(const SparklePacketType *packetType, void *data)
 {
     SparklePacket packet;
     packet.header()->operation = packetType->code;
@@ -156,7 +156,7 @@ void SparkleConnection::send1(const packet_type_t *packetType, void *data)
     send(&packet);
 }
 
-void SparkleConnection::unpack1(const packet_type_t *packetType, SparklePacket *packet, void *data)
+void SparkleConnection::unpack1(const SparklePacketType *packetType, SparklePacket *packet, void *data)
 {
     SparklePacketStream stream(packet);
     stream.pRead(&packetType->packer, data);
@@ -164,74 +164,58 @@ void SparkleConnection::unpack1(const packet_type_t *packetType, SparklePacket *
 
 //==================================================================================================
 
-sparkle_connection_t *sparkle_connection_create(were_event_loop_t *loop, const char *path)
+SparkleConnection *sparkle_connection_create(WereEventLoop *loop, const char *path)
 {
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-    SparkleConnection *_connection = new SparkleConnection(_loop, path);
-    return static_cast<sparkle_connection_t *>(_connection);
+    return new SparkleConnection(loop, path);
 }
 
-void sparkle_connection_destroy(sparkle_connection_t *connection)
+void sparkle_connection_destroy(SparkleConnection *connection)
 {
-    SparkleConnection *_connection = static_cast<SparkleConnection *>(connection);
-    delete _connection;
+    delete connection;
 }
 
-void sparkle_connection_send(sparkle_connection_t *connection, sparkle_packet_t *packet)
+void sparkle_connection_send(SparkleConnection *connection, SparklePacket *packet)
 {
-    SparkleConnection *_connection = static_cast<SparkleConnection *>(connection);
-    SparklePacket *_packet = static_cast<SparklePacket *>(packet);
-    _connection->send(_packet);
+    connection->send(packet);
 }
 
-void sparkle_connection_send1(sparkle_connection_t *connection, const packet_type_t *packetType, void *data)
+void sparkle_connection_send1(SparkleConnection *connection, const SparklePacketType *packetType, void *data)
 {
-    SparkleConnection *_connection = static_cast<SparkleConnection *>(connection);
-    _connection->send1(packetType, data);
+    connection->send1(packetType, data);
 }
 
-void sparkle_connection_unpack1(const packet_type_t *packetType, sparkle_packet_t *packet, void *data)
+void sparkle_connection_unpack1(const SparklePacketType *packetType, SparklePacket *packet, void *data)
 {
-    SparklePacket *_packet = static_cast<SparklePacket *>(packet);
-    SparkleConnection::unpack1(packetType, _packet, data);
+    SparkleConnection::unpack1(packetType, packet, data);
 }
 
 
-void sparkle_connection_add_connection_callback(sparkle_connection_t *connection, were_event_loop_t *loop, void (*f)(void *user), void *user)
+void sparkle_connection_add_connection_callback(SparkleConnection *connection, WereEventLoop *loop, void (*f)(void *user), void *user)
 {
-    SparkleConnection *_connection = static_cast<SparkleConnection *>(connection);
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-
-    _connection->signal_connected.connect([_loop, f, user]()
+    connection->signal_connected.connect([loop, f, user]()
     {
-        _loop->queue(std::bind(f, user));
+        loop->queue(std::bind(f, user));
     });
 }
 
-void sparkle_connection_add_disconnection_callback(sparkle_connection_t *connection, were_event_loop_t *loop, void (*f)(void *user), void *user)
+void sparkle_connection_add_disconnection_callback(SparkleConnection *connection, WereEventLoop *loop, void (*f)(void *user), void *user)
 {
-    SparkleConnection *_connection = static_cast<SparkleConnection *>(connection);
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-
-    _connection->signal_disconnected.connect([_loop, f, user]()
+    connection->signal_disconnected.connect([loop, f, user]()
     {
-        _loop->queue(std::bind(f, user));
+        loop->queue(std::bind(f, user));
     });
 }
 
-static void sparkle_packet_callback(std::shared_ptr<SparklePacket> packet, void (*f)(void *user, sparkle_packet_t *packet), void *user)
+static void sparkle_packet_callback(std::shared_ptr<SparklePacket> packet, void (*f)(void *user, SparklePacket *packet), void *user)
 {
-    (*f)(user, static_cast<sparkle_packet_t *>(packet.get()));
+    (*f)(user, packet.get());
 }
 
-void sparkle_connection_add_packet_callback(sparkle_connection_t *connection, were_event_loop_t *loop, void (*f)(void *user, sparkle_packet_t *packet), void *user)
+void sparkle_connection_add_packet_callback(SparkleConnection *connection, WereEventLoop *loop, void (*f)(void *user, SparklePacket *packet), void *user)
 {
-    SparkleConnection *_connection = static_cast<SparkleConnection *>(connection);
-    WereEventLoop *_loop = static_cast<WereEventLoop *>(loop);
-
-    _connection->signal_packet.connect([_loop, f, user](std::shared_ptr<SparklePacket> packet)
+    connection->signal_packet.connect([loop, f, user](std::shared_ptr<SparklePacket> packet)
     {
-        _loop->queue(std::bind(sparkle_packet_callback, packet, f, user));
+        loop->queue(std::bind(sparkle_packet_callback, packet, f, user));
     });
 }
 

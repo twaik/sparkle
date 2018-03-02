@@ -13,6 +13,8 @@ public:
     
     int fd();
     
+    void setBlocking(bool blocking);
+    
 private:
     virtual void event(uint32_t events) = 0;
     

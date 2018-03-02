@@ -65,9 +65,9 @@ typedef struct dummyRec
 #endif
     Bool prop;
 #ifdef SPARKLE_MODE
-    sparkle_surface_file_t *surface;
-    were_event_loop_t *were;
-    sparkle_connection_t *sparkle;
+    SparkleSurfaceFile *surface;
+    WereEventLoop *were;
+    SparkleConnection *sparkle;
     int displayWidth;
     int displayHeight;
     int configuredWidth;

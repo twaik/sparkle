@@ -44,21 +44,24 @@ private:
     std::thread _thread;
 };
 
+#else
+
+struct WereEventLoop;
+typedef struct WereEventLoop WereEventLoop;
+
 #endif //__cplusplus
 
 //==================================================================================================
-
-typedef void were_event_loop_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
     
-were_event_loop_t *were_event_loop_create();
-void were_event_loop_destroy(were_event_loop_t *loop);
+WereEventLoop *were_event_loop_create();
+void were_event_loop_destroy(WereEventLoop *loop);
 
-int were_event_loop_fd(were_event_loop_t *loop);
-void were_event_loop_process_events(were_event_loop_t *loop);
+int were_event_loop_fd(WereEventLoop *loop);
+void were_event_loop_process_events(WereEventLoop *loop);
 
 #ifdef __cplusplus
 }

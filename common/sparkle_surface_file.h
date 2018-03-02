@@ -5,10 +5,9 @@
 
 #ifdef __cplusplus
 
-#include "sparkle_surface.h"
 #include <string>
 
-class SparkleSurfaceFile : public SparkleSurface
+class SparkleSurfaceFile
 {
 public:
     ~SparkleSurfaceFile();
@@ -33,22 +32,25 @@ private:
     unsigned char *_data;
 };
 
+#else
+
+struct SparkleSurfaceFile;
+typedef struct SparkleSurfaceFile SparkleSurfaceFile;
+
 #endif //__cplusplus
 
 //==================================================================================================
-
-typedef void sparkle_surface_file_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-sparkle_surface_file_t *sparkle_surface_file_create(const char *path, int width, int height, int owner);
-void sparkle_surface_file_destroy(sparkle_surface_file_t *surface);
+SparkleSurfaceFile *sparkle_surface_file_create(const char *path, int width, int height, int owner);
+void sparkle_surface_file_destroy(SparkleSurfaceFile *surface);
 
-int sparkle_surface_file_width(sparkle_surface_file_t *surface);
-int sparkle_surface_file_height(sparkle_surface_file_t *surface);
-void *sparkle_surface_file_data(sparkle_surface_file_t *surface);
+int sparkle_surface_file_width(SparkleSurfaceFile *surface);
+int sparkle_surface_file_height(SparkleSurfaceFile *surface);
+void *sparkle_surface_file_data(SparkleSurfaceFile *surface);
 
 #ifdef __cplusplus
 }

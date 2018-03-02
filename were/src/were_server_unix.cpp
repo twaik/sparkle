@@ -32,7 +32,7 @@ WereServerUnix::WereServerUnix(WereEventLoop *loop, const std::string &path) :
     if (_fd == -1)
         throw WereException("[%p][%s] Failed to create socket.", this, __PRETTY_FUNCTION__);
     
-    make_nonblock(_fd);
+    setBlocking(false);
     
     struct sockaddr_un name = {};
     name.sun_family = AF_UNIX;
@@ -64,9 +64,7 @@ WereSocketUnix *WereServerUnix::accept()
     int fd = ::accept(_fd, NULL, NULL);
     if (fd == -1)
         return 0;
-    
-    make_nonblock(_fd);
-    
+
     WereSocketUnix *socket = new WereSocketUnix(_loop, fd);
     
     return socket;

@@ -3,36 +3,18 @@
 
 //==================================================================================================
 
-#ifdef __cplusplus
-class SparklePacketStream;
-#endif
-
-struct _packer_t
-{
-#ifdef __cplusplus
-    void (*pack)(SparklePacketStream *stream, void *data);
-    void (*unpack)(SparklePacketStream *stream, void *data);
-#else
-    void *pack;
-    void *unpack;
-#endif
-};
-typedef struct _packer_t packer_t;
-
-extern const packer_t p_uint32;
-extern const packer_t p_string;
-
-//==================================================================================================
-
 struct SparklePacketHeader
 {
     int operation;
 };
 
 //==================================================================================================
+
 #ifdef __cplusplus
 
 #include <vector>
+
+struct WerePacker; //FIXME
 
 class SparklePacket
 {
@@ -63,8 +45,8 @@ public:
     
     void write(const void *data, unsigned int size);
     void read(void *data, unsigned int size);
-    void pWrite(const packer_t *packer, void *data);
-    void pRead(const packer_t *packer, void *data);
+    void pWrite(const WerePacker *packer, void *data);
+    void pRead(const WerePacker *packer, void *data);
     
 private:
     SparklePacket *_packet;
@@ -72,21 +54,41 @@ private:
     unsigned int _writePosition;
 };
 
+#else
+
+struct SparklePacket;
+typedef struct SparklePacket SparklePacket;
+
+struct SparklePacketStream;
+typedef struct SparklePacketStream SparklePacketStream;
+
 #endif
+
 //==================================================================================================
 
-typedef void sparkle_packet_t;
+struct WerePacker
+{
+    void (*pack)(SparklePacketStream *stream, void *data);
+    void (*unpack)(SparklePacketStream *stream, void *data);
+};
+typedef struct WerePacker WerePacker;
+
+extern const WerePacker p_uint32;
+extern const WerePacker p_string;
+
+//==================================================================================================
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-sparkle_packet_t *sparkle_packet_create();
-void sparkle_packet_destroy(sparkle_packet_t *packet);
+SparklePacket *sparkle_packet_create();
+void sparkle_packet_destroy(SparklePacket *packet);
 
-unsigned char *sparkle_packet_data(sparkle_packet_t *packet);
-unsigned int sparkle_packet_size(sparkle_packet_t *packet);
-struct SparklePacketHeader *sparkle_packet_header(sparkle_packet_t *packet);
+unsigned char *sparkle_packet_data(SparklePacket *packet);
+unsigned int sparkle_packet_size(SparklePacket *packet);
+struct SparklePacketHeader *sparkle_packet_header(SparklePacket *packet);
 
 #ifdef __cplusplus
 }
