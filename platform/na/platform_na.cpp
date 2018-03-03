@@ -28,7 +28,6 @@ private:
     void timeout();
     static int handleInput(struct android_app *app, AInputEvent *event);
     static void handleCmd(struct android_app *app, int32_t cmd);
-    void setImmersive();
 
 private:
     WereEventLoop *_loop;
@@ -64,7 +63,6 @@ PlatformNA::PlatformNA(WereEventLoop *loop, struct android_app *app)
 int PlatformNA::start()
 {
     ANativeActivity_setWindowFlags(_app->activity, AWINDOW_FLAG_FULLSCREEN, AWINDOW_FLAG_FORCE_NOT_FULLSCREEN);
-    setImmersive();
     
     _timer->start(1000/60, false);
     
@@ -224,7 +222,6 @@ void PlatformNA::handleCmd(struct android_app *app, int32_t cmd)
             //                                   engine->accelerometerSensor,
             //                                   (1000L/60)*1000);
             //}
-            //platform->setImmersive();
             break;
         case APP_CMD_LOST_FOCUS:
             // When our app loses focus, we stop monitoring the accelerometer.
@@ -240,6 +237,7 @@ void PlatformNA::handleCmd(struct android_app *app, int32_t cmd)
     }
 }
 
+#if 0
 void PlatformNA::setImmersive()
 {
 /*
@@ -293,6 +291,7 @@ public void onWindowFocusChanged(boolean hasFocus) {
 
 	_app->activity->vm->DetachCurrentThread();
 }
+#endif
 
 //==================================================================================================
 
