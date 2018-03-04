@@ -365,9 +365,8 @@ static void handle_packet(void *user, SparklePacket *packet)
             DisplayModePtr mode = dPtr->modes;
             //pScrn->currentMode = mode;
 
-            //XXX Take DPI from config
-            int mmWidth = mode->HDisplay * 254 / 960;
-            int mmHeight = mode->VDisplay * 254 / 960;
+            int mmWidth = mode->HDisplay * 25.4 / monitorResolution;
+            int mmHeight = mode->VDisplay * 25.4 / monitorResolution;
 
             RRScreenSizeSet(pScreen, mode->HDisplay, mode->VDisplay, mmWidth, mmHeight);
             xf86SetSingleMode(pScrn, mode, RR_Rotate_0);
@@ -760,6 +759,11 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
     dPtr->surface_file = xf86SetStrOption(pScrn->options, "SurfaceFile", NULL);
     if (dPtr->surface_file == NULL)
         return FALSE;
+    
+    if (!monitorResolution)
+        monitorResolution = xf86SetIntOption(pScrn->options, "DPI", 96);
+    
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DPI: %d\n", monitorResolution);
     
     //dPtr->desiredWidth = xf86SetIntOption(pScrn->options, "Width", 800);
     //dPtr->desiredHeight = xf86SetIntOption(pScrn->options, "Height", 600);
