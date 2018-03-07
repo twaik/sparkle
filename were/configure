@@ -17137,6 +17137,9 @@ $as_echo "#define HAVE_CXX11 1" >>confdefs.h
 
 
 
+CFLAGS="$CFLAGS -Wall -Wextra"
+CXXFLAGS="$CXXFLAGS -Wall -Wextra"
+
 ac_config_files="$ac_config_files Makefile src/Makefile"
 
 cat >confcache <<\_ACEOF

@@ -11,6 +11,9 @@ AC_PROG_CC
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
 
+CFLAGS="$CFLAGS -Wall -Wextra"
+CXXFLAGS="$CXXFLAGS -Wall -Wextra"
+
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT
 
