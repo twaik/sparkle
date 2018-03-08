@@ -17,6 +17,7 @@
 #include "common/sparkle_protocol.h"
 #include "common/sparkle_connection.h"
 
+#define ALWAYS_UPLOAD 0
 #define USE_BLENDING
 
 //==================================================================================================
@@ -34,8 +35,14 @@ static const char simpleFS[] =
         "precision mediump float;\n\n"
         "varying vec2 outTexCoords;\n"
         "uniform sampler2D texture;\n"
+#ifdef USE_BLENDING
+        "uniform float alpha;\n"
+#endif
         "\nvoid main(void) {\n"
         "    gl_FragColor = texture2D(texture, outTexCoords);\n"
+#ifdef USE_BLENDING
+        "    gl_FragColor.a = alpha;\n"
+#endif
         "}\n\n";
 
 
@@ -125,6 +132,9 @@ public:
     GLuint _textureProgram;
     GLuint _texturePositionHandle;
     GLuint _textureTexCoordsHandle;
+#ifdef USE_BLENDING
+    GLuint _textureAlphaHandle;
+#endif
     //GLuint _textureSamplerHandle;
 };
 
@@ -183,6 +193,9 @@ CompositorGL_GL::CompositorGL_GL(CompositorGL_EGL *egl, NativeWindowType window)
 
     _texturePositionHandle = glGetAttribLocation(_textureProgram, "position");
     _textureTexCoordsHandle = glGetAttribLocation(_textureProgram, "texCoords");
+#ifdef USE_BLENDING
+    _textureAlphaHandle = glGetUniformLocation(_textureProgram, "alpha");
+#endif
     //_textureSamplerHandle = glGetUniformLocation(_textureProgram, "texture");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -223,11 +236,11 @@ public:
     void destroyTexture(); //FIXME Temporary solution
     const RectangleA &position();
     int strata();
-    bool blending();
+    float alpha();
     
     void setPosition(int x1, int y1, int x2, int y2);
     void setStrata(int strata);
-    void setBlending(int blending);
+    void setAlpha(float alpha);
     void addDamage(int x1, int y1, int x2, int y2);
     
     virtual bool updateTexture() = 0;
@@ -237,7 +250,7 @@ protected:
     Texture *_texture;
     RectangleA _position;
     int _strata;
-    bool _blending;
+    float _alpha;
     RectangleA _damage;
 };
 
@@ -251,7 +264,7 @@ CompositorGLSurface::CompositorGLSurface(const std::string &name)
     _name = name;
     _texture = 0;
     _strata = 0;
-    _blending = false;
+    _alpha = 1.0f;
 }
 
 const std::string &CompositorGLSurface::name()
@@ -285,9 +298,9 @@ int CompositorGLSurface::strata()
     return _strata;
 }
 
-bool CompositorGLSurface::blending()
+float CompositorGLSurface::alpha()
 {
-    return _blending;
+    return _alpha;
 }
 
 void CompositorGLSurface::setPosition(int x1, int y1, int x2, int y2)
@@ -300,9 +313,9 @@ void CompositorGLSurface::setStrata(int strata)
     _strata = strata;
 }
 
-void CompositorGLSurface::setBlending(int blending)
+void CompositorGLSurface::setAlpha(float alpha)
 {
-    _blending = blending;
+    _alpha = alpha;
 }
 
 void CompositorGLSurface::addDamage(int x1, int y1, int x2, int y2)
@@ -358,7 +371,7 @@ bool CompositorGLSurfaceFile::updateTexture()
         result = true;
     }
     
-    if (_damage.width() > 0 && _damage.height() > 0)
+    if ((_damage.width() > 0 && _damage.height() > 0) || ALWAYS_UPLOAD)
     {
         unsigned char *data = _surface->data();
         
@@ -368,7 +381,7 @@ bool CompositorGLSurfaceFile::updateTexture()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture()->id());
 
-#if 0
+#if 0 || ALWAYS_UPLOAD
         glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA_EXT, texture()->width(), texture()->height(), 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, data);
 #else
         glTexSubImage2D(GL_TEXTURE_2D, 0,
@@ -417,7 +430,7 @@ private:
     void unregisterSurface(const std::string &name);
     void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
     void setSurfaceStrata(const std::string &name, int strata);
-    void setSurfaceBlending(const std::string &name, int blending);
+    void setSurfaceAlpha(const std::string &name, float alpha);
     void addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2);
 
     std::shared_ptr<CompositorGLSurface> findSurface(const std::string &name);
@@ -577,9 +590,8 @@ void CompositorGL::draw()
         for (auto it = _surfaces.begin(); it != _surfaces.end(); ++it)
         {
             std::shared_ptr<CompositorGLSurface> surface = (*it);
-
+            
             //XXX Ignore disabled layers
-
             //XXX Only recalculate when changed
             
             float x1r = 1.0 * surface->position().from.x / _gl->_surfaceWidth;
@@ -611,9 +623,12 @@ void CompositorGL::draw()
             glEnableVertexAttribArray(_gl->_texturePositionHandle);
             glEnableVertexAttribArray(_gl->_textureTexCoordsHandle);
 
+                            
 #ifdef USE_BLENDING
-            if (surface->blending())
+            if (surface->alpha() != 1.0f)
             {
+                glUniform1f(_gl->_textureAlphaHandle, surface->alpha());
+                
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
@@ -623,7 +638,7 @@ void CompositorGL::draw()
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
             
 #ifdef USE_BLENDING
-            if (surface->blending())
+            if (surface->alpha() != 1.0f)
             {
                 glDisable(GL_BLEND);
             }
@@ -750,7 +765,8 @@ void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared
     {
         _set_surface_blending_request r1;
         SparkleConnection::unpack1(&set_surface_blending_request, packet.get(), &r1);
-        setSurfaceBlending(r1.name, r1.blending);
+        if (r1.blending != 0)
+            setSurfaceAlpha(r1.name, 0.5);
     }
     else if (operation == add_surface_damage_request.code)
     {
@@ -827,14 +843,14 @@ void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
     }
 }
 
-void CompositorGL::setSurfaceBlending(const std::string &name, int blending)
+void CompositorGL::setSurfaceAlpha(const std::string &name, float alpha)
 {
-    were_debug("Surface [%s]: blending changed.\n", name.c_str());
+    were_debug("Surface [%s]: alpha changed.\n", name.c_str());
     
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
     {
-        surface->setBlending(blending);
+        surface->setAlpha(alpha);
         _redraw = true;
     }
 }
