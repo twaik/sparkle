@@ -82,6 +82,11 @@ const std::string &SparkleSurfaceFile::path()
     return _path;
 }
 
+unsigned char *SparkleSurfaceFile::data()
+{
+    return _data;
+}
+
 int SparkleSurfaceFile::width()
 {
     return _width;
@@ -92,9 +97,9 @@ int SparkleSurfaceFile::height()
     return _height;
 }
 
-unsigned char *SparkleSurfaceFile::data()
+int SparkleSurfaceFile::stride()
 {
-    return _data;
+    return width();
 }
     
 //==================================================================================================

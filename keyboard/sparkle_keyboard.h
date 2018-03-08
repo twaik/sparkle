@@ -8,9 +8,9 @@
 class WereEventLoop;
 class WereSignalHandler;
 class SparkleSurfaceFile;
-class WidgetHost;
+class WereWidget;
 class SparkleConnection;
-class WidgetButton;
+class WereButton;
 
 class SparkleKeyboard
 {
@@ -35,10 +35,10 @@ private:
     WereEventLoop *_loop;
     WereSignalHandler *_sig;
     SparkleSurfaceFile *_surface;
-    WidgetHost *_host;
+    WereWidget *_host;
     SparkleConnection *_sparkle;
     
-    WidgetButton *_buttons;
+    WereButton *_buttons;
     
     int _displayWidth;
     int _displayHeight;

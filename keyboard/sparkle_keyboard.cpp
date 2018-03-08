@@ -2,10 +2,10 @@
 #include "were/were_event_loop.h"
 #include "were/were_signal_handler.h"
 #include "common/sparkle_surface_file.h"
-#include "ui/widget_host.h"
+#include "were-graphics/were_widget.h"
 #include "common/sparkle_connection.h"
 #include "were/were_socket_unix.h"
-#include "ui/widget_button.h"
+#include "were-graphics/were_button.h"
 #include "common/sparkle_protocol.h"
 #include <unistd.h>
 
@@ -92,12 +92,12 @@ SparkleKeyboard::SparkleKeyboard()
     _sparkle->signal_packet.connect(WereSimpleQueuer(_loop, &SparkleKeyboard::packet, this));
 
     
-    _host = new WidgetHost(_loop);
-    _host->damage.connect(WereSimpleQueuer(_loop, &SparkleKeyboard::hostDamage, this));
+    _host = new WereWidget();
+
 
     unsigned int n = sizeof(layout) / sizeof(ButtonData);
     
-    _buttons = new WidgetButton[n];
+    _buttons = new WereButton[n];
     
     for (unsigned int i = 0; i < n; ++i)
     {
@@ -108,7 +108,7 @@ SparkleKeyboard::SparkleKeyboard()
         CoordinateC x2(1.0 * (layout[i].x + layout[i].width) / layoutWidth, 0);
         CoordinateC y2(1.0 * (layout[i].y + layout[i].height) / layoutHeight, 0);
 
-        _host->addWidget(&_buttons[i], 
+        _host->addChild(&_buttons[i], 
             RectangleC(PointC(x1, y1), PointC(x2, y2))
         );
         
@@ -186,14 +186,17 @@ void SparkleKeyboard::check()
         {
             unreg();
             _surface = new SparkleSurfaceFile(surface_path, sw, sh, true);
-            _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
+            _surface->damage.connect(WereSimpleQueuer(_loop, &SparkleKeyboard::hostDamage, this));
+            _host->setSurface(_surface);
+
         }
         else if (_surface->width() != sw || _surface->height() != sh)
         {
             unreg();
             delete _surface;
             _surface = new SparkleSurfaceFile(surface_path, sw, sh, true);
-            _host->setBuffer(_surface->data(), _surface->width(), _surface->width(), _surface->height());
+            _surface->damage.connect(WereSimpleQueuer(_loop, &SparkleKeyboard::hostDamage, this));
+            _host->setSurface(_surface);
         }
     }
     
@@ -225,22 +228,22 @@ void SparkleKeyboard::packet(std::shared_ptr<SparklePacket> packet)
     {
         struct _pointer_down_notification r1;
         SparkleConnection::unpack1(&pointer_down_notification, packet.get(), &r1);
-        if (strcmp(r1.surface, surface_name) == 0)
-            _host->pointerDown(r1.slot, r1.x, r1.y);
+        //if (strcmp(r1.surface, surface_name) == 0)
+        //    _host->pointerDown(r1.slot, r1.x, r1.y);
     }
     else if (operation == pointer_up_notification.code)
     {
         struct _pointer_up_notification r1;
         SparkleConnection::unpack1(&pointer_up_notification, packet.get(), &r1);
-        if (strcmp(r1.surface, surface_name) == 0)
-            _host->pointerUp(r1.slot, r1.x, r1.y);
+        //if (strcmp(r1.surface, surface_name) == 0)
+        //    _host->pointerUp(r1.slot, r1.x, r1.y);
     }
     else if (operation == pointer_motion_notification.code)
     {
         struct _pointer_motion_notification r1;
         SparkleConnection::unpack1(&pointer_motion_notification, packet.get(), &r1);
-        if (strcmp(r1.surface, surface_name) == 0)
-            _host->pointerMotion(r1.slot, r1.x, r1.y);
+        //if (strcmp(r1.surface, surface_name) == 0)
+        //    _host->pointerMotion(r1.slot, r1.x, r1.y);
     }
     else if (operation == key_down_notification.code)
     {

@@ -5,18 +5,20 @@
 
 #ifdef __cplusplus
 
+#include "were-graphics/were_surface.h"
 #include <string>
 
-class SparkleSurfaceFile
+class SparkleSurfaceFile : public WereSurface
 {
 public:
     ~SparkleSurfaceFile();
     SparkleSurfaceFile(const std::string &path, int width, int height, bool owner);
     
     const std::string &path();
+    unsigned char *data();
     int width();
     int height();
-    unsigned char *data();
+    int stride();
     
 private:
     void map();

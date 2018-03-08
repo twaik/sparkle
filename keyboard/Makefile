@@ -20,14 +20,14 @@ HEADERS += ../common/sparkle_surface_file.h
 SOURCES += ../ui/were_painter.cpp
 HEADERS += ../ui/were_painter.h
 
-SOURCES += ../ui/widget_host.cpp
-HEADERS += ../ui/widget_host.h
+SOURCES += ../were-graphics/were_widget.cpp
+HEADERS += ../were-graphics/were_widget.h
 
 SOURCES += sparkle_keyboard.cpp
 HEADERS += sparkle_keyboard.h
 
-SOURCES += ../ui/widget_button.cpp
-HEADERS += ../ui/widget_button.h
+SOURCES += ../were-graphics/were_button.cpp
+HEADERS += ../were-graphics/were_button.h
 
 SOURCES += ../common/sparkle_protocol.cpp
 HEADERS += ../common/sparkle_protocol.h
