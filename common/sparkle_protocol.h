@@ -26,8 +26,8 @@ extern const SparklePacketType set_surface_position_request;
 struct _set_surface_strata_request {const char *name; int strata;};
 extern const SparklePacketType set_surface_strata_request;
 
-struct _set_surface_blending_request {const char *name; int blending;};
-extern const SparklePacketType set_surface_blending_request;
+struct _set_surface_alpha_request {const char *name; float alpha;};
+extern const SparklePacketType set_surface_alpha_request;
 
 struct _add_surface_damage_request {const char *name; int x1; int y1; int x2; int y2;};
 extern const SparklePacketType add_surface_damage_request;

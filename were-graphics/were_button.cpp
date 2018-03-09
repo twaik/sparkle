@@ -14,19 +14,19 @@ void WereButton::draw()
     
     WerePainter painter(this);
     
-    painter.setColor(0xA0000000);
+    if (_pressed)
+        painter.setColor(0xFFAAFFAA);
+    else
+        painter.setColor(0x00000000);
+    
     painter.fill(0, 0, width() - 1, height() - 1);
     
     if (_pressed)
-    {
-        painter.setColor(0xFFAAFFAA);
-        painter.drawRectangle(0, 0, width() - 1, height() - 1);
-    }
+        painter.setColor(0x00000000);
     else
-    {
-        painter.setColor(0xFFAAAAAA);
-        painter.drawRectangle(0, 0, width() - 1, height() - 1);
-    }
+        painter.setColor(0xFFAAFFAA);
+    
+    painter.drawRectangle(1, 1, width() - 2, height() - 2);
     
     if (_label != 0)
     {
@@ -34,16 +34,15 @@ void WereButton::draw()
         int stringHeight;
         painter.stringSize(_label, &stringWidth, &stringHeight);
         
-        if (stringWidth <= width() - 4 && stringHeight <= height() - 4)
-        {
-            painter.drawString(2, 2, _label);
-        }
+        if (stringWidth <= width() - 6 && stringHeight <= height() - 6)
+            painter.drawString(3, 3, _label);
     }
 }
 
 void WereButton::pointerDown(int slot, int x, int y)
 {
-    pressed();
+    if (!_pressed)
+        pressed();
     _pressed = true;
     
     draw();
@@ -52,9 +51,16 @@ void WereButton::pointerDown(int slot, int x, int y)
 void WereButton::pointerUp(int slot, int x, int y)
 {
     if (_pressed)
-    {
         released();
-    }
+    _pressed = false;
+    
+    draw();
+}
+
+void WereButton::pointerMotion(int slot, int x, int y)
+{
+    if (_pressed)
+        released();
     _pressed = false;
     
     draw();

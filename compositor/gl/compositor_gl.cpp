@@ -761,12 +761,11 @@ void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared
         SparkleConnection::unpack1(&set_surface_strata_request, packet.get(), &r1);
         setSurfaceStrata(r1.name, r1.strata);
     }
-    else if (operation == set_surface_blending_request.code)
+    else if (operation == set_surface_alpha_request.code)
     {
-        _set_surface_blending_request r1;
-        SparkleConnection::unpack1(&set_surface_blending_request, packet.get(), &r1);
-        if (r1.blending != 0)
-            setSurfaceAlpha(r1.name, 0.5);
+        _set_surface_alpha_request r1;
+        SparkleConnection::unpack1(&set_surface_alpha_request, packet.get(), &r1);
+        setSurfaceAlpha(r1.name, r1.alpha);
     }
     else if (operation == add_surface_damage_request.code)
     {

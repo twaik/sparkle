@@ -13,6 +13,7 @@ public:
 
     void pointerDown(int slot, int x, int y);
     void pointerUp(int slot, int x, int y);
+    void pointerMotion(int slot, int x, int y);
     
     WereSignal<void ()> pressed;
     WereSignal<void ()> released;

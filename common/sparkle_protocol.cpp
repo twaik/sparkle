@@ -79,19 +79,19 @@ const SparklePacketType set_surface_strata_request =
     },
 };
 
-const SparklePacketType set_surface_blending_request =
+const SparklePacketType set_surface_alpha_request =
 {
     .code = 0x0004,
     {
         .pack = [](SparklePacketStream *stream, void *data) {
-            _set_surface_blending_request *_data = static_cast<_set_surface_blending_request *>(data);
+            _set_surface_alpha_request *_data = static_cast<_set_surface_alpha_request *>(data);
             stream->pWrite(&p_string, &_data->name);
-            stream->pWrite(&p_uint32, &_data->blending);
+            stream->pWrite(&p_float, &_data->alpha);
         },
         .unpack = [](SparklePacketStream *stream, void *data) {
-            _set_surface_blending_request *_data = static_cast<_set_surface_blending_request *>(data);
+            _set_surface_alpha_request *_data = static_cast<_set_surface_alpha_request *>(data);
             stream->pRead(&p_string, &_data->name);
-            stream->pRead(&p_uint32, &_data->blending);
+            stream->pRead(&p_float, &_data->alpha);
         },
     },
 };

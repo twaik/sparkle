@@ -130,3 +130,73 @@ void WereWidget::draw()
         it->first->draw();
 }
 
+void WereWidget::pointerDown(int slot, int x, int y)
+{
+    for (auto it = _children.rbegin(); it != _children.rend(); ++it)
+    {
+        int _x;
+        int _y;
+        transformCoordinates(x, y, it->second, &_x, &_y);
+        if (_x != -1 && _y != -1)
+        {
+            it->first->pointerDown(slot, _x, _y);
+            return;
+        }
+    }
+}
+
+void WereWidget::pointerUp(int slot, int x, int y)
+{
+    for (auto it = _children.rbegin(); it != _children.rend(); ++it)
+    {
+        int _x;
+        int _y;
+        transformCoordinates(x, y, it->second, &_x, &_y);
+        if (_x != -1 && _y != -1)
+        {
+            it->first->pointerUp(slot, _x, _y);
+            return;
+        }
+    }
+}
+
+void WereWidget::pointerMotion(int slot, int x, int y)
+{
+    for (auto it = _children.rbegin(); it != _children.rend(); ++it)
+    {
+        int _x;
+        int _y;
+        transformCoordinates(x, y, it->second, &_x, &_y);
+        if (_x != -1 && _y != -1)
+        {
+            it->first->pointerMotion(slot, _x, _y);
+            return;
+        }
+    }
+}
+
+void WereWidget::keyDown(int code)
+{
+}
+
+void WereWidget::keyUp(int code)
+{
+}
+
+void WereWidget::transformCoordinates(int x, int y, const RectangleC &position, int *_x, int *_y)
+{
+    *_x = -1;
+    *_y = -1;
+    
+    int x1a = position.from.x.relative * width() + position.from.x.absolute;
+    int y1a = position.from.y.relative * height() + position.from.y.absolute;
+    int x2a = position.to.x.relative * width() + position.to.x.absolute;
+    int y2a = position.to.y.relative * height() + position.to.y.absolute;
+    
+    if (x < x1a || x > x2a || y < y1a || y > y2a)
+        return;
+    
+    *_x = (x - x1a);
+    *_y = (y - y1a);
+}
+

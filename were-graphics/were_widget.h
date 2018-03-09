@@ -30,6 +30,15 @@ public:
     
     virtual void draw();
     
+    virtual void pointerDown(int slot, int x, int y);
+    virtual void pointerUp(int slot, int x, int y);
+    virtual void pointerMotion(int slot, int x, int y);
+    virtual void keyDown(int code);
+    virtual void keyUp(int code);
+    
+private:
+    void transformCoordinates(int x, int y, const RectangleC &position, int *_x, int *_y);
+    
 private:
     WereWidget *_parent;
     WereSurface *_surface;

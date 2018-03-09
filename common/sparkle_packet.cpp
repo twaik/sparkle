@@ -36,6 +36,18 @@ const WerePacker p_string =
     },
 };
 
+const WerePacker p_float =
+{
+    .pack = [](SparklePacketStream *stream, void *data)
+    {
+        stream->write(data, sizeof(float));
+    },
+    .unpack = [](SparklePacketStream *stream, void *data)
+    {
+        stream->read(data, sizeof(float));
+    },
+};
+
 //==================================================================================================
 
 SparklePacket::~SparklePacket()

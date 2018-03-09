@@ -75,6 +75,7 @@ typedef struct WerePacker WerePacker;
 
 extern const WerePacker p_uint32;
 extern const WerePacker p_string;
+extern const WerePacker p_float;
 
 //==================================================================================================
 

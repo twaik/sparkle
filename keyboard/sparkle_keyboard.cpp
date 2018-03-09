@@ -147,8 +147,8 @@ void SparkleKeyboard::reg()
     _set_surface_strata_request r3 = {surface_name, 0xff};
     _sparkle->send1(&set_surface_strata_request, &r3);
     
-    _set_surface_blending_request r4 = {surface_name, 1};
-    _sparkle->send1(&set_surface_blending_request, &r4);
+    _set_surface_alpha_request r4 = {surface_name, 0.75f};
+    _sparkle->send1(&set_surface_alpha_request, &r4);
     
     _registered = true;
 }
@@ -228,22 +228,22 @@ void SparkleKeyboard::packet(std::shared_ptr<SparklePacket> packet)
     {
         struct _pointer_down_notification r1;
         SparkleConnection::unpack1(&pointer_down_notification, packet.get(), &r1);
-        //if (strcmp(r1.surface, surface_name) == 0)
-        //    _host->pointerDown(r1.slot, r1.x, r1.y);
+        if (strcmp(r1.surface, surface_name) == 0)
+            _host->pointerDown(r1.slot, r1.x, r1.y);
     }
     else if (operation == pointer_up_notification.code)
     {
         struct _pointer_up_notification r1;
         SparkleConnection::unpack1(&pointer_up_notification, packet.get(), &r1);
-        //if (strcmp(r1.surface, surface_name) == 0)
-        //    _host->pointerUp(r1.slot, r1.x, r1.y);
+        if (strcmp(r1.surface, surface_name) == 0)
+            _host->pointerUp(r1.slot, r1.x, r1.y);
     }
     else if (operation == pointer_motion_notification.code)
     {
         struct _pointer_motion_notification r1;
         SparkleConnection::unpack1(&pointer_motion_notification, packet.get(), &r1);
-        //if (strcmp(r1.surface, surface_name) == 0)
-        //    _host->pointerMotion(r1.slot, r1.x, r1.y);
+        if (strcmp(r1.surface, surface_name) == 0)
+            _host->pointerMotion(r1.slot, r1.x, r1.y);
     }
     else if (operation == key_down_notification.code)
     {
