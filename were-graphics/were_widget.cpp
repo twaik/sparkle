@@ -133,40 +133,44 @@ void WereWidget::draw()
 
 void WereWidget::pointerDown(int slot, int x, int y)
 {
+    pointerUp(slot, 0, 0);
+    
     int _x, _y;
-    WereWidget *widget = widgetAt(x, y, &_x, &_y);
-    if (widget != nullptr)
-        widget->pointerDown(slot, _x, _y);
+    _underPointer[slot] = widgetAt(x, y, &_x, &_y);
+    
+    if (_underPointer[slot] != nullptr)
+    {
+        _underPointer[slot]->pointerDown(slot, _x, _y);
+    }
 }
 
 void WereWidget::pointerUp(int slot, int x, int y)
 {
-    int _x, _y;
-    WereWidget *widget = widgetAt(x, y, &_x, &_y);
-    if (widget != nullptr)
-        widget->pointerUp(slot, _x, _y);
+    if (_underPointer[slot] != nullptr)
+    {
+        _underPointer[slot]->pointerUp(slot, 0, 0);
+        _underPointer[slot] = nullptr;
+    }
 }
 
 void WereWidget::pointerMotion(int slot, int x, int y)
-{
+{  
     int _x, _y;
     WereWidget *widget = widgetAt(x, y, &_x, &_y);
     
-    WereWidget *before = _underPointer[slot];
-    
-    if (widget != before)
+    if (widget != _underPointer[slot])
     {
-        if (before != nullptr)
-            before->pointerLeave(slot);
+        if (_underPointer[slot] != nullptr)
+            _underPointer[slot]->pointerLeave(slot);
         
-        if (widget != nullptr)
-            widget->pointerEnter(slot);
-            
         _underPointer[slot] = widget;
+        
+        if (_underPointer[slot] != nullptr)
+            _underPointer[slot]->pointerEnter(slot);
     }
     
-    if (widget != nullptr)
-        widget->pointerMotion(slot, _x, _y);
+    if (_underPointer[slot] != nullptr)
+        _underPointer[slot]->pointerMotion(slot, _x, _y);
 }
 
 void WereWidget::keyDown(int code)
@@ -183,9 +187,8 @@ void WereWidget::pointerEnter(int slot)
 
 void WereWidget::pointerLeave(int slot)
 {
-    WereWidget *before = _underPointer[slot];
-    if (before != nullptr)
-        before->pointerLeave(slot);
+    if (_underPointer[slot] != nullptr)
+        _underPointer[slot]->pointerLeave(slot);
 }
 
 WereWidget *WereWidget::widgetAt(int x, int y, int *wX, int *wY)
