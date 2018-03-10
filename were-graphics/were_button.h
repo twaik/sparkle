@@ -14,6 +14,8 @@ public:
     void pointerDown(int slot, int x, int y);
     void pointerUp(int slot, int x, int y);
     void pointerMotion(int slot, int x, int y);
+    void pointerEnter(int slot);
+    void pointerLeave(int slot);
     
     WereSignal<void ()> pressed;
     WereSignal<void ()> released;
@@ -21,7 +23,7 @@ public:
     void setLabel(const char *label);
     
 private:
-    bool _pressed;
+    int _pressed;
     const char *_label;
 };
 

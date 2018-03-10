@@ -35,15 +35,18 @@ public:
     virtual void pointerMotion(int slot, int x, int y);
     virtual void keyDown(int code);
     virtual void keyUp(int code);
+    virtual void pointerEnter(int slot);
+    virtual void pointerLeave(int slot);
+    WereWidget *widgetAt(int x, int y, int *wX, int *wY);
     
 private:
-    void transformCoordinates(int x, int y, const RectangleC &position, int *_x, int *_y);
     
 private:
     WereWidget *_parent;
     WereSurface *_surface;
     
     std::map<WereWidget *, RectangleC> _children;
+    std::array<WereWidget *, 10> _underPointer;
 };
 
 #endif //WERE_WIDGET_H

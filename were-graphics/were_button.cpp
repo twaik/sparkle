@@ -3,7 +3,7 @@
 
 WereButton::WereButton()
 {
-    _pressed = false;
+    _pressed = -1;
     _label = 0;
 }
 
@@ -14,17 +14,17 @@ void WereButton::draw()
     
     WerePainter painter(this);
     
-    if (_pressed)
-        painter.setColor(0xFFAAFFAA);
-    else
+    if (_pressed == -1)
         painter.setColor(0x00000000);
+    else
+        painter.setColor(0xFFAAFFAA);
     
     painter.fill(0, 0, width() - 1, height() - 1);
     
-    if (_pressed)
-        painter.setColor(0x00000000);
-    else
+    if (_pressed == -1)
         painter.setColor(0xFFAAFFAA);
+    else
+        painter.setColor(0x00000000);
     
     painter.drawRectangle(1, 1, width() - 2, height() - 2);
     
@@ -41,29 +41,40 @@ void WereButton::draw()
 
 void WereButton::pointerDown(int slot, int x, int y)
 {
-    if (!_pressed)
+    if (_pressed == -1)
+    {
+        _pressed = slot;
         pressed();
-    _pressed = true;
-    
-    draw();
+        draw();
+    }
 }
 
 void WereButton::pointerUp(int slot, int x, int y)
 {
-    if (_pressed)
+    if (_pressed == slot)
+    {
+        _pressed = -1;
         released();
-    _pressed = false;
-    
-    draw();
+        draw();
+    }
 }
 
 void WereButton::pointerMotion(int slot, int x, int y)
 {
-    if (_pressed)
+}
+
+void WereButton::pointerEnter(int slot)
+{
+}
+
+void WereButton::pointerLeave(int slot)
+{
+    if (_pressed == slot)
+    {
+        _pressed = -1;
         released();
-    _pressed = false;
-    
-    draw();
+        draw();
+    }
 }
 
 void WereButton::setLabel(const char *label)

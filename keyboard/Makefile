@@ -17,8 +17,8 @@ HEADERS += ../common/sparkle_packet.h
 SOURCES += ../common/sparkle_surface_file.cpp
 HEADERS += ../common/sparkle_surface_file.h
 
-SOURCES += ../ui/were_painter.cpp
-HEADERS += ../ui/were_painter.h
+SOURCES += ../were-graphics/were_painter.cpp
+HEADERS += ../were-graphics/were_painter.h
 
 SOURCES += ../were-graphics/were_widget.cpp
 HEADERS += ../were-graphics/were_widget.h

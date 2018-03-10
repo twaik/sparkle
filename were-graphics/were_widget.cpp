@@ -7,8 +7,9 @@ WereWidget::~WereWidget()
 
 WereWidget::WereWidget()
 {
-    _parent = 0;
-    _surface = 0;
+    _parent = nullptr;
+    _surface = nullptr;
+    _underPointer = {};
 }
 
 WereSurface *WereWidget::surface()
@@ -132,47 +133,40 @@ void WereWidget::draw()
 
 void WereWidget::pointerDown(int slot, int x, int y)
 {
-    for (auto it = _children.rbegin(); it != _children.rend(); ++it)
-    {
-        int _x;
-        int _y;
-        transformCoordinates(x, y, it->second, &_x, &_y);
-        if (_x != -1 && _y != -1)
-        {
-            it->first->pointerDown(slot, _x, _y);
-            return;
-        }
-    }
+    int _x, _y;
+    WereWidget *widget = widgetAt(x, y, &_x, &_y);
+    if (widget != nullptr)
+        widget->pointerDown(slot, _x, _y);
 }
 
 void WereWidget::pointerUp(int slot, int x, int y)
 {
-    for (auto it = _children.rbegin(); it != _children.rend(); ++it)
-    {
-        int _x;
-        int _y;
-        transformCoordinates(x, y, it->second, &_x, &_y);
-        if (_x != -1 && _y != -1)
-        {
-            it->first->pointerUp(slot, _x, _y);
-            return;
-        }
-    }
+    int _x, _y;
+    WereWidget *widget = widgetAt(x, y, &_x, &_y);
+    if (widget != nullptr)
+        widget->pointerUp(slot, _x, _y);
 }
 
 void WereWidget::pointerMotion(int slot, int x, int y)
 {
-    for (auto it = _children.rbegin(); it != _children.rend(); ++it)
+    int _x, _y;
+    WereWidget *widget = widgetAt(x, y, &_x, &_y);
+    
+    WereWidget *before = _underPointer[slot];
+    
+    if (widget != before)
     {
-        int _x;
-        int _y;
-        transformCoordinates(x, y, it->second, &_x, &_y);
-        if (_x != -1 && _y != -1)
-        {
-            it->first->pointerMotion(slot, _x, _y);
-            return;
-        }
+        if (before != nullptr)
+            before->pointerLeave(slot);
+        
+        if (widget != nullptr)
+            widget->pointerEnter(slot);
+            
+        _underPointer[slot] = widget;
     }
+    
+    if (widget != nullptr)
+        widget->pointerMotion(slot, _x, _y);
 }
 
 void WereWidget::keyDown(int code)
@@ -183,20 +177,37 @@ void WereWidget::keyUp(int code)
 {
 }
 
-void WereWidget::transformCoordinates(int x, int y, const RectangleC &position, int *_x, int *_y)
+void WereWidget::pointerEnter(int slot)
 {
-    *_x = -1;
-    *_y = -1;
+}
+
+void WereWidget::pointerLeave(int slot)
+{
+    WereWidget *before = _underPointer[slot];
+    if (before != nullptr)
+        before->pointerLeave(slot);
+}
+
+WereWidget *WereWidget::widgetAt(int x, int y, int *wX, int *wY)
+{
+    for (auto it = _children.begin(); it != _children.end(); ++it)
+    {
+        int x1a = it->second.from.x.relative * width() + it->second.from.x.absolute;
+        int y1a = it->second.from.y.relative * height() + it->second.from.y.absolute;
+        int x2a = it->second.to.x.relative * width() + it->second.to.x.absolute;
+        int y2a = it->second.to.y.relative * height() + it->second.to.y.absolute;
+        
+        if (x >= x1a && x <= x2a && y >= y1a && y <= y2a)
+        {
+            if (wX != nullptr)
+                *wX = x1a;
+            if (wY != nullptr)
+                *wY = y1a;
+            
+            return it->first;
+        }
+    }
     
-    int x1a = position.from.x.relative * width() + position.from.x.absolute;
-    int y1a = position.from.y.relative * height() + position.from.y.absolute;
-    int x2a = position.to.x.relative * width() + position.to.x.absolute;
-    int y2a = position.to.y.relative * height() + position.to.y.absolute;
-    
-    if (x < x1a || x > x2a || y < y1a || y > y2a)
-        return;
-    
-    *_x = (x - x1a);
-    *_y = (y - y1a);
+    return nullptr;
 }
 
