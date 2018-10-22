@@ -1,20 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion = 25
-    buildToolsVersion = '25.0.2'
-
+    compileSdkVersion = 28
     defaultConfig {
         applicationId = 'com.sion.sparkle'
         minSdkVersion 19
-        targetSdkVersion  25
-        ndk {
-            abiFilters 'x86', 'x86_64', 'armeabi', 'armeabi-v7a', 'arm64-v8a'
-        }
+        targetSdkVersion  28
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_PLATFORM=android-19',
-                        '-DANDROID_TOOLCHAIN=clang', '-DANDROID_STL=gnustl_static'
+                cppFlags "-fexceptions"
             }
         }
     }
@@ -33,7 +27,7 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:25.2.0'
-    compile 'com.android.support.constraint:constraint-layout:1.0.1'
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
 }

@@ -56,9 +56,9 @@ class CompositorGL_EGL
 public:
     ~CompositorGL_EGL();
     CompositorGL_EGL(NativeDisplayType nativeDisplay);
-    
+
     EGLint getVID();
-    
+
     EGLDisplay _display;
     EGLConfig _config;
 };
@@ -119,9 +119,9 @@ class CompositorGL_GL
 public:
     ~CompositorGL_GL();
     CompositorGL_GL(CompositorGL_EGL *egl, NativeWindowType window);
-    
+
     static GLuint loadShader(GLenum shaderType, const char *pSource);
-    
+
     CompositorGL_EGL *_egl;
     EGLSurface _surface;
     EGLContext _context;
@@ -147,14 +147,14 @@ CompositorGL_GL::~CompositorGL_GL()
     eglMakeCurrent(_egl->_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     eglDestroyContext(_egl->_display, _context);
     eglDestroySurface(_egl->_display, _surface);
-    
+
     were_debug("GL destroyed.\n");
 }
 
 CompositorGL_GL::CompositorGL_GL(CompositorGL_EGL *egl, NativeWindowType window)
 {
     _egl = egl;
-    
+
     _surface = eglCreateWindowSurface(_egl->_display, _egl->_config, window, NULL);
     if (_surface == EGL_NO_SURFACE)
         throw std::runtime_error("[CompositorGL_GL::CompositorGL_GL] Failed: eglCreateWindowSurface.");
@@ -230,21 +230,21 @@ class CompositorGLSurface
 public:
     virtual ~CompositorGLSurface();
     CompositorGLSurface(const std::string &name);
-    
+
     const std::string &name();
     Texture *texture();
     void destroyTexture(); //FIXME Temporary solution
     const RectangleA &position();
     int strata();
     float alpha();
-    
+
     void setPosition(int x1, int y1, int x2, int y2);
     void setStrata(int strata);
     void setAlpha(float alpha);
     void addDamage(int x1, int y1, int x2, int y2);
-    
+
     virtual bool updateTexture() = 0;
-    
+
 protected:
     std::string _name;
     Texture *_texture;
@@ -342,9 +342,9 @@ class CompositorGLSurfaceFile : public CompositorGLSurface
 public:
     ~CompositorGLSurfaceFile();
     CompositorGLSurfaceFile(const std::string &name, const std::string &path, int width, int height);
-    
+
     bool updateTexture();
-    
+
 private:
     SparkleSurfaceFile *_surface;
 };
@@ -363,18 +363,18 @@ CompositorGLSurfaceFile::CompositorGLSurfaceFile(const std::string &name, const 
 bool CompositorGLSurfaceFile::updateTexture()
 {
     bool result = false;
-    
+
     if (texture()->width() != _surface->width() || texture()->height() != _surface->height())
     {
         texture()->resize(_surface->width(), _surface->height());
         _damage = RectangleA(PointA(0, 0), PointA(texture()->width(), texture()->height()));
         result = true;
     }
-    
+
     if ((_damage.width() > 0 && _damage.height() > 0) || ALWAYS_UPLOAD)
     {
         unsigned char *data = _surface->data();
-        
+
         //were_debug("Uploading %d %d %d %d -> %d %d\n", _damage.from.x, _damage.from.y, _damage.to.x, _damage.to.y, texture()->width(), texture()->height());
 
 
@@ -390,11 +390,11 @@ bool CompositorGLSurfaceFile::updateTexture()
             GL_BGRA_EXT, GL_UNSIGNED_BYTE,
             &data[_damage.from.y * texture()->width() * 4]);
 #endif
-        
+
         _damage = RectangleA(PointA(0, 0), PointA(0, 0));
         result = true;
     }
-    
+
     return result;
 }
 
@@ -425,7 +425,7 @@ private:
 
     void connection(std::shared_ptr <SparkleConnection> client);
     void packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet);
-    
+
     void registerSurfaceFile(const std::string &name, const std::string &path, int width, int height);
     void unregisterSurface(const std::string &name);
     void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
@@ -435,7 +435,7 @@ private:
 
     std::shared_ptr<CompositorGLSurface> findSurface(const std::string &name);
     void transformCoordinates(int x, int y, std::shared_ptr<CompositorGLSurface> surface, int *_x, int *_y);
-    
+
     static bool sortFunction(std::shared_ptr<CompositorGLSurface> a1, std::shared_ptr<CompositorGLSurface> a2);
 
 private:
@@ -448,7 +448,7 @@ private:
 
     std::vector< std::shared_ptr<CompositorGLSurface> > _surfaces;
 
-    std::array<float, 20> _plane;
+    float _plane[20];
     bool _redraw;
 };
 
@@ -457,7 +457,7 @@ private:
 CompositorGL::~CompositorGL()
 {
     delete _server;
-    
+
     if (_gl)
         delete _gl;
     if (_egl)
@@ -468,17 +468,33 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
 {
     _loop = loop;
     _platform = platform;
-    
+
     _egl = 0;
     _gl = 0;
 
-    _plane = {{
-    // X, Y, Z, U, V
-        -1.0f, -1.0f, 0, 0.0f, 0.0f,
-         1.0f, -1.0f, 0, 1.0f, 0.0f,
-        -1.0f,  1.0f, 0, 0.0f, 1.0f,
-         1.0f,  1.0f, 0, 1.0f, 1.0f,
-    }};
+    _plane[0] = -1.0f;
+    _plane[1] = -1.0f;
+    _plane[2] = 0.0f;
+    _plane[3] = 0.0f;
+    _plane[4] = 0.0f;
+
+    _plane[5] = 1.0f;
+    _plane[6] = -1.0f;
+    _plane[7] = 0.0f;
+    _plane[8] = 1.0f;
+    _plane[9] = 0.0f;
+
+    _plane[10] = -1.0f;
+    _plane[11] = 1.0f;
+    _plane[12] = 0.0;
+    _plane[13] = 0.0f;
+    _plane[14] = 1.0f;
+
+    _plane[15] = 1.0f;
+    _plane[16] = 1.0f;
+    _plane[17] = 0.0f;
+    _plane[18] = 1.0f;
+    _plane[19] = 1.0f;
 
     _platform->initializeForNativeDisplay.connect(WereSimpleQueuer(loop, &CompositorGL::initializeForNativeDisplay, this));
     _platform->initializeForNativeWindow.connect(WereSimpleQueuer(loop, &CompositorGL::initializeForNativeWindow, this));
@@ -492,9 +508,9 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
     _platform->pointerMotion.connect(WereSimpleQueuer(loop, &CompositorGL::pointerMotion, this));
     _platform->keyDown.connect(WereSimpleQueuer(loop, &CompositorGL::keyDown, this));
     _platform->keyUp.connect(WereSimpleQueuer(loop, &CompositorGL::keyUp, this));
-    
+
     _server = new SparkleServer(_loop, "/dev/shm/sparkle.socket");
-    
+
     _server->signal_connected.connect(WereSimpleQueuer(loop, &CompositorGL::connection, this));
     _server->signal_packet.connect(WereSimpleQueuer(loop, &CompositorGL::packet, this));
 }
@@ -520,7 +536,7 @@ void CompositorGL::initializeForNativeDisplay(NativeDisplayType nativeDisplay)
 void CompositorGL::finishForNativeDisplay()
 {
     //XXX Disconnect getVID
-    
+
     if (_egl != 0)
         delete _egl;
     _egl = 0;
@@ -529,10 +545,10 @@ void CompositorGL::finishForNativeDisplay()
 void CompositorGL::initializeForNativeWindow(NativeWindowType window)
 {
     _gl = new CompositorGL_GL(_egl, window);
-    
+
     _display_size_notification r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
     _server->broadcast1(&display_size_notification, &r1);
-    
+
     _redraw = true;
 }
 
@@ -542,7 +558,7 @@ void CompositorGL::finishForNativeWindow()
     {
         for (auto it = _surfaces.begin(); it != _surfaces.end(); ++it)
             (*it)->destroyTexture();
-        
+
         delete _gl;
     }
     _gl = 0;
@@ -559,24 +575,24 @@ void CompositorGL::draw()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     eglQuerySurface(_egl->_display, _gl->_surface, EGL_WIDTH, &width);
     eglQuerySurface(_egl->_display, _gl->_surface, EGL_HEIGHT, &height);
-    
+
     if (width != _gl->_surfaceWidth || height != _gl->_surfaceHeight)
     {
         _gl->_surfaceWidth = width;
         _gl->_surfaceHeight = height;
         glViewport(0, 0, _gl->_surfaceWidth, _gl->_surfaceHeight);
-        
+
         _display_size_notification r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
         _server->broadcast1(&display_size_notification, &r1);
     }
-    
+
 #endif
 
     for (auto it = _surfaces.begin(); it != _surfaces.end(); ++it)
     {
         _redraw |= (*it)->updateTexture();
     }
-    
+
     if (_redraw)
     {
         _redraw = false;
@@ -590,10 +606,10 @@ void CompositorGL::draw()
         for (auto it = _surfaces.begin(); it != _surfaces.end(); ++it)
         {
             std::shared_ptr<CompositorGLSurface> surface = (*it);
-            
+
             //XXX Ignore disabled layers
             //XXX Only recalculate when changed
-            
+
             float x1r = 1.0 * surface->position().from.x / _gl->_surfaceWidth;
             float y1r = 1.0 * surface->position().from.y / _gl->_surfaceHeight;
             float x2r = 1.0 * surface->position().to.x / _gl->_surfaceWidth;
@@ -623,12 +639,12 @@ void CompositorGL::draw()
             glEnableVertexAttribArray(_gl->_texturePositionHandle);
             glEnableVertexAttribArray(_gl->_textureTexCoordsHandle);
 
-                            
+
 #ifdef USE_BLENDING
             if (surface->alpha() != 1.0f)
             {
                 glUniform1f(_gl->_textureAlphaHandle, surface->alpha());
-                
+
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
@@ -636,7 +652,7 @@ void CompositorGL::draw()
 
             glBindTexture(GL_TEXTURE_2D, surface->texture()->id());
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-            
+
 #ifdef USE_BLENDING
             if (surface->alpha() != 1.0f)
             {
@@ -736,7 +752,7 @@ void CompositorGL::connection(std::shared_ptr <SparkleConnection> client)
 void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet)
 {
     uint32_t operation = packet->header()->operation;
-    
+
     if (operation == register_surface_file_request.code)
     {
         _register_surface_file_request r1;
@@ -790,7 +806,7 @@ void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared
 void CompositorGL::registerSurfaceFile(const std::string &name, const std::string &path, int width, int height)
 {
     unregisterSurface(name);
-        
+
     std::shared_ptr<CompositorGLSurface> surface(new CompositorGLSurfaceFile(name, path, width, height));
     _surfaces.push_back(surface);
     std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
@@ -813,14 +829,14 @@ void CompositorGL::unregisterSurface(const std::string &name)
         else
             ++it;
     }
-        
+
     _redraw = true;
 }
 
 void CompositorGL::setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2)
 {
     were_debug("Surface [%s]: position changed (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
-    
+
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
     {
@@ -832,7 +848,7 @@ void CompositorGL::setSurfacePosition(const std::string &name, int x1, int y1, i
 void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
 {
     were_debug("Surface [%s]: strata changed.\n", name.c_str());
-    
+
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
     {
@@ -845,7 +861,7 @@ void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
 void CompositorGL::setSurfaceAlpha(const std::string &name, float alpha)
 {
     were_debug("Surface [%s]: alpha changed.\n", name.c_str());
-    
+
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
     {
@@ -857,7 +873,7 @@ void CompositorGL::setSurfaceAlpha(const std::string &name, float alpha)
 void CompositorGL::addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2)
 {
     //were_debug("Surface [%s]: damage (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
-    
+
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
         surface->addDamage(x1, y1, x2, y2);
@@ -872,9 +888,9 @@ std::shared_ptr<CompositorGLSurface> CompositorGL::findSurface(const std::string
         if ((*it)->name() == name)
             return (*it);
     }
-    
+
     were_debug("Surface [%s]: not registered.\n", name.c_str());
-    
+
     return 0;
 }
 
@@ -882,15 +898,15 @@ void CompositorGL::transformCoordinates(int x, int y, std::shared_ptr<Compositor
 {
     *_x = -1;
     *_y = -1;
-    
+
     int x1a = surface->position().from.x;
     int y1a = surface->position().from.y;
     int x2a = surface->position().to.x;
     int y2a = surface->position().to.y;
-    
+
     if (x < x1a || x > x2a || y < y1a || y > y2a)
         return;
-    
+
     *_x = (x - x1a) * surface->texture()->width() / (x2a - x1a);
     *_y = (y - y1a) * surface->texture()->height() / (y2a - y1a);
 }
