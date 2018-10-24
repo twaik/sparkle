@@ -1,6 +1,6 @@
-#AM_CFLAGS = 
-#AM_CXXFLAGS = 
-#AM_CPPFLAGS = 
+#AM_CFLAGS =
+#AM_CXXFLAGS =
+#AM_CPPFLAGS =
 
 
 #noinst_LTLIBRARIES = libsiski.la
@@ -26,8 +26,6 @@ test_SOURCES = \
 	../../compositor/gl/texture.h		\
 	../../common/were_benchmark.cpp		\
 	../../common/were_benchmark.h		\
-	../../common/sparkle_packet.cpp		\
-	../../common/sparkle_packet.h		\
 	../../common/sparkle_protocol.cpp   \
 	../../common/sparkle_protocol.h		\
 	../../common/sparkle_server.cpp		\

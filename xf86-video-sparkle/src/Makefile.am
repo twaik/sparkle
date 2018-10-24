@@ -38,10 +38,10 @@ sparkle_drv_la_SOURCES = \
          dummy_cursor.c \
          dummy_driver.c \
          dummy.h \
+         sparkle_c.cpp \
+         sparkle_c.h \
          ../../common/sparkle_surface_file.cpp \
          ../../common/sparkle_surface_file.h \
-         ../../common/sparkle_packet.cpp \
-         ../../common/sparkle_packet.h \
          ../../common/sparkle_connection.cpp \
          ../../common/sparkle_connection.h \
          ../../common/sparkle_protocol.cpp \

@@ -17,37 +17,37 @@ SoundSLES::~SoundSLES()
     result = (*playerBufferqueue)->Clear(playerBufferqueue);
     checkResult(result);
     clearQueue();
-    
+
     (*playerObject)->Destroy(playerObject);
     (*outputmixObject)->Destroy(outputmixObject);
     (*engineObject)->Destroy(engineObject);
-    
-    delete _server;
+
+    delete server_;
 }
 
-SoundSLES::SoundSLES(WereEventLoop *loop)
+SoundSLES::SoundSLES(WereEventLoop *loop, const std::string &file)
 {
-    _loop = loop;
-    
-    _server = new SparkleServer(_loop, "/dev/shm/sparkle-sound.socket");
-    _server->signal_packet.connect(WereSimpleQueuer(loop, &SoundSLES::packet, this));
+    loop_ = loop;
+
+    server_ = new SparkleServer(loop_, file);
+    server_->signal_packet.connect(WereSimpleQueuer(loop, &SoundSLES::packet, this));
 
     SLresult result;
 
     // create engine
     result = slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
     checkResult(result);
-    
+
     result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
     checkResult(result);
-    
+
     result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
     checkResult(result);
 
     // create output mix
     result = (*engineEngine)->CreateOutputMix(engineEngine, &outputmixObject, 0, NULL, NULL);
     checkResult(result);
-    
+
     result = (*outputmixObject)->Realize(outputmixObject, SL_BOOLEAN_FALSE);
     checkResult(result);
 
@@ -76,19 +76,19 @@ SoundSLES::SoundSLES(WereEventLoop *loop)
     SLboolean flags[1] = {SL_BOOLEAN_TRUE};
     result = (*engineEngine)->CreateAudioPlayer(engineEngine, &playerObject, &audiosrc, &audiosnk, 1, ids, flags);
     checkResult(result);
-    
+
     result = (*playerObject)->Realize(playerObject, SL_BOOLEAN_FALSE);
     checkResult(result);
 
     result = (*playerObject)->GetInterface(playerObject, SL_IID_PLAY, &playerPlay);
     checkResult(result);
-    
+
     result = (*playerObject)->GetInterface(playerObject, IID_BUFFERQUEUE, &playerBufferqueue);
     checkResult(result);
 
     result = (*playerBufferqueue)->RegisterCallback(playerBufferqueue, callback, this);
     checkResult(result);
-    
+
     busy = false;
 }
 
@@ -96,12 +96,12 @@ void SoundSLES::checkQueue()
 {
     if (busy)
         return;
-    
-    if (_queue.size() == 0)
+
+    if (queue_.size() == 0)
         return;
-    
-    struct _sound_data r1;
-    SparkleConnection::unpack1(&sound_data, _queue.front().get(), &r1);
+
+    struct sound_data_ r1;
+    SparkleConnection::unpack1(&sound_data, queue_.front().get(), &r1);
     SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, r1.data, r1.size);
     checkResult(result);
 
@@ -110,17 +110,17 @@ void SoundSLES::checkQueue()
 
 void SoundSLES::clearQueue()
 {
-    _queue.clear();
+    queue_.clear();
 }
 
 void SoundSLES::callback(BufferQueueItf playerBufferqueue, void *data)
 {
     SoundSLES *sound = reinterpret_cast<SoundSLES *>(data);
-    
-    sound->_queue.pop_front();
-    
+
+    sound->queue_.pop_front();
+
     sound->busy = false;
-    
+
     sound->checkQueue();
 }
 
@@ -129,10 +129,10 @@ void SoundSLES::callback(BufferQueueItf playerBufferqueue, void *data)
 void SoundSLES::packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet)
 {
     int operation = packet->header()->operation;
-        
+
     if (operation == sound_data.code)
     {
-        _queue.push_back(packet);
+        queue_.push_back(packet);
         checkQueue();
 
     }
@@ -154,7 +154,7 @@ void SoundSLES::packet(std::shared_ptr<SparkleConnection> client, std::shared_pt
         busy = 0;
     }
 }
-    
+
 //==================================================================================================
 
 void SoundSLES::beep()

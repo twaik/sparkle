@@ -5,6 +5,7 @@
 #include "sound/sles/sound_sles.h"
 #include <sys/stat.h>
 #include <stdexcept>
+#include <sys/memfd.h>
 
 //#define SOUND_THREAD
 
@@ -14,18 +15,24 @@ void android_main(struct android_app *app)
 
     umask(0);
 
+    std::string internalDataPath(app->activity->internalDataPath);
+    std::string tmpPath = internalDataPath + "/tmp";
+    mkdir(tmpPath.c_str(), 0777);
+
+    int x = memfd_create("A", 0);
+
     try
     {
         WereEventLoop *loop = new WereEventLoop();
         Platform *platform = platform_na_create(loop, app);
-        Compositor *compositor = compositor_gl_create(loop, platform);
+        Compositor *compositor = compositor_gl_create(loop, platform, internalDataPath + "/sparkle.socket");
 
 #ifdef SOUND_THREAD
         WereEventLoop *loop2 = new WereEventLoop();
         SoundSLES *sound = new SoundSLES(loop2);
         loop2->runThread();
 #else
-        SoundSLES *sound = new SoundSLES(loop);
+        SoundSLES *sound = new SoundSLES(loop, internalDataPath + "/sparkle-sound.socket");
 #endif
 
         WereBenchmark *test = new WereBenchmark(loop);
@@ -51,7 +58,7 @@ void android_main(struct android_app *app)
     }
 
     ANativeActivity_finish(app->activity);
-    
+
     were_message("android_main finished.\n");
 }
 

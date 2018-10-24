@@ -1,8 +1,6 @@
 #ifndef WERE_H
 #define WERE_H
 
-#include <cstdint>
-
 #include "were_exception.h"
 
 #ifdef __ANDROID__
@@ -19,5 +17,4 @@
 
 #define werethings public
 
-#endif //WERE_H
-
+#endif /* WERE_H */

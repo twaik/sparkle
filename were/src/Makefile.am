@@ -1,6 +1,6 @@
 #AM_CFLAGS =
 #AM_CXXFLAGS =
-#AM_CPPFLAGS = 
+#AM_CPPFLAGS =
 
 #noinst_LTLIBRARIES = libsiski.la
 #libsiski_la_SOURCES = siski.cpp
@@ -38,5 +38,7 @@ libwere_la_SOURCES =			\
 	were_timer.cpp			\
 	were_timer.h			\
 	were_signal.cpp			\
-	were_signal.h
+	were_signal.h			\
+	were_stream.cpp			\
+	were_stream.h
 

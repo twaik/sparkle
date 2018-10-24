@@ -11,17 +11,17 @@ int main(int argc, char *argv[])
     sig->terminate.connect(WereSimpleQueuer(loop, &WereEventLoop::exit, loop));
 
     Platform *platform = platform_x11_create(loop);
-    Compositor *compositor = compositor_gl_create(loop, platform);
-    
+    Compositor *compositor = compositor_gl_create(loop, platform, "/dev/shm/sparkle.socket");
+
     WereBenchmark *test = new WereBenchmark(loop);
     compositor->frame.connect(WereSimpleQueuer(loop, &WereBenchmark::event, test));
 
     platform->start();
-    
+
     loop->run();
-    
+
     platform->stop();
-    
+
     delete test;
     delete compositor;
     delete platform;

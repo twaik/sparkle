@@ -13,7 +13,7 @@
     });
 
     signal.connect(WereSimpleQueuer(&Object::method, object, x, y));
-    
+
     signal.connect([this, client](std::shared_ptr<SparklePacket> packet)
     {
         _loop->queue(std::bind(&SparkleServer::handlePacket, this, client, packet));
@@ -25,7 +25,7 @@
 #include <vector>
 #include <functional>
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 template <typename Signature> class WereSignal;
 template <typename ... Args>
@@ -48,7 +48,7 @@ private:
     std::vector< std::function<void (Args ...)> > _f;
 };
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 template <typename ... Args>
 std::function<void (Args ...)> WereSimpleQueuer(WereEventLoop *loop, void (*f)(Args ... args))
@@ -68,7 +68,6 @@ std::function<void (Args ...)> WereSimpleQueuer(WereEventLoop *loop, void (T::*f
     };
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
-#endif //WERE_SIGNAL_H
-
+#endif /* WERE_SIGNAL_H */

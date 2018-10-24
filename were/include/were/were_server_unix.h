@@ -3,31 +3,30 @@
 
 #include "were.h"
 #include "were_event_source.h"
-#include "were_socket_unix.h"
 #include "were_signal.h"
+#include "were_socket_unix.h"
 #include <string>
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 class WereServerUnix : public WereEventSource
 {
 public:
     ~WereServerUnix();
     WereServerUnix(WereEventLoop *loop, const std::string &path);
-    
+
     WereSocketUnix *accept();
-    
+
 werethings:
-    WereSignal<void ()> newConnection;
-    
+    WereSignal<void ()> signal_connection;
+
 private:
     void event(uint32_t events);
-    
+
 private:
-    std::string _path;
+    std::string path_;
 };
 
-//==================================================================================================
+/* ================================================================================================================== */
 
-#endif //WERE_SERVER_UNIX_H
-
+#endif /* WERE_SERVER_UNIX_H */

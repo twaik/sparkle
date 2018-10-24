@@ -5,7 +5,7 @@
 #include "were/were_event_loop.h"
 #include "platform/platform.h"
 
-Compositor *compositor_gl_create(WereEventLoop *loop, Platform *platform);
+Compositor *compositor_gl_create(WereEventLoop *loop, Platform *platform,
+    const std::string &file);
 
 #endif //COMPOSITOR_GL_H
-

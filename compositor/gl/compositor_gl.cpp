@@ -59,31 +59,31 @@ public:
 
     EGLint getVID();
 
-    EGLDisplay _display;
-    EGLConfig _config;
+    EGLDisplay display_;
+    EGLConfig config_;
 };
 
 CompositorGL_EGL::~CompositorGL_EGL()
 {
-    eglTerminate(_display);
+    eglTerminate(display_);
     were_debug("EGL destroyed.\n");
 }
 
 CompositorGL_EGL::CompositorGL_EGL(NativeDisplayType nativeDisplay)
 {
-    _display = eglGetDisplay(nativeDisplay);
-    if (_display == EGL_NO_DISPLAY)
+    display_ = eglGetDisplay(nativeDisplay);
+    if (display_ == EGL_NO_DISPLAY)
         throw std::runtime_error("[CompositorGL_EGL::CompositorGL_EGL] Failed: eglGetDisplay.");
 
     EGLint majorVersion, minorVersion;
 
-    if (eglInitialize(_display, &majorVersion, &minorVersion) != EGL_TRUE)
+    if (eglInitialize(display_, &majorVersion, &minorVersion) != EGL_TRUE)
         throw std::runtime_error("[CompositorGL_EGL::CompositorGL_EGL] Failed: eglInitialize.");
 
-    were_message("EGL_VERSION = %s\n",       eglQueryString(_display, EGL_VERSION));
-    were_message("EGL_VENDOR = %s\n",        eglQueryString(_display, EGL_VENDOR));
-    were_message("EGL_CLIENT_APIS = %s\n",   eglQueryString(_display, EGL_CLIENT_APIS));
-    were_message("EGL_EXTENSIONS = %s\n",    eglQueryString(_display, EGL_EXTENSIONS));
+    were_message("EGL_VERSION = %s\n",       eglQueryString(display_, EGL_VERSION));
+    were_message("EGL_VENDOR = %s\n",        eglQueryString(display_, EGL_VENDOR));
+    were_message("EGL_CLIENT_APIS = %s\n",   eglQueryString(display_, EGL_CLIENT_APIS));
+    were_message("EGL_EXTENSIONS = %s\n",    eglQueryString(display_, EGL_EXTENSIONS));
 
     const EGLint configAttribs[] = {
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -96,7 +96,7 @@ CompositorGL_EGL::CompositorGL_EGL(NativeDisplayType nativeDisplay)
 
     EGLint numConfigs;
 
-    if (eglChooseConfig(_display, configAttribs, &_config, 1, &numConfigs) != EGL_TRUE)
+    if (eglChooseConfig(display_, configAttribs, &config_, 1, &numConfigs) != EGL_TRUE)
         throw std::runtime_error("[CompositorGL_EGL::CompositorGL_EGL] Failed: eglChooseConfig.");
 
     eglBindAPI(EGL_OPENGL_ES_API);
@@ -106,7 +106,7 @@ EGLint CompositorGL_EGL::getVID()
 {
     EGLint vid;
 
-    if (eglGetConfigAttrib(_display, _config, EGL_NATIVE_VISUAL_ID, &vid) != EGL_TRUE)
+    if (eglGetConfigAttrib(display_, config_, EGL_NATIVE_VISUAL_ID, &vid) != EGL_TRUE)
         throw std::runtime_error("[CompositorGL_EGL::getVID] Failed: eglGetConfigAttrib.");
 
     return vid;
@@ -144,9 +144,9 @@ CompositorGL_GL::~CompositorGL_GL()
     glDeleteShader(_pixelShader);
     glDeleteShader(_vertexShader);
 
-    eglMakeCurrent(_egl->_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-    eglDestroyContext(_egl->_display, _context);
-    eglDestroySurface(_egl->_display, _surface);
+    eglMakeCurrent(_egl->display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroyContext(_egl->display_, _context);
+    eglDestroySurface(_egl->display_, _surface);
 
     were_debug("GL destroyed.\n");
 }
@@ -155,7 +155,7 @@ CompositorGL_GL::CompositorGL_GL(CompositorGL_EGL *egl, NativeWindowType window)
 {
     _egl = egl;
 
-    _surface = eglCreateWindowSurface(_egl->_display, _egl->_config, window, NULL);
+    _surface = eglCreateWindowSurface(_egl->display_, _egl->config_, window, NULL);
     if (_surface == EGL_NO_SURFACE)
         throw std::runtime_error("[CompositorGL_GL::CompositorGL_GL] Failed: eglCreateWindowSurface.");
 
@@ -163,11 +163,11 @@ CompositorGL_GL::CompositorGL_GL(CompositorGL_EGL *egl, NativeWindowType window)
             EGL_CONTEXT_CLIENT_VERSION, 2,
             EGL_NONE};
 
-    _context = eglCreateContext(_egl->_display, _egl->_config, EGL_NO_CONTEXT, contextAttribs);
+    _context = eglCreateContext(_egl->display_, _egl->config_, EGL_NO_CONTEXT, contextAttribs);
     if (_context == EGL_NO_CONTEXT)
         throw std::runtime_error("[CompositorGL_GL::CompositorGL_GL] Failed: eglCreateContext.");
 
-    if (eglMakeCurrent(_egl->_display, _surface, _surface, _context) != EGL_TRUE)
+    if (eglMakeCurrent(_egl->display_, _surface, _surface, _context) != EGL_TRUE)
         throw std::runtime_error("[CompositorGL_GL::CompositorGL_GL] Failed: eglMakeCurrent.");
 
     were_message("GL_VERSION = %s\n",    (char *) glGetString(GL_VERSION));
@@ -199,11 +199,11 @@ CompositorGL_GL::CompositorGL_GL(CompositorGL_EGL *egl, NativeWindowType window)
     //_textureSamplerHandle = glGetUniformLocation(_textureProgram, "texture");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    eglQuerySurface(_egl->_display, _surface, EGL_WIDTH, &_surfaceWidth);
-    eglQuerySurface(_egl->_display, _surface, EGL_HEIGHT, &_surfaceHeight);
+    eglQuerySurface(_egl->display_, _surface, EGL_WIDTH, &_surfaceWidth);
+    eglQuerySurface(_egl->display_, _surface, EGL_HEIGHT, &_surfaceHeight);
     glViewport(0, 0, _surfaceWidth, _surfaceHeight);
 
-    eglSwapInterval(_egl->_display, 0);
+    eglSwapInterval(_egl->display_, 0);
 }
 
 GLuint CompositorGL_GL::loadShader(GLenum shaderType, const char *pSource)
@@ -404,7 +404,7 @@ class CompositorGL : public Compositor
 {
 public:
     ~CompositorGL();
-    CompositorGL(WereEventLoop *loop, Platform *platform);
+    CompositorGL(WereEventLoop *loop, Platform *platform, const std::string &file);
 
     int displayWidth();
     int displayHeight();
@@ -424,7 +424,7 @@ private:
     void keyUp(int code);
 
     void connection(std::shared_ptr <SparkleConnection> client);
-    void packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet);
+    void packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message);
 
     void registerSurfaceFile(const std::string &name, const std::string &path, int width, int height);
     void unregisterSurface(const std::string &name);
@@ -464,7 +464,7 @@ CompositorGL::~CompositorGL()
         delete _egl;
 }
 
-CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
+CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform, const std::string &file)
 {
     _loop = loop;
     _platform = platform;
@@ -509,7 +509,7 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform)
     _platform->keyDown.connect(WereSimpleQueuer(loop, &CompositorGL::keyDown, this));
     _platform->keyUp.connect(WereSimpleQueuer(loop, &CompositorGL::keyUp, this));
 
-    _server = new SparkleServer(_loop, "/dev/shm/sparkle.socket");
+    _server = new SparkleServer(_loop, file);
 
     _server->signal_connected.connect(WereSimpleQueuer(loop, &CompositorGL::connection, this));
     _server->signal_packet.connect(WereSimpleQueuer(loop, &CompositorGL::packet, this));
@@ -546,7 +546,7 @@ void CompositorGL::initializeForNativeWindow(NativeWindowType window)
 {
     _gl = new CompositorGL_GL(_egl, window);
 
-    _display_size_notification r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
+    display_size_notification_ r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
     _server->broadcast1(&display_size_notification, &r1);
 
     _redraw = true;
@@ -573,8 +573,8 @@ void CompositorGL::draw()
     int width;
     int height;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    eglQuerySurface(_egl->_display, _gl->_surface, EGL_WIDTH, &width);
-    eglQuerySurface(_egl->_display, _gl->_surface, EGL_HEIGHT, &height);
+    eglQuerySurface(_egl->display_, _gl->_surface, EGL_WIDTH, &width);
+    eglQuerySurface(_egl->display_, _gl->_surface, EGL_HEIGHT, &height);
 
     if (width != _gl->_surfaceWidth || height != _gl->_surfaceHeight)
     {
@@ -582,7 +582,7 @@ void CompositorGL::draw()
         _gl->_surfaceHeight = height;
         glViewport(0, 0, _gl->_surfaceWidth, _gl->_surfaceHeight);
 
-        _display_size_notification r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
+        display_size_notification_ r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
         _server->broadcast1(&display_size_notification, &r1);
     }
 
@@ -667,7 +667,7 @@ void CompositorGL::draw()
         if (1)
             glFinish();
 
-        eglSwapBuffers(_egl->_display, _gl->_surface);
+        eglSwapBuffers(_egl->display_, _gl->_surface);
 
         frame();
     }
@@ -685,7 +685,7 @@ void CompositorGL::pointerDown(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            _pointer_down_notification r1 = {surface->name().c_str(), slot, _x, _y};
+            pointer_down_notification_ r1 = {surface->name().c_str(), slot, _x, _y};
             _server->broadcast1(&pointer_down_notification, &r1);
             return;
         }
@@ -702,7 +702,7 @@ void CompositorGL::pointerUp(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            _pointer_up_notification r1 = {surface->name().c_str(), slot, _x, _y};
+            pointer_up_notification_ r1 = {surface->name().c_str(), slot, _x, _y};
             _server->broadcast1(&pointer_up_notification, &r1);
             return;
         }
@@ -719,7 +719,7 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            _pointer_motion_notification r1 = {surface->name().c_str(), slot, _x, _y};
+            pointer_motion_notification_ r1 = {surface->name().c_str(), slot, _x, _y};
             _server->broadcast1(&pointer_motion_notification, &r1);
             return;
         }
@@ -728,13 +728,13 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
 
 void CompositorGL::keyDown(int code)
 {
-    _key_down_notification r1 = {code};
+    key_down_notification_ r1 = {code};
     _server->broadcast1(&key_down_notification, &r1);
 }
 
 void CompositorGL::keyUp(int code)
 {
-    _key_up_notification r1 = {code};
+    key_up_notification_ r1 = {code};
     _server->broadcast1(&key_up_notification, &r1);
 }
 
@@ -744,61 +744,64 @@ void CompositorGL::connection(std::shared_ptr <SparkleConnection> client)
 {
     if (_gl != 0)
     {
-        _display_size_notification r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
+        display_size_notification_ r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
         client->send1(&display_size_notification, &r1);
     }
 }
 
-void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet)
+void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message)
 {
-    uint32_t operation = packet->header()->operation;
+    uint32_t operation;
+
+    WereStream stream(message->data());
+    stream.pRead(&p_uint32, &operation);
 
     if (operation == register_surface_file_request.code)
     {
-        _register_surface_file_request r1;
-        SparkleConnection::unpack1(&register_surface_file_request, packet.get(), &r1);
+        register_surface_file_request_ r1;
+        stream.pRead(&register_surface_file_request.packer, &r1);
         registerSurfaceFile(r1.name, r1.path, r1.width, r1.height);
     }
     else if (operation == unregister_surface_request.code)
     {
-        _unregister_surface_request r1;
-        SparkleConnection::unpack1(&unregister_surface_request, packet.get(), &r1);
+        unregister_surface_request_ r1;
+        stream.pRead(&unregister_surface_request.packer, &r1);
         unregisterSurface(r1.name);
     }
     else if (operation == set_surface_position_request.code)
     {
-        _set_surface_position_request r1;
-        SparkleConnection::unpack1(&set_surface_position_request, packet.get(), &r1);
+        set_surface_position_request_ r1;
+        stream.pRead(&set_surface_position_request.packer, &r1);
         setSurfacePosition(r1.name, r1.x1, r1.y1, r1.x2, r1.y2);
     }
     else if (operation == set_surface_strata_request.code)
     {
-        _set_surface_strata_request r1;
-        SparkleConnection::unpack1(&set_surface_strata_request, packet.get(), &r1);
+        set_surface_strata_request_ r1;
+        stream.pRead(&set_surface_strata_request.packer, &r1);
         setSurfaceStrata(r1.name, r1.strata);
     }
     else if (operation == set_surface_alpha_request.code)
     {
-        _set_surface_alpha_request r1;
-        SparkleConnection::unpack1(&set_surface_alpha_request, packet.get(), &r1);
+        set_surface_alpha_request_ r1;
+        stream.pRead(&set_surface_alpha_request.packer, &r1);
         setSurfaceAlpha(r1.name, r1.alpha);
     }
     else if (operation == add_surface_damage_request.code)
     {
-        _add_surface_damage_request r1;
-        SparkleConnection::unpack1(&add_surface_damage_request, packet.get(), &r1);
+        add_surface_damage_request_ r1;
+        stream.pRead(&add_surface_damage_request.packer, &r1);
         addSurfaceDamage(r1.name, r1.x1, r1.y1, r1.x2, r1.y2);
     }
     else if (operation == key_down_request.code)
     {
-        _key_down_request r1;
-        SparkleConnection::unpack1(&key_down_request, packet.get(), &r1);
+        key_down_request_ r1;
+        stream.pRead(&key_down_request.packer, &r1);
         keyDown(r1.code);
     }
     else if (operation == key_up_request.code)
     {
-        _key_up_request r1;
-        SparkleConnection::unpack1(&key_up_request, packet.get(), &r1);
+        key_up_request_ r1;
+        stream.pRead(&key_up_request.packer, &r1);
         keyUp(r1.code);
     }
 }
@@ -810,9 +813,9 @@ void CompositorGL::registerSurfaceFile(const std::string &name, const std::strin
     std::shared_ptr<CompositorGLSurface> surface(new CompositorGLSurfaceFile(name, path, width, height));
     _surfaces.push_back(surface);
     std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
-    were_debug("Surface [%s] registered.\n", name.c_str());
 
     _redraw = true;
+    were_debug("Surface [%s] registered.\n", name.c_str());
 }
 
 void CompositorGL::unregisterSurface(const std::string &name)
@@ -835,48 +838,46 @@ void CompositorGL::unregisterSurface(const std::string &name)
 
 void CompositorGL::setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2)
 {
-    were_debug("Surface [%s]: position changed (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
-
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
     {
         surface->setPosition(x1, y1, x2, y2);
         _redraw = true;
+        were_debug("Surface [%s]: position changed (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
     }
 }
 
 void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
 {
-    were_debug("Surface [%s]: strata changed.\n", name.c_str());
-
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
     {
         surface->setStrata(strata);
         std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
         _redraw = true;
+        were_debug("Surface [%s]: strata changed.\n", name.c_str());
     }
 }
 
 void CompositorGL::setSurfaceAlpha(const std::string &name, float alpha)
 {
-    were_debug("Surface [%s]: alpha changed.\n", name.c_str());
-
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
     {
         surface->setAlpha(alpha);
         _redraw = true;
+        were_debug("Surface [%s]: alpha changed.\n", name.c_str());
     }
 }
 
 void CompositorGL::addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2)
 {
-    //were_debug("Surface [%s]: damage (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
-
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != 0)
+    {
         surface->addDamage(x1, y1, x2, y2);
+        //were_debug("Surface [%s]: damage (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
+    }
 }
 
 //==================================================================================================
@@ -918,10 +919,10 @@ bool CompositorGL::sortFunction(std::shared_ptr<CompositorGLSurface> a1, std::sh
 
 //==================================================================================================
 
-Compositor *compositor_gl_create(WereEventLoop *loop, Platform *platform)
+Compositor *compositor_gl_create(WereEventLoop *loop, Platform *platform,
+    const std::string &file)
 {
-    return new CompositorGL(loop, platform);
+    return new CompositorGL(loop, platform, file);
 }
 
 //==================================================================================================
-

@@ -34,7 +34,7 @@
 
 #define checkResult(r) do { if ((r) != SL_RESULT_SUCCESS) were_error("error %d at %s:%d\n", \
     (int) r, __FILE__, __LINE__); } while (0)
-    
+
 //==================================================================================================
 
 class WereEventLoop;
@@ -46,8 +46,8 @@ class SoundSLES
 {
 public:
     ~SoundSLES();
-    SoundSLES(WereEventLoop *loop);
-    
+    SoundSLES(WereEventLoop *loop, const std::string &file);
+
     void beep();
 
 private:
@@ -59,11 +59,11 @@ private:
     static void callback(BufferQueueItf playerBufferqueue, void *data);
 
 private:
-    WereEventLoop *_loop;
-    SparkleServer *_server;
+    WereEventLoop *loop_;
+    SparkleServer *server_;
 
     void packet(std::shared_ptr <SparkleConnection> client, std::shared_ptr<SparklePacket> packet);
-    
+
     SLObjectItf engineObject;
     SLEngineItf engineEngine;
     SLObjectItf outputmixObject;
@@ -76,8 +76,8 @@ private:
     SLPlayItf playerPlay;
     BufferQueueItf playerBufferqueue;
     SLuint32 state;
-    
-    std::list< std::shared_ptr<SparklePacket> > _queue;
+
+    std::list< std::shared_ptr<SparklePacket> > queue_;
     bool busy;
 };
 

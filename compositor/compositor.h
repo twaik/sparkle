@@ -14,4 +14,3 @@ public:
 };
 
 #endif //COMPOSITOR_H
-

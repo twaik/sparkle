@@ -22,7 +22,6 @@
 #include <X11/Xatom.h>
 #include <xserver-properties.h>
 
-#include "common/sparkle_protocol.h"
 
 #ifndef XI_PROP_PRODUCT_ID
 #define XI_PROP_PRODUCT_ID "Device Product ID"
@@ -85,8 +84,8 @@ static void
 EvdevReadInput(InputInfoPtr pInfo)
 {
     EvdevPtr pEvdev = pInfo->private;
-    
-    were_event_loop_process_events(pEvdev->loop);
+
+    sparklei_c_process(pEvdev->sparkle); /* TODO */
 
     //if (rc == -ENODEV) /* May happen after resume */
     //    xf86RemoveEnabledDevice(pInfo);
@@ -212,7 +211,7 @@ EvdevAddButtonClass(DeviceIntPtr device)
 
     pInfo = device->public.devicePrivate;
     pEvdev = pInfo->private;
-    
+
     labels = malloc(n_buttons * sizeof(Atom)); // NUM_BUTTONS * ATOM
     EvdevInitButtonLabels(pEvdev, n_buttons, labels); // NUM_BUTTONS
 
@@ -256,7 +255,7 @@ static CARD32 EvdevTimeout(OsTimerPtr timer, CARD32 time, pointer arg)
 {
     //InputInfoPtr      pInfo    = (InputInfoPtr)arg;
     //EvdevPtr          pEvdev   = pInfo->private;
-    
+
     //pEvdev->timer = TimerSet(pEvdev->timer, 0, 1000, EvdevTimeout, pInfo);
 
     return 0;
@@ -272,8 +271,8 @@ EvdevOn(DeviceIntPtr device)
 
     pInfo = device->public.devicePrivate;
     //pEvdev = pInfo->private;
-    
-    
+
+
     /* after PreInit fd is still open */
     rc = EvdevOpenDevice(pInfo);
     if (rc != Success)
@@ -282,7 +281,7 @@ EvdevOn(DeviceIntPtr device)
     xf86FlushInput(pInfo->fd);
     xf86AddEnabledDevice(pInfo);
     device->public.on = TRUE;
-    
+
     //pEvdev->timer = TimerSet(pEvdev->timer, 0, 1000, EvdevTimeout, pInfo); //FIXME
 
     return Success;
@@ -341,10 +340,11 @@ EvdevProbe(InputInfoPtr pInfo)
     return Success;
 }
 
-static void SparkleiPointerDown(InputInfoPtr pInfo, int slot, int x, int y)
+static void SparkleiPointerDown(void *user, int slot, int x, int y)
 {
+    InputInfoPtr      pInfo    = (InputInfoPtr)user;
     EvdevPtr          pEvdev   = pInfo->private;
-    
+
     valuator_mask_set(pEvdev->mt_mask, 0, x);
     valuator_mask_set(pEvdev->mt_mask, 1, y);
     xf86PostTouchEvent(pInfo->dev, slot + 1, 18, 0, pEvdev->mt_mask);
@@ -352,19 +352,21 @@ static void SparkleiPointerDown(InputInfoPtr pInfo, int slot, int x, int y)
     valuator_mask_zero(pEvdev->mt_mask);
 }
 
-static void SparkleiPointerUp(InputInfoPtr pInfo, int slot)
+static void SparkleiPointerUp(void *user, int slot)
 {
+    InputInfoPtr      pInfo    = (InputInfoPtr)user;
     EvdevPtr          pEvdev   = pInfo->private;
-    
+
     xf86PostTouchEvent(pInfo->dev, slot + 1, 20, 0, pEvdev->mt_mask);
     pEvdev->slot_state[slot] = 0;
     valuator_mask_zero(pEvdev->mt_mask);
 }
 
-static void SparkleiPointerMotion(InputInfoPtr pInfo, int slot, int x, int y)
+static void SparkleiPointerMotion(void *user, int slot, int x, int y)
 {
+    InputInfoPtr      pInfo    = (InputInfoPtr)user;
     EvdevPtr          pEvdev   = pInfo->private;
-    
+
     valuator_mask_set(pEvdev->mt_mask, 0, x);
     valuator_mask_set(pEvdev->mt_mask, 1, y);
     if (pEvdev->slot_state[slot] == 1)
@@ -372,10 +374,11 @@ static void SparkleiPointerMotion(InputInfoPtr pInfo, int slot, int x, int y)
     valuator_mask_zero(pEvdev->mt_mask);
 }
 
-static void SparkleiRMB(InputInfoPtr pInfo, int state)
+static void SparkleiRMB(void *user, int state)
 {
+    InputInfoPtr      pInfo    = (InputInfoPtr)user;
     EvdevPtr          pEvdev   = pInfo->private;
-    
+
     //xf86PostMotionEventM(pInfo->dev, Absolute, pEvdev->mt_mask);
 
     if (state == 1 && pEvdev->rmb_state == 0)
@@ -390,57 +393,24 @@ static void SparkleiRMB(InputInfoPtr pInfo, int state)
     }
 }
 
-static void SparkleiPacketHandler(void *user, SparklePacket *packet)
+static void SparkleiKeyDown(void *user, int code)
 {
     InputInfoPtr      pInfo    = (InputInfoPtr)user;
-    EvdevPtr          pEvdev   = pInfo->private;
-    
-    uint32_t operation = sparkle_packet_header(packet)->operation;
-    
-    if (operation == pointer_down_notification.code)
-    {
-        struct _pointer_down_notification r1;
-        sparkle_connection_unpack1(&pointer_down_notification, packet, &r1);
 
-        if (strcmp(r1.surface, pEvdev->surface_name) == 0)
-            SparkleiPointerDown(pInfo, r1.slot, r1.x, r1.y);
-    }
-    else if (operation == pointer_up_notification.code)
-    {
-        struct _pointer_up_notification r1;
-        sparkle_connection_unpack1(&pointer_up_notification, packet, &r1);
-        
-        if (strcmp(r1.surface, pEvdev->surface_name) == 0)
-            SparkleiPointerUp(pInfo, r1.slot);
-    }
-    else if (operation == pointer_motion_notification.code)
-    {
-        struct _pointer_motion_notification r1;
-        sparkle_connection_unpack1(&pointer_motion_notification, packet, &r1);
-        
-        if (strcmp(r1.surface, pEvdev->surface_name) == 0)
-            SparkleiPointerMotion(pInfo, r1.slot, r1.x, r1.y);
-    }
-    else if (operation == key_down_notification.code)
-    {
-        struct _key_down_notification r1;
-        sparkle_connection_unpack1(&key_down_notification, packet, &r1);
-        
-        if (r1.code == 122) //122
-            SparkleiRMB(pInfo, 1);
-        else
-            xf86PostKeyboardEvent(pInfo->dev, r1.code, 1);
-    }
-    else if (operation == key_up_notification.code)
-    {
-        struct _key_up_notification r1;
-        sparkle_connection_unpack1(&key_up_notification, packet, &r1);
-        
-        if (r1.code == 122) //122
-            SparkleiRMB(pInfo, 0);
-        else
-            xf86PostKeyboardEvent(pInfo->dev, r1.code, 0);
-    }
+    if (code == 122)
+        SparkleiRMB(user, 1);
+    else
+        xf86PostKeyboardEvent(pInfo->dev, code, 1);
+}
+
+static void SparkleiKeyUp(void *user, int code)
+{
+    InputInfoPtr      pInfo    = (InputInfoPtr)user;
+
+    if (code == 122)
+        SparkleiRMB(user, 0);
+    else
+        xf86PostKeyboardEvent(pInfo->dev, code, 0);
 }
 
 static int
@@ -450,11 +420,14 @@ EvdevOpenDevice(InputInfoPtr pInfo)
 
     if (!(pInfo->flags & XI86_SERVER_FD) && pInfo->fd < 0)
     {
-        pEvdev->loop = were_event_loop_create();
-        pInfo->fd = were_event_loop_fd(pEvdev->loop);
-        
-        pEvdev->sparkle = sparkle_connection_create(pEvdev->loop, pEvdev->compositor);
-        sparkle_connection_add_packet_callback(pEvdev->sparkle, pEvdev->loop, SparkleiPacketHandler, pInfo);
+        pEvdev->sparkle = sparklei_c_create();
+        pInfo->fd = sparklei_c_fd(pEvdev->sparkle);
+
+        sparklei_c_set_pointer_down_cb(pEvdev->sparkle, SparkleiPointerDown, pInfo);
+        sparklei_c_set_pointer_up_cb(pEvdev->sparkle, SparkleiPointerUp, pInfo);
+        sparklei_c_set_pointer_motion_cb(pEvdev->sparkle, SparkleiPointerMotion, pInfo);
+        sparklei_c_set_key_down_cb(pEvdev->sparkle, SparkleiKeyDown, pInfo);
+        sparklei_c_set_key_up_cb(pEvdev->sparkle, SparkleiKeyUp, pInfo);
     }
 
     if (pInfo->fd < 0) {
@@ -472,8 +445,7 @@ EvdevCloseDevice(InputInfoPtr pInfo)
 
     if (!(pInfo->flags & XI86_SERVER_FD) && pInfo->fd >= 0)
     {
-        sparkle_connection_destroy(pEvdev->sparkle);
-        were_event_loop_destroy(pEvdev->loop);
+        sparklei_c_destroy(pEvdev->sparkle);
         pInfo->fd = -1;
     }
 }
@@ -505,14 +477,14 @@ EvdevPreInit(InputDriverPtr drv, InputInfoPtr pInfo, int flags)
 
     if (!(pEvdev = EvdevAlloc(pInfo)))
         goto error;
-    
+
 
     pInfo->private = pEvdev;
     pInfo->type_name = "UNKNOWN";
     pInfo->device_control = EvdevProc;
     pInfo->read_input = EvdevReadInput;
     pInfo->switch_mode = EvdevSwitchMode;
-    
+
     pEvdev->compositor = xf86SetStrOption(pInfo->options, "Compositor", NULL);
     if (pEvdev->compositor == NULL)
         goto error;
@@ -530,7 +502,7 @@ EvdevPreInit(InputDriverPtr drv, InputInfoPtr pInfo, int flags)
         rc = BadMatch;
         goto error;
     }
-    
+
 
     return Success;
 

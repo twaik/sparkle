@@ -16,9 +16,7 @@
 #include "compat-api.h"
 
 #ifdef SPARKLE_MODE
-#include "common/sparkle_surface_file.h"
-#include "were/were_event_loop.h"
-#include "common/sparkle_connection.h"
+#include "sparkle_c.h"
 #endif
 
 /* Supported chipsets */
@@ -44,7 +42,7 @@ typedef struct _color
     int blue;
 } dummy_colors;
 
-typedef struct dummyRec 
+typedef struct dummyRec
 {
 #ifndef SPARKLE_MODE
     /* options */
@@ -65,9 +63,7 @@ typedef struct dummyRec
 #endif
     Bool prop;
 #ifdef SPARKLE_MODE
-    SparkleSurfaceFile *surface;
-    WereEventLoop *were;
-    SparkleConnection *sparkle;
+    SparkleC *sparkle;
     int displayWidth;
     int displayHeight;
     int configuredWidth;
@@ -80,9 +76,9 @@ typedef struct dummyRec
     DisplayModePtr modes;
     //int desiredWidth;
     //int desiredHeight;
-    
+
     //OsTimerPtr timer;
-    
+
     char *compositor;
     char *surface_name;
     char *surface_file;

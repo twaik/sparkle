@@ -41,8 +41,6 @@
 #include "servermd.h"
 
 #ifdef SPARKLE_MODE
-#include "common/sparkle_protocol.h"
-#include "common/sparkle_packet.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -228,13 +226,13 @@ DUMMYFreeRec(ScrnInfoPtr pScrn)
 
     if (dPtr == NULL)
         return;
-    
+
     free(dPtr->compositor);
     free(dPtr->surface_name);
     free(dPtr->surface_file);
 
     free(dPtr);
-    
+
     pScrn->driverPrivate = NULL;
 }
 
@@ -280,7 +278,7 @@ DUMMYProbe(DriverPtr drv, int flags)
 
 	for (i = 0; i < numUsed; i++) {
 	    ScrnInfoPtr pScrn = NULL;
-	    int entityIndex = 
+	    int entityIndex =
 		xf86ClaimNoSlot(drv,DUMMY_CHIP,devSections[i],TRUE);
 	    /* Allocate a ScrnInfoRec and claim the slot */
 	    if ((pScrn = xf86AllocateScreen(drv,0 ))) {
@@ -301,7 +299,7 @@ DUMMYProbe(DriverPtr drv, int flags)
 		    foundScreen = TRUE;
 	    }
 	}
-    }    
+    }
 
     free(devSections);
 
@@ -314,78 +312,17 @@ DUMMYProbe(DriverPtr drv, int flags)
 					     }
 
 #ifdef SPARKLE_MODE
+
 //==================================================================================================
-
-static void handle_connection(void *user)
-{
-    ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
-    DUMMYPtr dPtr = DUMMYPTR(pScrn);
-    
-    struct _register_surface_file_request r1 = {dPtr->surface_name, dPtr->surface_file, sparkle_surface_file_width(dPtr->surface), sparkle_surface_file_height(dPtr->surface)};
-    sparkle_connection_send1(dPtr->sparkle, &register_surface_file_request, &r1);
-    
-    struct _set_surface_position_request r2 = {dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight};
-    sparkle_connection_send1(dPtr->sparkle, &set_surface_position_request, &r2);
-}
-
-static void handle_disconnection(void *user)
-{   
-    ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
-    DUMMYPtr dPtr = DUMMYPTR(pScrn);
-}
-
-static void handle_packet(void *user, SparklePacket *packet)
-{
-    ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
-    ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
-    DUMMYPtr dPtr = DUMMYPTR(pScrn);
-    
-    uint32_t operation = sparkle_packet_header(packet)->operation;
-    
-    if (operation == display_size_notification.code)
-    {
-        struct _display_size_notification r1;
-        sparkle_connection_unpack1(&display_size_notification, packet, &r1);
-
-        dPtr->displayWidth = r1.width;
-        dPtr->displayHeight = r1.height;
-        
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DISPLAY SIZE: %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
-    
-        struct _set_surface_position_request r2 = {dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight};
-        sparkle_connection_send1(dPtr->sparkle, &set_surface_position_request, &r2);
-    
-
-        if (dPtr->displayWidth != dPtr->configuredWidth || dPtr->displayHeight != dPtr->configuredHeight)
-        {
-            xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Reconfiguring for %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
-
-            DUMMYUpdateModes(pScrn, dPtr->displayWidth, dPtr->displayHeight);
-
-            DisplayModePtr mode = dPtr->modes;
-            //pScrn->currentMode = mode;
-
-            int mmWidth = mode->HDisplay * 25.4 / monitorResolution;
-            int mmHeight = mode->VDisplay * 25.4 / monitorResolution;
-
-            RRScreenSizeSet(pScreen, mode->HDisplay, mode->VDisplay, mmWidth, mmHeight);
-            xf86SetSingleMode(pScrn, mode, RR_Rotate_0);
-
-            dPtr->configuredWidth = dPtr->displayWidth;
-            dPtr->configuredHeight = dPtr->displayHeight;
-        }
-    
-    }
-}
 
 static void handle_event(int fd, int ready, void *data)
 {
     ScrnInfoPtr pScrn = (ScrnInfoPtr)data;
     ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
-    
+
     if (ready)
-        were_event_loop_process_events(dPtr->were);
+        sparkle_c_process(dPtr->sparkle);
 }
 
 //==================================================================================================
@@ -409,29 +346,14 @@ Bool DUMMYCrtc_resize(ScrnInfoPtr pScrn, int width, int height)
     }
 #endif
 
-    struct _unregister_surface_request r1 = {dPtr->surface_name};
-    sparkle_connection_send1(dPtr->sparkle, &unregister_surface_request, &r1);
-    usleep(100000);
-
-    if (dPtr->surface != NULL)
-        sparkle_surface_file_destroy(dPtr->surface);
-
-    dPtr->surface = sparkle_surface_file_create(dPtr->surface_file, width, height, 1);
-    
-    struct _register_surface_file_request r2 = {dPtr->surface_name, dPtr->surface_file, sparkle_surface_file_width(dPtr->surface), sparkle_surface_file_height(dPtr->surface)};
-    sparkle_connection_send1(dPtr->sparkle, &register_surface_file_request, &r2);
-    
-    struct _set_surface_position_request r3 = {dPtr->surface_name, 0, 0, dPtr->displayWidth, dPtr->displayHeight};
-    sparkle_connection_send1(dPtr->sparkle, &set_surface_position_request, &r3);
-    
+    //sparkle_c_resize_surface(dPtr->sparkle, width, height);
 
     pScrn->virtualX = width;
     pScrn->virtualY = height;
     pScrn->displayWidth = width; //XXX
 
     int cpp = (pScrn->bitsPerPixel + 7) / 8;
-    pScreen->ModifyPixmapHeader(pPixmap, width, height, -1, -1, pScrn->displayWidth * cpp, sparkle_surface_file_data(dPtr->surface));
-    
+    pScreen->ModifyPixmapHeader(pPixmap, 800, 600, -1, -1, pScrn->displayWidth * cpp, sparkle_c_surface_data(dPtr->sparkle));
 
 
     //XXX
@@ -581,21 +503,21 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
     xf86OutputPtr output;
 #endif
 
-    if (flags & PROBE_DETECT) 
+    if (flags & PROBE_DETECT)
 	return TRUE;
-    
+
     /* Allocate the DummyRec driverPrivate */
     if (!DUMMYGetRec(pScrn)) {
 	return FALSE;
     }
-    
+
     dPtr = DUMMYPTR(pScrn);
 
     pScrn->chipset = (char *)xf86TokenToString(DUMMYChipsets,
 					       DUMMY_CHIP);
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Chipset is a DUMMY\n");
-    
+
     pScrn->monitor = pScrn->confScreen->monitor;
 
     if (!xf86SetDepthBpp(pScrn, 0, 0, 0,  Support24bppFb | Support32bppFb))
@@ -641,7 +563,7 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
 	}
     }
 
-    if (!xf86SetDefaultVisual(pScrn, -1)) 
+    if (!xf86SetDefaultVisual(pScrn, -1))
 	return FALSE;
 
     if (pScrn->depth > 1) {
@@ -665,7 +587,7 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
     xf86CollectOptions(pScrn, NULL);
     dPtr->swCursor = 0;
 #endif
-    
+
     if (device->videoRam != 0) {
 	pScrn->videoRam = device->videoRam;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "VideoRAM: %d kByte\n",
@@ -679,7 +601,7 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
 	xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "VideoRAM: %d kByte\n",
 		   pScrn->videoRam);
     }
-    
+
     if (device->dacSpeeds[0] != 0) {
 	maxClock = device->dacSpeeds[0];
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Max Clock: %d kHz\n",
@@ -702,7 +624,7 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
     clockRanges->minClock = 11000;   /* guessed §§§ */
     clockRanges->maxClock = maxClock;
     clockRanges->clockIndex = -1;		/* programmable */
-    clockRanges->interlaceAllowed = TRUE; 
+    clockRanges->interlaceAllowed = TRUE;
     clockRanges->doubleScanAllowed = TRUE;
 
     /* Subtract memory for HW cursor */
@@ -738,8 +660,8 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
      * driver and if the driver doesn't provide code to set them.  They
      * are not pre-initialised at all.
      */
-    xf86SetCrtcForModes(pScrn, 0); 
- 
+    xf86SetCrtcForModes(pScrn, 0);
+
     /* Set the current mode to the first in the list */
     pScrn->currentMode = pScrn->modes;
 
@@ -759,12 +681,12 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
     dPtr->surface_file = xf86SetStrOption(pScrn->options, "SurfaceFile", NULL);
     if (dPtr->surface_file == NULL)
         return FALSE;
-    
+
     if (!monitorResolution)
         monitorResolution = xf86SetIntOption(pScrn->options, "DPI", 96);
-    
+
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DPI: %d\n", monitorResolution);
-    
+
     //dPtr->desiredWidth = xf86SetIntOption(pScrn->options, "Width", 800);
     //dPtr->desiredHeight = xf86SetIntOption(pScrn->options, "Height", 600);
     dPtr->displayWidth = 800;
@@ -801,7 +723,7 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
 	if (!xf86LoadSubModule(pScrn, "ramdac"))
 	    RETURN;
     }
-    
+
     /* We have no contiguous physical fb in physical memory */
     pScrn->memPhysBase = 0;
     pScrn->fbOffset = 0;
@@ -835,11 +757,11 @@ DUMMYLoadPalette(
    DUMMYPtr dPtr = DUMMYPTR(pScrn);
 
    switch(pScrn->depth) {
-   case 15:	
+   case 15:
 	shift = Gshift = 1;
 	break;
    case 16:
-	shift = 0; 
+	shift = 0;
         Gshift = 0;
 	break;
    default:
@@ -852,7 +774,7 @@ DUMMYLoadPalette(
        dPtr->colors[index].red = colors[index].red << shift;
        dPtr->colors[index].green = colors[index].green << Gshift;
        dPtr->colors[index].blue = colors[index].blue << shift;
-   } 
+   }
 
 }
 
@@ -881,29 +803,19 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
     if (!(pixels = malloc(pScrn->videoRam * 1024)))
 	return FALSE;
 #else
-    
-    dPtr->surface = NULL;
-    
 
-    dPtr->were = were_event_loop_create();
-    SetNotifyFd(were_event_loop_fd(dPtr->were), handle_event, X_NOTIFY_READ, pScrn);
+    dPtr->sparkle = sparkle_c_create();
+    SetNotifyFd(sparkle_c_fd(dPtr->sparkle), handle_event, X_NOTIFY_READ, pScrn);
 
-    dPtr->sparkle = sparkle_connection_create(dPtr->were, dPtr->compositor);
-    sparkle_connection_add_connection_callback(dPtr->sparkle, dPtr->were, handle_connection, pScrn);
-    sparkle_connection_add_disconnection_callback(dPtr->sparkle, dPtr->were, handle_disconnection, pScrn);
-    sparkle_connection_add_packet_callback(dPtr->sparkle, dPtr->were, handle_packet, pScrn);
-
-
-    //dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);
 #endif
 
     /*
      * Reset visual list.
      */
     miClearVisualTypes();
-    
+
     /* Setup the visuals we support. */
-    
+
     if (!miSetVisualTypes(pScrn->depth,
       		      miGetDefaultVisualMask(pScrn->depth),
 		      pScrn->rgbBits, pScrn->defaultVisual))
@@ -940,7 +852,7 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
 	    }
 	}
     }
-    
+
     /* must be after RGB ordering fixed */
     fbPictureInit(pScreen, 0, 0);
 
@@ -956,7 +868,7 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
 
     {
 
-	 
+
 	BoxRec AvailFBArea;
 	int lines = pScrn->videoRam * 1024 /
 	    (pScrn->displayWidth * (pScrn->bitsPerPixel >> 3));
@@ -964,16 +876,16 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
 	AvailFBArea.y1 = 0;
 	AvailFBArea.x2 = pScrn->displayWidth;
 	AvailFBArea.y2 = lines;
-	xf86InitFBManager(pScreen, &AvailFBArea); 
-	
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO, 
+	xf86InitFBManager(pScreen, &AvailFBArea);
+
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		   "Using %i scanlines of offscreen memory \n"
 		   , lines - pScrn->virtualY);
     }
 
     xf86SetBackingStore(pScreen);
     xf86SetSilkenMouse(pScreen);
-	
+
     /* Initialise cursor functions */
     miDCInitialize (pScreen, xf86GetPointerScreenFuncs());
 
@@ -986,20 +898,20 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
 	  return FALSE;
       }
     }
-    
+
     /* Initialise default colourmap */
     if(!miCreateDefColormap(pScreen))
 	return FALSE;
 
     if (!xf86HandleColormaps(pScreen, 1024, pScrn->rgbBits,
-                         DUMMYLoadPalette, NULL, 
-                         CMAP_PALETTED_TRUECOLOR 
+                         DUMMYLoadPalette, NULL,
+                         CMAP_PALETTED_TRUECOLOR
 			     | CMAP_RELOAD_ON_MODE_SWITCH))
 	return FALSE;
 
     pScreen->SaveScreen = DUMMYSaveScreen;
 
-    
+
     /* Wrap the current CloseScreen function */
     dPtr->CloseScreen = pScreen->CloseScreen;
     pScreen->CloseScreen = DUMMYCloseScreen;
@@ -1056,16 +968,9 @@ DUMMYCloseScreen(CLOSE_SCREEN_ARGS_DECL)
     //TimerFree(dPtr->timer);
     //dPtr->timer = NULL;
 
-    struct _unregister_surface_request r1 = {dPtr->surface_name};
-    sparkle_connection_send1(dPtr->sparkle, &unregister_surface_request, &r1);
-    usleep(100000);
+    RemoveNotifyFd(sparkle_c_fd(dPtr->sparkle));
+    sparkle_c_destroy(dPtr->sparkle);
 
-    
-    if (dPtr->surface != NULL)
-        sparkle_surface_file_destroy(dPtr->surface);
-    sparkle_connection_destroy(dPtr->sparkle);
-    RemoveNotifyFd(were_event_loop_fd(dPtr->were));
-    were_event_loop_destroy(dPtr->were);
 #endif
 
     if (dPtr->CursorInfo)
@@ -1091,7 +996,7 @@ static void
 DUMMYFreeScreen(FREE_SCREEN_ARGS_DECL)
 {
     SCRN_INFO_PTR(arg);
-    
+
     DUMMYFreeRec(pScrn);
 }
 
@@ -1127,7 +1032,7 @@ DUMMYCreateWindow(WindowPtr pWin)
 
     if(ret != TRUE)
 	return(ret);
-	
+
     if(dPtr->prop == FALSE) {
 #if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 8
         pWinRoot = WindowTable[DUMMYScrn->pScreen->myNum];
@@ -1158,7 +1063,7 @@ static Bool
 dummyDriverFunc(ScrnInfoPtr pScrn, xorgDriverFuncOp op, pointer ptr)
 {
     CARD32 *flag;
-    
+
     switch (op) {
 	case GET_REQUIRED_HW_INTERFACES:
 	    flag = (CARD32*)ptr;
@@ -1178,9 +1083,9 @@ static CARD32 DUMMYTimeout(OsTimerPtr timer, CARD32 time, pointer arg)
     DUMMYPtr dPtr = DUMMYPTR(pScrn);
 
     //were_event_loop_process_events(dPtr->were);
-    
+
     //dPtr->timer = TimerSet(dPtr->timer, 0, 1000, DUMMYTimeout, pScreen);
-    
+
     return 0;
 }
 
@@ -1227,8 +1132,7 @@ static void DUMMYBlockHandler(BLOCKHANDLER_ARGS_DECL)
 
     if (RegionNotEmpty(pRegion))
     {
-        struct _add_surface_damage_request r1 = {dPtr->surface_name, pRegion->extents.x1, pRegion->extents.y1, pRegion->extents.x2, pRegion->extents.y2};
-        sparkle_connection_send1(dPtr->sparkle, &add_surface_damage_request, &r1);
+        sparkle_c_damage(dPtr->sparkle, pRegion->extents.x1, pRegion->extents.y1, pRegion->extents.x2, pRegion->extents.y2);
 
         DamageEmpty(dPtr->damage);
     }
@@ -1247,7 +1151,7 @@ DUMMYUpdateModes(ScrnInfoPtr pScrn, int width, int height)
         free((void *)mode->name);
         free(mode);
         mode = nextMode;
-    }   
+    }
     dPtr->modes = NULL;
 
     dPtr->modes = xf86ModesAdd(dPtr->modes, xf86CVTMode(width, height, 60, 0, 0)); //Native

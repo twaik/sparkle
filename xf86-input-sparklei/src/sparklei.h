@@ -11,9 +11,8 @@
 #include <xf86Xinput.h>
 #include <xf86_OSproc.h>
 #include <xkbstr.h>
-#include "were/were_event_loop.h"
-#include "common/sparkle_connection.h"
 
+#include "sparklei_c.h"
 
 
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 18
@@ -70,14 +69,13 @@ enum ButtonAction {
 typedef struct {
     ValuatorMask *mt_mask;
     unsigned char btnmap[32];
-    
+
     //OsTimerPtr timer;
-    WereEventLoop *loop;
-    SparkleConnection *sparkle;
-    
+    SparkleiC *sparkle;
+
     int slot_state[10];
     int rmb_state;
-    
+
     char *compositor;
     char *surface_name;
 
