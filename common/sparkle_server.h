@@ -2,11 +2,11 @@
 #define SPARKLE_SERVER_H
 
 #include "were/were.h"
-#include "were/were_socket_unix.h"
 #include "were/were_signal.h"
+#include "were/were_socket_unix.h"
+#include "were/were_socket_unix_message_stream.h"
 #include <set>
 #include <string>
-#include "sparkle_protocol.h" /* FIXME */
 
 /* ================================================================================================================== */
 
@@ -21,7 +21,15 @@ public:
     SparkleServer(WereEventLoop *loop, const std::string &path);
 
     void broadcast(WereSocketUnixMessage *message);
-    void broadcast1(const SparklePacketType *packetType, void *data);
+
+    template <typename T>
+    void broadcast(const T &data)
+    {
+        WereSocketUnixMessage message;
+        WereSocketUnixMessageStream stream(&message);
+        stream << data;
+        broadcast(&message);
+    }
 
 werethings:
     WereSignal<void (std::shared_ptr<SparkleConnection> client)> signal_connected;
@@ -30,7 +38,7 @@ werethings:
 private:
     void handleConnection();
     void handleDisconnection(std::shared_ptr<SparkleConnection> client);
-    void handlePacket(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message);
+    void handleMessage(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message);
 
 private:
     WereEventLoop *_loop;

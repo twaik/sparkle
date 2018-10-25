@@ -1,7 +1,7 @@
 #include "sparkle_c.h"
 #include "were/were_event_loop.h"
 #include "common/sparkle_connection.h"
-#include "common/sparkle_surface_file.h"
+#include "common/sparkle_surface_fd.h"
 #include <unistd.h>
 
 
@@ -36,7 +36,7 @@ private:
 private:
     WereEventLoop *loop_;
     SparkleConnection *connection_;
-    SparkleSurfaceFile *surface_;
+    SparkleSurfaceFd *surface_;
 };
 
 SparkleC::~SparkleC()
@@ -50,7 +50,7 @@ SparkleC::SparkleC()
 {
     loop_ = new WereEventLoop();
     connection_ = new SparkleConnection(loop_, compositor);
-    surface_ = new SparkleSurfaceFile(surface_file, 800, 600, true);
+    surface_ = new SparkleSurfaceFd(surface_file, 800, 600);
 
     connection_->signal_connected.connect(WereSimpleQueuer(loop_, &SparkleC::handleConnection, this));
     connection_->signal_disconnected.connect(WereSimpleQueuer(loop_, &SparkleC::handleDisconnection, this));

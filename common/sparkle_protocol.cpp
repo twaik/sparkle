@@ -2,299 +2,206 @@
 
 /* ================================================================================================================== */
 
-const SparklePacketType register_surface_file_request =
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const RegisterSurfaceFdRequest &data)
 {
-    .code = 0x0000,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const register_surface_file_request_ *_data = static_cast<const register_surface_file_request_ *>(data);
-            stream->pWrite(&p_string, &_data->name);
-            stream->pWrite(&p_string, &_data->path);
-            stream->pWrite(&p_uint32, &_data->width);
-            stream->pWrite(&p_uint32, &_data->height);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            register_surface_file_request_ *_data = static_cast<register_surface_file_request_ *>(data);
-            stream->pRead(&p_string, &_data->name);
-            stream->pRead(&p_string, &_data->path);
-            stream->pRead(&p_uint32, &_data->width);
-            stream->pRead(&p_uint32, &_data->height);
-        },
-    },
+    stream << RegisterSurfaceFdRequestCode;
+    stream << data.name;
+    stream.writeFD(data.fd);
+    stream << data.width;
+    stream << data.height;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, RegisterSurfaceFdRequest &data)
+{
+    stream >> data.name;
+    stream.readFD(&data.fd);
+    stream >> data.width;
+    stream >> data.height;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const UnregisterSurfaceRequest &data)
+{
+    stream << UnregisterSurfaceRequestCode;
+    stream << data.name;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, UnregisterSurfaceRequest &data)
+{
+    stream >> data.name;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SetSurfacePositionRequest &data)
+{
+    stream << SetSurfacePositionRequestCode;
+    stream << data.name;
+    stream << data.x1;
+    stream << data.y1;
+    stream << data.x2;
+    stream << data.y2;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, SetSurfacePositionRequest &data)
+{
+    stream >> data.name;
+    stream >> data.x1;
+    stream >> data.y1;
+    stream >> data.x2;
+    stream >> data.y2;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SetSurfaceStrataRequest &data)
+{
+    stream << SetSurfaceStrataRequestCode;
+    stream << data.name;
+    stream << data.strata;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, SetSurfaceStrataRequest &data)
+{
+    stream >> data.name;
+    stream >> data.strata;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SetSurfaceAlphaRequest &data)
+{
+    stream << SetSurfaceAlphaRequestCode;
+    stream << data.name;
+    stream << data.alpha;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, SetSurfaceAlphaRequest &data)
+{
+    stream >> data.name;
+    stream >> data.alpha;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const AddSurfaceDamageRequest &data)
+{
+    stream << AddSurfaceDamageRequestCode;
+    stream << data.name;
+    stream << data.x1;
+    stream << data.y1;
+    stream << data.x2;
+    stream << data.y2;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, AddSurfaceDamageRequest &data)
+{
+    stream >> data.name;
+    stream >> data.x1;
+    stream >> data.y1;
+    stream >> data.x2;
+    stream >> data.y2;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const DisplaySizeNotification &data)
+{
+    stream << DisplaySizeNotificationCode;
+    stream << data.width;
+    stream << data.height;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, DisplaySizeNotification &data)
+{
+    stream >> data.width;
+    stream >> data.height;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const PointerDownNotification &data)
+{
+    stream << PointerDownNotificationCode;
+    stream << data.surface;
+    stream << data.slot;
+    stream << data.x;
+    stream << data.y;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, PointerDownNotification &data)
+{
+    stream >> data.surface;
+    stream >> data.slot;
+    stream >> data.x;
+    stream >> data.y;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const PointerUpNotification &data)
+{
+    stream << PointerUpNotificationCode;
+    stream << data.surface;
+    stream << data.slot;
+    stream << data.x;
+    stream << data.y;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, PointerUpNotification &data)
+{
+    stream >> data.surface;
+    stream >> data.slot;
+    stream >> data.x;
+    stream >> data.y;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const PointerMotionNotification &data)
+{
+    stream << PointerMotionNotificationCode;
+    stream << data.surface;
+    stream << data.slot;
+    stream << data.x;
+    stream << data.y;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, PointerMotionNotification &data)
+{
+    stream >> data.surface;
+    stream >> data.slot;
+    stream >> data.x;
+    stream >> data.y;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const KeyDownNotification &data)
+{
+    stream << KeyDownNotificationCode;
+    stream << data.code;
+    return stream;
 };
 
-const SparklePacketType unregister_surface_request =
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, KeyDownNotification &data)
 {
-    .code = 0x0001,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const unregister_surface_request_ *_data = static_cast<const unregister_surface_request_ *>(data);
-            stream->pWrite(&p_string, &_data->name);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            unregister_surface_request_ *_data = static_cast<unregister_surface_request_ *>(data);
-            stream->pRead(&p_string, &_data->name);
-        },
-    },
+    stream >> data.code;
+    return stream;
 };
 
-const SparklePacketType set_surface_position_request =
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const KeyUpNotification &data)
 {
-    .code = 0x0002,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const set_surface_position_request_ *_data = static_cast<const set_surface_position_request_ *>(data);
-            stream->pWrite(&p_string, &_data->name);
-            stream->pWrite(&p_uint32, &_data->x1);
-            stream->pWrite(&p_uint32, &_data->y1);
-            stream->pWrite(&p_uint32, &_data->x2);
-            stream->pWrite(&p_uint32, &_data->y2);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            set_surface_position_request_ *_data = static_cast<set_surface_position_request_ *>(data);
-            stream->pRead(&p_string, &_data->name);
-            stream->pRead(&p_uint32, &_data->x1);
-            stream->pRead(&p_uint32, &_data->y1);
-            stream->pRead(&p_uint32, &_data->x2);
-            stream->pRead(&p_uint32, &_data->y2);
-        },
-    },
-};
+    stream << KeyUpNotificationCode;
+    stream << data.code;
+    return stream;
+}
 
-const SparklePacketType set_surface_strata_request =
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, KeyUpNotification &data)
 {
-    .code = 0x0003,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const set_surface_strata_request_ *_data = static_cast<const set_surface_strata_request_ *>(data);
-            stream->pWrite(&p_string, &_data->name);
-            stream->pWrite(&p_uint32, &_data->strata);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            set_surface_strata_request_ *_data = static_cast<set_surface_strata_request_ *>(data);
-            stream->pRead(&p_string, &_data->name);
-            stream->pRead(&p_uint32, &_data->strata);
-        },
-    },
-};
-
-const SparklePacketType set_surface_alpha_request =
-{
-    .code = 0x0004,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const set_surface_alpha_request_ *_data = static_cast<const set_surface_alpha_request_ *>(data);
-            stream->pWrite(&p_string, &_data->name);
-            stream->pWrite(&p_float, &_data->alpha);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            set_surface_alpha_request_ *_data = static_cast<set_surface_alpha_request_ *>(data);
-            stream->pRead(&p_string, &_data->name);
-            stream->pRead(&p_float, &_data->alpha);
-        },
-    },
-};
-
-const SparklePacketType add_surface_damage_request =
-{
-    .code = 0x0005,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const add_surface_damage_request_ *_data = static_cast<const add_surface_damage_request_ *>(data);
-            stream->pWrite(&p_string, &_data->name);
-            stream->pWrite(&p_uint32, &_data->x1);
-            stream->pWrite(&p_uint32, &_data->y1);
-            stream->pWrite(&p_uint32, &_data->x2);
-            stream->pWrite(&p_uint32, &_data->y2);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            add_surface_damage_request_ *_data = static_cast<add_surface_damage_request_ *>(data);
-            stream->pRead(&p_string, &_data->name);
-            stream->pRead(&p_uint32, &_data->x1);
-            stream->pRead(&p_uint32, &_data->y1);
-            stream->pRead(&p_uint32, &_data->x2);
-            stream->pRead(&p_uint32, &_data->y2);
-        },
-    },
-};
-
-const SparklePacketType display_size_notification =
-{
-    .code = 0x1000,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const display_size_notification_ *_data = static_cast<const display_size_notification_ *>(data);
-            stream->pWrite(&p_uint32, &_data->width);
-            stream->pWrite(&p_uint32, &_data->height);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            display_size_notification_ *_data = static_cast<display_size_notification_ *>(data);
-            stream->pRead(&p_uint32, &_data->width);
-            stream->pRead(&p_uint32, &_data->height);
-        },
-    },
-};
-
-const SparklePacketType pointer_down_notification =
-{
-    .code = 0x1001,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const pointer_down_notification_ *_data = static_cast<const pointer_down_notification_ *>(data);
-            stream->pWrite(&p_string, &_data->surface);
-            stream->pWrite(&p_uint32, &_data->slot);
-            stream->pWrite(&p_uint32, &_data->x);
-            stream->pWrite(&p_uint32, &_data->y);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            pointer_down_notification_ *_data = static_cast<pointer_down_notification_ *>(data);
-            stream->pRead(&p_string, &_data->surface);
-            stream->pRead(&p_uint32, &_data->slot);
-            stream->pRead(&p_uint32, &_data->x);
-            stream->pRead(&p_uint32, &_data->y);
-        },
-    },
-};
-
-const SparklePacketType pointer_up_notification =
-{
-    .code = 0x1002,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const pointer_up_notification_ *_data = static_cast<const pointer_up_notification_ *>(data);
-            stream->pWrite(&p_string, &_data->surface);
-            stream->pWrite(&p_uint32, &_data->slot);
-            stream->pWrite(&p_uint32, &_data->x);
-            stream->pWrite(&p_uint32, &_data->y);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            pointer_up_notification_ *_data = static_cast<pointer_up_notification_ *>(data);
-            stream->pRead(&p_string, &_data->surface);
-            stream->pRead(&p_uint32, &_data->slot);
-            stream->pRead(&p_uint32, &_data->x);
-            stream->pRead(&p_uint32, &_data->y);
-        },
-    },
-};
-
-const SparklePacketType pointer_motion_notification =
-{
-    .code = 0x1003,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const pointer_motion_notification_ *_data = static_cast<const pointer_motion_notification_ *>(data);
-            stream->pWrite(&p_string, &_data->surface);
-            stream->pWrite(&p_uint32, &_data->slot);
-            stream->pWrite(&p_uint32, &_data->x);
-            stream->pWrite(&p_uint32, &_data->y);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            pointer_motion_notification_ *_data = static_cast<pointer_motion_notification_ *>(data);
-            stream->pRead(&p_string, &_data->surface);
-            stream->pRead(&p_uint32, &_data->slot);
-            stream->pRead(&p_uint32, &_data->x);
-            stream->pRead(&p_uint32, &_data->y);
-        },
-    },
-};
-
-const SparklePacketType key_down_notification =
-{
-    .code = 0x1004,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const key_down_notification_ *_data = static_cast<const key_down_notification_ *>(data);
-            stream->pWrite(&p_uint32, &_data->code);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            key_down_notification_ *_data = static_cast<key_down_notification_ *>(data);
-            stream->pRead(&p_uint32, &_data->code);
-        },
-    },
-};
-
-const SparklePacketType key_up_notification =
-{
-    .code = 0x1005,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const key_up_notification_ *_data = static_cast<const key_up_notification_ *>(data);
-            stream->pWrite(&p_uint32, &_data->code);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            key_up_notification_ *_data = static_cast<key_up_notification_ *>(data);
-            stream->pRead(&p_uint32, &_data->code);
-        },
-    },
-};
-
-/* ================================================================================================================== */
-
-const SparklePacketType sound_data =
-{
-    .code = 0x2000,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const sound_data_ *_data = static_cast<const sound_data_ *>(data);
-            stream->pWrite(&p_uint32, &_data->size);
-            stream->write(_data->data, _data->size);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            sound_data_ *_data = static_cast<sound_data_ *>(data);
-            stream->pRead(&p_uint32, &_data->size);
-            _data->data = reinterpret_cast<const unsigned char *>(stream->get(_data->size));
-        },
-    },
-};
-
-const SparklePacketType sound_start =
-{
-    .code = 0x2001,
-    {
-        .pack = [](WereStream *stream, const void *data) {},
-        .unpack = [](WereStream *stream, void *data) {},
-    },
-};
-
-const SparklePacketType sound_stop =
-{
-    .code = 0x2002,
-    {
-        .pack = [](WereStream *stream, const void *data) {},
-        .unpack = [](WereStream *stream, void *data) {},
-    },
-};
-
-/* ================================================================================================================== */
-
-const SparklePacketType key_down_request =
-{
-    .code = 0x0006,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const key_down_request_ *_data = static_cast<const key_down_request_ *>(data);
-            stream->pWrite(&p_uint32, &_data->code);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            key_down_request_ *_data = static_cast<key_down_request_ *>(data);
-            stream->pRead(&p_uint32, &_data->code);
-        },
-    },
-};
-
-const SparklePacketType key_up_request =
-{
-    .code = 0x0007,
-    {
-        .pack = [](WereStream *stream, const void *data) {
-            const key_up_request_ *_data = static_cast<const key_up_request_ *>(data);
-            stream->pWrite(&p_uint32, &_data->code);
-        },
-        .unpack = [](WereStream *stream, void *data) {
-            key_up_request_ *_data = static_cast<key_up_request_ *>(data);
-            stream->pRead(&p_uint32, &_data->code);
-        },
-    },
-};
+    stream >> data.code;
+    return stream;
+}
 
 /* ================================================================================================================== */

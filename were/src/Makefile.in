@@ -122,7 +122,8 @@ libwere_la_LIBADD =
 am_libwere_la_OBJECTS = were_call_queue.lo were_event_loop.lo \
 	were_event_source.lo were_exception.lo were_server_unix.lo \
 	were_signal_handler.lo were_socket_unix.lo were_timer.lo \
-	were_signal.lo were_stream.lo
+	were_signal.lo were_stream.lo \
+	were_socket_unix_message_stream.lo
 libwere_la_OBJECTS = $(am_libwere_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -333,28 +334,30 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I../include/were
 noinst_LTLIBRARIES = libwere.la
 libwere_la_SOURCES = \
-	were.h				\
-	were_call_queue.cpp		\
-	were_call_queue.h		\
-	were_event_loop.cpp		\
-	were_event_loop.h		\
-	were_event_source.cpp		\
-	were_event_source.h		\
-	were_exception.cpp		\
-	were_exception.h		\
-	were_function.h			\
-	were_server_unix.cpp		\
-	were_server_unix.h		\
-	were_signal_handler.cpp		\
-	were_signal_handler.h		\
-	were_socket_unix.cpp		\
-	were_socket_unix.h		\
-	were_timer.cpp			\
-	were_timer.h			\
-	were_signal.cpp			\
-	were_signal.h			\
-	were_stream.cpp			\
-	were_stream.h
+	were.h					\
+	were_call_queue.cpp			\
+	were_call_queue.h			\
+	were_event_loop.cpp			\
+	were_event_loop.h			\
+	were_event_source.cpp			\
+	were_event_source.h			\
+	were_exception.cpp			\
+	were_exception.h			\
+	were_function.h				\
+	were_server_unix.cpp			\
+	were_server_unix.h			\
+	were_signal_handler.cpp			\
+	were_signal_handler.h			\
+	were_socket_unix.cpp			\
+	were_socket_unix.h			\
+	were_timer.cpp				\
+	were_timer.h				\
+	were_signal.cpp				\
+	were_signal.h				\
+	were_stream.cpp				\
+	were_stream.h				\
+	were_socket_unix_message_stream.cpp	\
+	were_socket_unix_message_stream.h
 
 all: all-am
 
@@ -418,6 +421,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_signal.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_signal_handler.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_socket_unix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_socket_unix_message_stream.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_stream.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_timer.Plo@am__quote@
 

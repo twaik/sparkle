@@ -32,8 +32,8 @@ test_SOURCES = \
 	../../common/sparkle_server.h		\
 	../../common/sparkle_connection.cpp	\
 	../../common/sparkle_connection.h	\
-	../../common/sparkle_surface_file.cpp	\
-	../../common/sparkle_surface_file.h
+	../../common/sparkle_surface_fd.cpp	\
+	../../common/sparkle_surface_fd.h
 
 #_LDFLAGS =
 #_LIBADD =

@@ -118,7 +118,7 @@ am_test_OBJECTS = main.$(OBJEXT) platform_x11.$(OBJEXT) \
 	compositor_gl.$(OBJEXT) texture.$(OBJEXT) \
 	were_benchmark.$(OBJEXT) sparkle_protocol.$(OBJEXT) \
 	sparkle_server.$(OBJEXT) sparkle_connection.$(OBJEXT) \
-	sparkle_surface_file.$(OBJEXT)
+	sparkle_surface_fd.$(OBJEXT)
 test_OBJECTS = $(am_test_OBJECTS)
 test_DEPENDENCIES = ../../were/src/libwere.la
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -345,8 +345,8 @@ test_SOURCES = \
 	../../common/sparkle_server.h		\
 	../../common/sparkle_connection.cpp	\
 	../../common/sparkle_connection.h	\
-	../../common/sparkle_surface_file.cpp	\
-	../../common/sparkle_surface_file.h
+	../../common/sparkle_surface_fd.cpp	\
+	../../common/sparkle_surface_fd.h
 
 all: all-am
 
@@ -447,7 +447,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparkle_connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparkle_protocol.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparkle_server.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparkle_surface_file.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparkle_surface_fd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/texture.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/were_benchmark.Po@am__quote@
 
@@ -570,19 +570,19 @@ sparkle_connection.obj: ../../common/sparkle_connection.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparkle_connection.obj `if test -f '../../common/sparkle_connection.cpp'; then $(CYGPATH_W) '../../common/sparkle_connection.cpp'; else $(CYGPATH_W) '$(srcdir)/../../common/sparkle_connection.cpp'; fi`
 
-sparkle_surface_file.o: ../../common/sparkle_surface_file.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparkle_surface_file.o -MD -MP -MF $(DEPDIR)/sparkle_surface_file.Tpo -c -o sparkle_surface_file.o `test -f '../../common/sparkle_surface_file.cpp' || echo '$(srcdir)/'`../../common/sparkle_surface_file.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sparkle_surface_file.Tpo $(DEPDIR)/sparkle_surface_file.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../../common/sparkle_surface_file.cpp' object='sparkle_surface_file.o' libtool=no @AMDEPBACKSLASH@
+sparkle_surface_fd.o: ../../common/sparkle_surface_fd.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparkle_surface_fd.o -MD -MP -MF $(DEPDIR)/sparkle_surface_fd.Tpo -c -o sparkle_surface_fd.o `test -f '../../common/sparkle_surface_fd.cpp' || echo '$(srcdir)/'`../../common/sparkle_surface_fd.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sparkle_surface_fd.Tpo $(DEPDIR)/sparkle_surface_fd.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../../common/sparkle_surface_fd.cpp' object='sparkle_surface_fd.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparkle_surface_file.o `test -f '../../common/sparkle_surface_file.cpp' || echo '$(srcdir)/'`../../common/sparkle_surface_file.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparkle_surface_fd.o `test -f '../../common/sparkle_surface_fd.cpp' || echo '$(srcdir)/'`../../common/sparkle_surface_fd.cpp
 
-sparkle_surface_file.obj: ../../common/sparkle_surface_file.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparkle_surface_file.obj -MD -MP -MF $(DEPDIR)/sparkle_surface_file.Tpo -c -o sparkle_surface_file.obj `if test -f '../../common/sparkle_surface_file.cpp'; then $(CYGPATH_W) '../../common/sparkle_surface_file.cpp'; else $(CYGPATH_W) '$(srcdir)/../../common/sparkle_surface_file.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sparkle_surface_file.Tpo $(DEPDIR)/sparkle_surface_file.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../../common/sparkle_surface_file.cpp' object='sparkle_surface_file.obj' libtool=no @AMDEPBACKSLASH@
+sparkle_surface_fd.obj: ../../common/sparkle_surface_fd.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparkle_surface_fd.obj -MD -MP -MF $(DEPDIR)/sparkle_surface_fd.Tpo -c -o sparkle_surface_fd.obj `if test -f '../../common/sparkle_surface_fd.cpp'; then $(CYGPATH_W) '../../common/sparkle_surface_fd.cpp'; else $(CYGPATH_W) '$(srcdir)/../../common/sparkle_surface_fd.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sparkle_surface_fd.Tpo $(DEPDIR)/sparkle_surface_fd.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../../common/sparkle_surface_fd.cpp' object='sparkle_surface_fd.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparkle_surface_file.obj `if test -f '../../common/sparkle_surface_file.cpp'; then $(CYGPATH_W) '../../common/sparkle_surface_file.cpp'; else $(CYGPATH_W) '$(srcdir)/../../common/sparkle_surface_file.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparkle_surface_fd.obj `if test -f '../../common/sparkle_surface_fd.cpp'; then $(CYGPATH_W) '../../common/sparkle_surface_fd.cpp'; else $(CYGPATH_W) '$(srcdir)/../../common/sparkle_surface_fd.cpp'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

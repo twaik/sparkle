@@ -36,9 +36,9 @@ void SparkleServer::handleConnection()
         _loop->queue(std::bind(&SparkleServer::handleDisconnection, this, client_weak.lock()));
     });
 
-    client->signal_packet.connect([this, client_weak](std::shared_ptr<WereSocketUnixMessage> message)
+    client->signal_message.connect([this, client_weak](std::shared_ptr<WereSocketUnixMessage> message)
     {
-        _loop->queue(std::bind(&SparkleServer::handlePacket, this, client_weak.lock(), message));
+        _loop->queue(std::bind(&SparkleServer::handleMessage, this, client_weak.lock(), message));
     });
 
     _clients.insert(client);
@@ -51,7 +51,7 @@ void SparkleServer::handleDisconnection(std::shared_ptr<SparkleConnection> clien
     _clients.erase(client);
 }
 
-void SparkleServer::handlePacket(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message)
+void SparkleServer::handleMessage(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message)
 {
     signal_packet(client, message);
 }
@@ -60,17 +60,6 @@ void SparkleServer::broadcast(WereSocketUnixMessage *message)
 {
     for (auto it = _clients.begin(); it != _clients.end(); ++it)
         (*it)->send(message);
-}
-
-void SparkleServer::broadcast1(const SparklePacketType *packetType, void *data)
-{
-    WereSocketUnixMessage message;
-
-    WereStream stream(message.data());
-    stream.pWrite(&p_uint32, &packetType->code);
-    stream.pWrite(&packetType->packer, data);
-
-    broadcast(&message);
 }
 
 /* ================================================================================================================== */

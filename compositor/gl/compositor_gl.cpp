@@ -12,7 +12,7 @@
 #include <algorithm>
 
 #include "common/utility.h"
-#include "common/sparkle_surface_file.h"
+#include "common/sparkle_surface_fd.h"
 #include "common/sparkle_server.h"
 #include "common/sparkle_protocol.h"
 #include "common/sparkle_connection.h"
@@ -20,7 +20,7 @@
 #define ALWAYS_UPLOAD 0
 #define USE_BLENDING
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 static const char simpleVS[] =
         "attribute vec4 position;\n"
@@ -49,7 +49,7 @@ static const char simpleFS[] =
 const GLint FLOAT_SIZE_BYTES = sizeof(float);
 const GLint TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES;
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 class CompositorGL_EGL
 {
@@ -112,7 +112,7 @@ EGLint CompositorGL_EGL::getVID()
     return vid;
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 class CompositorGL_GL
 {
@@ -223,15 +223,15 @@ GLuint CompositorGL_GL::loadShader(GLenum shaderType, const char *pSource)
     return shader;
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 class CompositorGLSurface
 {
 public:
     virtual ~CompositorGLSurface();
-    CompositorGLSurface(const std::string &name);
+    CompositorGLSurface(const std::vector<char> &name);
 
-    const std::string &name();
+    const std::vector<char> &name() {return _name;}
     Texture *texture();
     void destroyTexture(); //FIXME Temporary solution
     const RectangleA &position();
@@ -246,7 +246,7 @@ public:
     virtual bool updateTexture() = 0;
 
 protected:
-    std::string _name;
+    std::vector<char> _name;
     Texture *_texture;
     RectangleA _position;
     int _strata;
@@ -259,17 +259,12 @@ CompositorGLSurface::~CompositorGLSurface()
     destroyTexture();
 }
 
-CompositorGLSurface::CompositorGLSurface(const std::string &name)
+CompositorGLSurface::CompositorGLSurface(const std::vector<char> &name)
 {
     _name = name;
     _texture = 0;
     _strata = 0;
     _alpha = 1.0f;
-}
-
-const std::string &CompositorGLSurface::name()
-{
-    return _name;
 }
 
 Texture *CompositorGLSurface::texture()
@@ -335,18 +330,18 @@ void CompositorGLSurface::addDamage(int x1, int y1, int x2, int y2)
         _damage = RectangleA(PointA(x1, y1), PointA(x2, y2));
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 class CompositorGLSurfaceFile : public CompositorGLSurface
 {
 public:
     ~CompositorGLSurfaceFile();
-    CompositorGLSurfaceFile(const std::string &name, const std::string &path, int width, int height);
+    CompositorGLSurfaceFile(const std::vector<char> &name, int fd, int width, int height);
 
     bool updateTexture();
 
 private:
-    SparkleSurfaceFile *_surface;
+    SparkleSurfaceFd *_surface;
 };
 
 CompositorGLSurfaceFile::~CompositorGLSurfaceFile()
@@ -354,10 +349,10 @@ CompositorGLSurfaceFile::~CompositorGLSurfaceFile()
     delete _surface;
 }
 
-CompositorGLSurfaceFile::CompositorGLSurfaceFile(const std::string &name, const std::string &path, int width, int height) :
+CompositorGLSurfaceFile::CompositorGLSurfaceFile(const std::vector<char> &name, int fd, int width, int height) :
     CompositorGLSurface(name)
 {
-    _surface = new SparkleSurfaceFile(path, width, height, false);
+    _surface = new SparkleSurfaceFd(fd, width, height);
 }
 
 bool CompositorGLSurfaceFile::updateTexture()
@@ -398,7 +393,7 @@ bool CompositorGLSurfaceFile::updateTexture()
     return result;
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 class CompositorGL : public Compositor
 {
@@ -426,14 +421,14 @@ private:
     void connection(std::shared_ptr <SparkleConnection> client);
     void packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message);
 
-    void registerSurfaceFile(const std::string &name, const std::string &path, int width, int height);
-    void unregisterSurface(const std::string &name);
-    void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
-    void setSurfaceStrata(const std::string &name, int strata);
-    void setSurfaceAlpha(const std::string &name, float alpha);
-    void addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2);
+    void registerSurfaceFile(const std::vector<char> &name, int fd, int width, int height);
+    void unregisterSurface(const std::vector<char> &name);
+    void setSurfacePosition(const std::vector<char> &name, int x1, int y1, int x2, int y2);
+    void setSurfaceStrata(const std::vector<char> &name, int strata);
+    void setSurfaceAlpha(const std::vector<char> &name, float alpha);
+    void addSurfaceDamage(const std::vector<char> &name, int x1, int y1, int x2, int y2);
 
-    std::shared_ptr<CompositorGLSurface> findSurface(const std::string &name);
+    std::shared_ptr<CompositorGLSurface> findSurface(const std::vector<char> &name);
     void transformCoordinates(int x, int y, std::shared_ptr<CompositorGLSurface> surface, int *_x, int *_y);
 
     static bool sortFunction(std::shared_ptr<CompositorGLSurface> a1, std::shared_ptr<CompositorGLSurface> a2);
@@ -452,7 +447,7 @@ private:
     bool _redraw;
 };
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 CompositorGL::~CompositorGL()
 {
@@ -525,7 +520,7 @@ int CompositorGL::displayHeight()
     return _gl->_surfaceHeight;
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 void CompositorGL::initializeForNativeDisplay(NativeDisplayType nativeDisplay)
 {
@@ -546,8 +541,7 @@ void CompositorGL::initializeForNativeWindow(NativeWindowType window)
 {
     _gl = new CompositorGL_GL(_egl, window);
 
-    display_size_notification_ r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
-    _server->broadcast1(&display_size_notification, &r1);
+    _server->broadcast(DisplaySizeNotification({_gl->_surfaceWidth, _gl->_surfaceHeight}));
 
     _redraw = true;
 }
@@ -582,8 +576,7 @@ void CompositorGL::draw()
         _gl->_surfaceHeight = height;
         glViewport(0, 0, _gl->_surfaceWidth, _gl->_surfaceHeight);
 
-        display_size_notification_ r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
-        _server->broadcast1(&display_size_notification, &r1);
+        _server->broadcast(DisplaySizeNotification({_gl->_surfaceWidth, _gl->_surfaceHeight}));
     }
 
 #endif
@@ -673,7 +666,7 @@ void CompositorGL::draw()
     }
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 void CompositorGL::pointerDown(int slot, int x, int y)
 {
@@ -685,8 +678,7 @@ void CompositorGL::pointerDown(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            pointer_down_notification_ r1 = {surface->name().c_str(), slot, _x, _y};
-            _server->broadcast1(&pointer_down_notification, &r1);
+            _server->broadcast(PointerDownNotification({surface->name(), slot, _x, _y}));
             return;
         }
     }
@@ -702,8 +694,7 @@ void CompositorGL::pointerUp(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            pointer_up_notification_ r1 = {surface->name().c_str(), slot, _x, _y};
-            _server->broadcast1(&pointer_up_notification, &r1);
+            _server->broadcast(PointerUpNotification({surface->name(), slot, _x, _y}));
             return;
         }
     }
@@ -719,8 +710,7 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
         transformCoordinates(x, y, surface, &_x, &_y);
         if (_x != -1 && _y != -1)
         {
-            pointer_motion_notification_ r1 = {surface->name().c_str(), slot, _x, _y};
-            _server->broadcast1(&pointer_motion_notification, &r1);
+            _server->broadcast(PointerMotionNotification({surface->name(), slot, _x, _y}));
             return;
         }
     }
@@ -728,24 +718,21 @@ void CompositorGL::pointerMotion(int slot, int x, int y)
 
 void CompositorGL::keyDown(int code)
 {
-    key_down_notification_ r1 = {code};
-    _server->broadcast1(&key_down_notification, &r1);
+    _server->broadcast(KeyDownNotification({code}));
 }
 
 void CompositorGL::keyUp(int code)
 {
-    key_up_notification_ r1 = {code};
-    _server->broadcast1(&key_up_notification, &r1);
+    _server->broadcast(KeyUpNotification({code}));
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 void CompositorGL::connection(std::shared_ptr <SparkleConnection> client)
 {
     if (_gl != 0)
     {
-        display_size_notification_ r1 = {_gl->_surfaceWidth, _gl->_surfaceHeight};
-        client->send1(&display_size_notification, &r1);
+        client->send(DisplaySizeNotification({_gl->_surfaceWidth, _gl->_surfaceHeight}));
     }
 }
 
@@ -753,72 +740,60 @@ void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared
 {
     uint32_t operation;
 
-    WereStream stream(message->data());
-    stream.pRead(&p_uint32, &operation);
+    WereSocketUnixMessageStream stream(message.get());
+    stream >> operation;
 
-    if (operation == register_surface_file_request.code)
+    if (operation == RegisterSurfaceFdRequestCode)
     {
-        register_surface_file_request_ r1;
-        stream.pRead(&register_surface_file_request.packer, &r1);
-        registerSurfaceFile(r1.name, r1.path, r1.width, r1.height);
+        RegisterSurfaceFdRequest r1;
+        stream >> r1;
+        registerSurfaceFile(r1.name, r1.fd, r1.width, r1.height);
     }
-    else if (operation == unregister_surface_request.code)
+    else if (operation == UnregisterSurfaceRequestCode)
     {
-        unregister_surface_request_ r1;
-        stream.pRead(&unregister_surface_request.packer, &r1);
+        UnregisterSurfaceRequest r1;
+        stream >> r1;
         unregisterSurface(r1.name);
     }
-    else if (operation == set_surface_position_request.code)
+    else if (operation == SetSurfacePositionRequestCode)
     {
-        set_surface_position_request_ r1;
-        stream.pRead(&set_surface_position_request.packer, &r1);
+        SetSurfacePositionRequest r1;
+        stream >> r1;
         setSurfacePosition(r1.name, r1.x1, r1.y1, r1.x2, r1.y2);
     }
-    else if (operation == set_surface_strata_request.code)
+    else if (operation == SetSurfaceStrataRequestCode)
     {
-        set_surface_strata_request_ r1;
-        stream.pRead(&set_surface_strata_request.packer, &r1);
+        SetSurfaceStrataRequest r1;
+        stream >> r1;
         setSurfaceStrata(r1.name, r1.strata);
     }
-    else if (operation == set_surface_alpha_request.code)
+    else if (operation == SetSurfaceAlphaRequestCode)
     {
-        set_surface_alpha_request_ r1;
-        stream.pRead(&set_surface_alpha_request.packer, &r1);
+        SetSurfaceAlphaRequest r1;
+        stream >> r1;
         setSurfaceAlpha(r1.name, r1.alpha);
     }
-    else if (operation == add_surface_damage_request.code)
+    else if (operation == AddSurfaceDamageRequestCode)
     {
-        add_surface_damage_request_ r1;
-        stream.pRead(&add_surface_damage_request.packer, &r1);
+        AddSurfaceDamageRequest r1;
+        stream >> r1;
         addSurfaceDamage(r1.name, r1.x1, r1.y1, r1.x2, r1.y2);
-    }
-    else if (operation == key_down_request.code)
-    {
-        key_down_request_ r1;
-        stream.pRead(&key_down_request.packer, &r1);
-        keyDown(r1.code);
-    }
-    else if (operation == key_up_request.code)
-    {
-        key_up_request_ r1;
-        stream.pRead(&key_up_request.packer, &r1);
-        keyUp(r1.code);
     }
 }
 
-void CompositorGL::registerSurfaceFile(const std::string &name, const std::string &path, int width, int height)
+void CompositorGL::registerSurfaceFile(const std::vector<char> &name, int fd, int width, int height)
 {
     unregisterSurface(name);
 
-    std::shared_ptr<CompositorGLSurface> surface(new CompositorGLSurfaceFile(name, path, width, height));
+    std::shared_ptr<CompositorGLSurface> surface(new CompositorGLSurfaceFile(name, fd, width, height));
     _surfaces.push_back(surface);
     std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
 
     _redraw = true;
-    were_debug("Surface [%s] registered.\n", name.c_str());
+    were_debug("Surface [%s] registered.\n", "");
 }
 
-void CompositorGL::unregisterSurface(const std::string &name)
+void CompositorGL::unregisterSurface(const std::vector<char> &name)
 {
     auto it = _surfaces.begin();
     while (it != _surfaces.end())
@@ -827,7 +802,7 @@ void CompositorGL::unregisterSurface(const std::string &name)
         if (surface->name() == name)
         {
             it = _surfaces.erase(it);
-            were_debug("Surface [%s] unregistered.\n", name.c_str());
+            were_debug("Surface [%s] unregistered.\n", "");
         }
         else
             ++it;
@@ -836,53 +811,53 @@ void CompositorGL::unregisterSurface(const std::string &name)
     _redraw = true;
 }
 
-void CompositorGL::setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2)
+void CompositorGL::setSurfacePosition(const std::vector<char> &name, int x1, int y1, int x2, int y2)
 {
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
-    if (surface != 0)
+    if (surface != nullptr)
     {
         surface->setPosition(x1, y1, x2, y2);
         _redraw = true;
-        were_debug("Surface [%s]: position changed (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
+        were_debug("Surface [%s]: position changed (%d %d %d %d).\n", "", x1, y1, x2, y2);
     }
 }
 
-void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
+void CompositorGL::setSurfaceStrata(const std::vector<char> &name, int strata)
 {
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
-    if (surface != 0)
+    if (surface != nullptr)
     {
         surface->setStrata(strata);
         std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
         _redraw = true;
-        were_debug("Surface [%s]: strata changed.\n", name.c_str());
+        were_debug("Surface [%s]: strata changed.\n", "");
     }
 }
 
-void CompositorGL::setSurfaceAlpha(const std::string &name, float alpha)
+void CompositorGL::setSurfaceAlpha(const std::vector<char> &name, float alpha)
 {
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
-    if (surface != 0)
+    if (surface != nullptr)
     {
         surface->setAlpha(alpha);
         _redraw = true;
-        were_debug("Surface [%s]: alpha changed.\n", name.c_str());
+        were_debug("Surface [%s]: alpha changed.\n", "");
     }
 }
 
-void CompositorGL::addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2)
+void CompositorGL::addSurfaceDamage(const std::vector<char> &name, int x1, int y1, int x2, int y2)
 {
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
-    if (surface != 0)
+    if (surface != nullptr)
     {
         surface->addDamage(x1, y1, x2, y2);
-        //were_debug("Surface [%s]: damage (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
+        //were_debug("Surface [%s]: damage (%d %d %d %d).\n", nullptr, x1, y1, x2, y2);
     }
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
-std::shared_ptr<CompositorGLSurface> CompositorGL::findSurface(const std::string &name)
+std::shared_ptr<CompositorGLSurface> CompositorGL::findSurface(const std::vector<char> &name)
 {
     for (auto it = _surfaces.begin(); it != _surfaces.end(); ++it)
     {
@@ -890,9 +865,9 @@ std::shared_ptr<CompositorGLSurface> CompositorGL::findSurface(const std::string
             return (*it);
     }
 
-    were_debug("Surface [%s]: not registered.\n", name.c_str());
+    were_debug("Surface [%s]: not registered.\n", "");
 
-    return 0;
+    return nullptr;
 }
 
 void CompositorGL::transformCoordinates(int x, int y, std::shared_ptr<CompositorGLSurface> surface, int *_x, int *_y)
@@ -917,7 +892,7 @@ bool CompositorGL::sortFunction(std::shared_ptr<CompositorGLSurface> a1, std::sh
     return a1->strata() < a2->strata();
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 Compositor *compositor_gl_create(WereEventLoop *loop, Platform *platform,
     const std::string &file)
@@ -925,4 +900,4 @@ Compositor *compositor_gl_create(WereEventLoop *loop, Platform *platform,
     return new CompositorGL(loop, platform, file);
 }
 
-//==================================================================================================
+/* ================================================================================================================== */

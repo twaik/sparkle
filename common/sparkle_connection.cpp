@@ -65,7 +65,7 @@ void SparkleConnection::handleDisconnection()
 
 void SparkleConnection::handleMessage(std::shared_ptr<WereSocketUnixMessage> message)
 {
-    signal_packet(message);
+    signal_message(message);
 }
 
 /* ================================================================================================================== */
@@ -76,17 +76,6 @@ void SparkleConnection::send(WereSocketUnixMessage *message)
         return;
 
     _socket->sendMessage(message);
-}
-
-void SparkleConnection::send1(const SparklePacketType *packetType, void *data)
-{
-    WereSocketUnixMessage message;
-
-    WereStream stream(message.data());
-    stream.pWrite(&p_uint32, &packetType->code);
-    stream.pWrite(&packetType->packer, data);
-
-    send(&message);
 }
 
 /* ================================================================================================================== */

@@ -1,6 +1,5 @@
 #include "were_stream.h"
 #include <cstring>
-#include <cstdint>
 
 /* ================================================================================================================== */
 
@@ -11,8 +10,8 @@ WereStream::~WereStream()
 WereStream::WereStream(std::vector<unsigned char> *vector)
 {
     vector_ = vector;
-    readPosition_ = 0;
     writePosition_ = 0;
+    readPosition_ = 0;
 }
 
 /* ================================================================================================================== */
@@ -49,59 +48,47 @@ void WereStream::read(void *data, unsigned int size)
     memcpy(data, p, size);
 }
 
-void WereStream::pWrite(const WerePacker *packer, const void *data)
-{
-    packer->pack(this, data);
-}
-
-void WereStream::pRead(const WerePacker *packer, void *data)
-{
-    packer->unpack(this, data);
-}
-
 /* ================================================================================================================== */
 
-const WerePacker p_uint32 =
+WereStream &operator<<(WereStream &stream, uint32_t data)
 {
-    .pack = [](WereStream *stream, const void *data)
-    {
-        stream->write(data, sizeof(uint32_t));
-    },
-    .unpack = [](WereStream *stream, void *data)
-    {
-        stream->read(data, sizeof(uint32_t));
-    },
-};
+    stream.write(&data, sizeof(uint32_t));
+    return stream;
+}
 
-const WerePacker p_string =
+WereStream &operator>>(WereStream &stream, uint32_t &data)
 {
-    .pack = [](WereStream *stream, const void *data)
-    {
-        const char * const *_data = reinterpret_cast<const char * const *>(data);
-        uint32_t length;
-        length = strlen(*_data);
-        stream->write(&length, sizeof(uint32_t));
-        stream->write(*_data, length + 1);
-    },
-    .unpack = [](WereStream *stream, void *data)
-    {
-        const char **_data = reinterpret_cast<const char **>(data);
-        uint32_t length;
-        stream->read(&length, sizeof(uint32_t));
-        *_data = reinterpret_cast<const char *>(stream->get(length + 1));
-    },
-};
+    stream.read(&data, sizeof(uint32_t));
+    return stream;
+}
 
-const WerePacker p_float =
+WereStream &operator<<(WereStream &stream, int32_t data)
 {
-    .pack = [](WereStream *stream, const void *data)
-    {
-        stream->write(data, sizeof(float));
-    },
-    .unpack = [](WereStream *stream, void *data)
-    {
-        stream->read(data, sizeof(float));
-    },
-};
+    stream.write(&data, sizeof(int32_t));
+    return stream;
+}
+
+WereStream &operator>>(WereStream &stream, int32_t &data)
+{
+    stream.read(&data, sizeof(int32_t));
+    return stream;
+}
+
+WereStream &operator<<(WereStream &stream, const std::vector<char> &data)
+{
+    uint32_t size = data.size();
+    stream << size;
+    stream.write(data.data(), size);
+    return stream;
+}
+
+WereStream &operator>>(WereStream &stream, std::vector<char> &data)
+{
+    uint32_t size;
+    stream >> size;
+    data.resize(size);
+    stream.read(data.data(), size);
+    return stream;
+}
 
 /* ================================================================================================================== */

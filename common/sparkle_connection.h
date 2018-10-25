@@ -4,9 +4,9 @@
 #include "were/were.h"
 #include "were/were_signal.h"
 #include "were/were_socket_unix.h"
+#include "were/were_socket_unix_message_stream.h"
 #include <string>
 #include <memory>
-#include "sparkle_protocol.h" /* FIXME */
 
 /* ================================================================================================================== */
 
@@ -24,12 +24,20 @@ public:
     bool connected();
 
     void send(WereSocketUnixMessage *message);
-    void send1(const SparklePacketType *packetType, void *data);
+
+    template <typename T>
+    void send(const T &data)
+    {
+        WereSocketUnixMessage message;
+        WereSocketUnixMessageStream stream(&message);
+        stream << data;
+        send(&message);
+    }
 
 werethings:
     WereSignal<void ()> signal_connected;
     WereSignal<void ()> signal_disconnected;
-    WereSignal<void (std::shared_ptr<WereSocketUnixMessage> message)> signal_packet;
+    WereSignal<void (std::shared_ptr<WereSocketUnixMessage> message)> signal_message;
 
 private:
     void connect();

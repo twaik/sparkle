@@ -40,8 +40,8 @@ sparkle_drv_la_SOURCES = \
          dummy.h \
          sparkle_c.cpp \
          sparkle_c.h \
-         ../../common/sparkle_surface_file.cpp \
-         ../../common/sparkle_surface_file.h \
+         ../../common/sparkle_surface_fd.cpp \
+         ../../common/sparkle_surface_fd.h \
          ../../common/sparkle_connection.cpp \
          ../../common/sparkle_connection.h \
          ../../common/sparkle_protocol.cpp \

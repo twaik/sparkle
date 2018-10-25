@@ -2,10 +2,9 @@
 #define WERE_STREAM_H
 
 #include <vector>
+#include <cstdint>
 
 /* ================================================================================================================== */
-
-struct WerePacker;
 
 class WereStream
 {
@@ -19,30 +18,23 @@ public:
     void write(const void *data, unsigned int size);
     void read(void *data, unsigned int size);
 
-    void pWrite(const WerePacker *packer, const void *data);
-    void pRead(const WerePacker *packer, void *data);
-
 private:
     unsigned char *allocate(unsigned int size);
 
 private:
     std::vector<unsigned char> *vector_;
-    unsigned int readPosition_;
     unsigned int writePosition_;
+    unsigned int readPosition_;
 };
-
-struct WerePacker
-{
-    void (*pack)(WereStream *stream, const void *data);
-    void (*unpack)(WereStream *stream, void *data);
-};
-typedef struct WerePacker WerePacker;
 
 /* ================================================================================================================== */
 
-extern const WerePacker p_uint32;
-extern const WerePacker p_string;
-extern const WerePacker p_float;
+WereStream &operator<<(WereStream &stream, uint32_t data);
+WereStream &operator>>(WereStream &stream, uint32_t &data);
+WereStream &operator<<(WereStream &stream, int32_t data);
+WereStream &operator>>(WereStream &stream, int32_t &data);
+WereStream &operator<<(WereStream &stream, const std::vector<char> &data);
+WereStream &operator>>(WereStream &stream, std::vector<char> &data);
 
 /* ================================================================================================================== */
 

@@ -1,66 +1,128 @@
 #ifndef SPARKLE_PROTOCOL_H
 #define SPARKLE_PROTOCOL_H
 
-#include "were/were_stream.h"
+#include "were/were_socket_unix_message_stream.h"
 
 /* ================================================================================================================== */
 
-typedef struct
+struct RegisterSurfaceFdRequest
 {
-    int code;
-    WerePacker packer;
-} SparklePacketType;
+    std::vector<char> name;
+    int fd;
+    int32_t width;
+    int32_t height;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const RegisterSurfaceFdRequest &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, RegisterSurfaceFdRequest &data);
+const uint32_t RegisterSurfaceFdRequestCode = 0x01;
 
-/* ================================================================================================================== */
+struct UnregisterSurfaceRequest
+{
+    std::vector<char> name;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const UnregisterSurfaceRequest &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, UnregisterSurfaceRequest &data);
+const uint32_t UnregisterSurfaceRequestCode = 0x02;
 
-struct register_surface_file_request_ {const char *name; const char *path; int width; int height;};
-extern const SparklePacketType register_surface_file_request;
+struct SetSurfacePositionRequest
+{
+    std::vector<char> name;
+    int32_t x1;
+    int32_t y1;
+    int32_t x2;
+    int32_t y2;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SetSurfacePositionRequest &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, SetSurfacePositionRequest &data);
+const uint32_t SetSurfacePositionRequestCode = 0x03;
 
-struct unregister_surface_request_ {const char *name;};
-extern const SparklePacketType unregister_surface_request;
+struct SetSurfaceStrataRequest
+{
+    std::vector<char> name;
+    int32_t strata;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SetSurfaceStrataRequest &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, SetSurfaceStrataRequest &data);
+const uint32_t SetSurfaceStrataRequestCode = 0x04;
 
-struct set_surface_position_request_ {const char *name; int x1; int y1; int x2; int y2;};
-extern const SparklePacketType set_surface_position_request;
+struct SetSurfaceAlphaRequest
+{
+    std::vector<char> name;
+    int32_t alpha;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SetSurfaceAlphaRequest &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, SetSurfaceAlphaRequest &data);
+const uint32_t SetSurfaceAlphaRequestCode = 0x05;
 
-struct set_surface_strata_request_ {const char *name; int strata;};
-extern const SparklePacketType set_surface_strata_request;
+struct AddSurfaceDamageRequest
+{
+    std::vector<char> name;
+    int32_t x1;
+    int32_t y1;
+    int32_t x2;
+    int32_t y2;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const AddSurfaceDamageRequest &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, AddSurfaceDamageRequest &data);
+const uint32_t AddSurfaceDamageRequestCode = 0x06;
 
-struct set_surface_alpha_request_ {const char *name; float alpha;};
-extern const SparklePacketType set_surface_alpha_request;
+struct DisplaySizeNotification
+{
+    int32_t width;
+    int32_t height;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const DisplaySizeNotification &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, DisplaySizeNotification &data);
+const uint32_t DisplaySizeNotificationCode = 0x07;
 
-struct add_surface_damage_request_ {const char *name; int x1; int y1; int x2; int y2;};
-extern const SparklePacketType add_surface_damage_request;
+struct PointerDownNotification
+{
+    std::vector<char> surface;
+    int32_t slot;
+    int32_t x;
+    int32_t y;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const PointerDownNotification &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, PointerDownNotification &data);
+const uint32_t PointerDownNotificationCode = 0x21;
 
-struct display_size_notification_ {int width; int height;};
-extern const SparklePacketType display_size_notification;
+struct PointerUpNotification
+{
+    std::vector<char> surface;
+    int32_t slot;
+    int32_t x;
+    int32_t y;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const PointerUpNotification &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, PointerUpNotification &data);
+const uint32_t PointerUpNotificationCode = 0x22;
 
-struct pointer_down_notification_ {const char *surface; int slot; int x; int y;};
-extern const SparklePacketType pointer_down_notification;
+struct PointerMotionNotification
+{
+    std::vector<char> surface;
+    int32_t slot;
+    int32_t x;
+    int32_t y;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const PointerMotionNotification &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, PointerMotionNotification &data);
+const uint32_t PointerMotionNotificationCode = 0x23;
 
-struct pointer_up_notification_ {const char *surface; int slot; int x; int y;};
-extern const SparklePacketType pointer_up_notification;
+struct KeyDownNotification
+{
+    int32_t code;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const KeyDownNotification &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, KeyDownNotification &data);
+const uint32_t KeyDownNotificationCode = 0x24;
 
-struct pointer_motion_notification_ {const char *surface; int slot; int x; int y;};
-extern const SparklePacketType pointer_motion_notification;
-
-struct key_down_notification_ {int code;};
-extern const SparklePacketType key_down_notification;
-
-struct key_up_notification_ {int code;};
-extern const SparklePacketType key_up_notification;
-
-struct sound_data_ {unsigned int size; const unsigned char *data;};
-extern const SparklePacketType sound_data;
-
-extern const SparklePacketType sound_start;
-
-extern const SparklePacketType sound_stop;
-
-struct key_down_request_ {int code;};
-extern const SparklePacketType key_down_request;
-
-struct key_up_request_ {int code;};
-extern const SparklePacketType key_up_request;
+struct KeyUpNotification
+{
+    int32_t code;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const KeyUpNotification &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, KeyUpNotification &data);
+const uint32_t KeyUpNotificationCode = 0x25;
 
 /* ================================================================================================================== */
 
