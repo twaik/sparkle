@@ -12,7 +12,7 @@
 #include <algorithm>
 
 #include "common/utility.h"
-#include "common/sparkle_surface_fd.h"
+#include "common/sparkle_surface_shm.h"
 #include "common/sparkle_server.h"
 #include "common/sparkle_protocol.h"
 #include "common/sparkle_connection.h"
@@ -336,12 +336,12 @@ class CompositorGLSurfaceFile : public CompositorGLSurface
 {
 public:
     ~CompositorGLSurfaceFile();
-    CompositorGLSurfaceFile(const std::string &name, int fd, int width, int height);
+    CompositorGLSurfaceFile(const std::string &name, key_t key, int width, int height);
 
     bool updateTexture();
 
 private:
-    SparkleSurfaceFd *_surface;
+    SparkleSurfaceShm *_surface;
 };
 
 CompositorGLSurfaceFile::~CompositorGLSurfaceFile()
@@ -349,10 +349,10 @@ CompositorGLSurfaceFile::~CompositorGLSurfaceFile()
     delete _surface;
 }
 
-CompositorGLSurfaceFile::CompositorGLSurfaceFile(const std::string &name, int fd, int width, int height) :
+CompositorGLSurfaceFile::CompositorGLSurfaceFile(const std::string &name, key_t key, int width, int height) :
     CompositorGLSurface(name)
 {
-    _surface = new SparkleSurfaceFd(fd, width, height);
+    _surface = new SparkleSurfaceShm(key, width, height, false);
 }
 
 bool CompositorGLSurfaceFile::updateTexture()
@@ -421,7 +421,7 @@ private:
     void connection(std::shared_ptr <SparkleConnection> client);
     void packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message);
 
-    void registerSurfaceFile(const std::string &name, int fd, int width, int height);
+    void registerSurfaceFile(const std::string &name, key_t key, int width, int height);
     void unregisterSurface(const std::string &name);
     void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
     void setSurfaceStrata(const std::string &name, int strata);
@@ -743,11 +743,11 @@ void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared
     WereSocketUnixMessageStream stream(message.get());
     stream >> operation;
 
-    if (operation == RegisterSurfaceFdRequestCode)
+    if (operation == RegisterSurfaceShmRequestCode)
     {
-        RegisterSurfaceFdRequest r1;
+        RegisterSurfaceShmRequest r1;
         stream >> r1;
-        registerSurfaceFile(r1.name, r1.fd, r1.width, r1.height);
+        registerSurfaceFile(r1.name, r1.key, r1.width, r1.height);
     }
     else if (operation == UnregisterSurfaceRequestCode)
     {
@@ -781,11 +781,11 @@ void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared
     }
 }
 
-void CompositorGL::registerSurfaceFile(const std::string &name, int fd, int width, int height)
+void CompositorGL::registerSurfaceFile(const std::string &name, key_t key, int width, int height)
 {
     unregisterSurface(name);
 
-    std::shared_ptr<CompositorGLSurface> surface(new CompositorGLSurfaceFile(name, fd, width, height));
+    std::shared_ptr<CompositorGLSurface> surface(new CompositorGLSurfaceFile(name, key, width, height));
     _surfaces.push_back(surface);
     std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
 

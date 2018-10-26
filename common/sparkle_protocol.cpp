@@ -2,6 +2,7 @@
 
 /* ================================================================================================================== */
 
+#if 0
 WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const RegisterSurfaceFdRequest &data)
 {
     stream << RegisterSurfaceFdRequestCode;
@@ -20,6 +21,26 @@ WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, Reg
     stream >> data.height;
     return stream;
 }
+#else
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const RegisterSurfaceShmRequest &data)
+{
+    stream << RegisterSurfaceShmRequestCode;
+    stream << data.name;
+    stream << data.key;
+    stream << data.width;
+    stream << data.height;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, RegisterSurfaceShmRequest &data)
+{
+    stream >> data.name;
+    stream >> data.key;
+    stream >> data.width;
+    stream >> data.height;
+    return stream;
+}
+#endif
 
 WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const UnregisterSurfaceRequest &data)
 {

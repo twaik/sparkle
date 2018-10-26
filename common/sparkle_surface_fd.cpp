@@ -1,5 +1,4 @@
 #include "sparkle_surface_fd.h"
-#include <stdexcept>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>

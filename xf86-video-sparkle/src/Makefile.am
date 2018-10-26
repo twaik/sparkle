@@ -34,16 +34,18 @@ sparkle_drv_la_LIBADD = $(XORG_LIBS) ../../were/src/libwere.la
 sparkle_drv_ladir = @moduledir@/drivers
 
 sparkle_drv_la_SOURCES = \
-         compat-api.h \
-         dummy_cursor.c \
-         dummy_driver.c \
-         dummy.h \
-         sparkle_c.cpp \
-         sparkle_c.h \
-         ../../common/sparkle_surface_fd.cpp \
-         ../../common/sparkle_surface_fd.h \
-         ../../common/sparkle_connection.cpp \
-         ../../common/sparkle_connection.h \
-         ../../common/sparkle_protocol.cpp \
-         ../../common/sparkle_protocol.h
+         compat-api.h				\
+         dummy_cursor.c				\
+         dummy_driver.c				\
+         dummy.h				\
+         sparkle_c.cpp				\
+         sparkle_c.h				\
+         ../../common/sparkle_surface_shm.cpp	\
+         ../../common/sparkle_surface_shm.h	\
+         ../../common/sparkle_connection.cpp	\
+         ../../common/sparkle_connection.h	\
+         ../../common/sparkle_protocol.cpp	\
+         ../../common/sparkle_protocol.h	\
+         ../../shm/shm.c			\
+         ../../shm/shm.h
 

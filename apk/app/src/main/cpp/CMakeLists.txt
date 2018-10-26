@@ -32,11 +32,12 @@ add_library(sparkle SHARED
             ${SPARKLE_ROOT}/compositor/gl/texture.cpp
             ${SPARKLE_ROOT}/common/sparkle_connection.cpp
             ${SPARKLE_ROOT}/common/sparkle_server.cpp
-            ${SPARKLE_ROOT}/common/sparkle_surface_fd.cpp
+            ${SPARKLE_ROOT}/common/sparkle_surface_shm.cpp
             ${SPARKLE_ROOT}/common/were_benchmark.cpp
             ${SPARKLE_ROOT}/sound/sles/sound_sles.cpp
             ${SPARKLE_ROOT}/were/src/were_exception.cpp
             ${SPARKLE_ROOT}/common/sparkle_protocol.cpp
+            ${SPARKLE_ROOT}/shm/shm.c
 )
 
 target_include_directories(sparkle PRIVATE

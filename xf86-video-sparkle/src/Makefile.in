@@ -160,8 +160,8 @@ am__DEPENDENCIES_1 =
 sparkle_drv_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	../../were/src/libwere.la
 am_sparkle_drv_la_OBJECTS = dummy_cursor.lo dummy_driver.lo \
-	sparkle_c.lo sparkle_surface_fd.lo sparkle_connection.lo \
-	sparkle_protocol.lo
+	sparkle_c.lo sparkle_surface_shm.lo sparkle_connection.lo \
+	sparkle_protocol.lo shm.lo
 sparkle_drv_la_OBJECTS = $(am_sparkle_drv_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -406,18 +406,20 @@ sparkle_drv_la_LDFLAGS = -module -avoid-version
 sparkle_drv_la_LIBADD = $(XORG_LIBS) ../../were/src/libwere.la
 sparkle_drv_ladir = @moduledir@/drivers
 sparkle_drv_la_SOURCES = \
-         compat-api.h \
-         dummy_cursor.c \
-         dummy_driver.c \
-         dummy.h \
-         sparkle_c.cpp \
-         sparkle_c.h \
-         ../../common/sparkle_surface_fd.cpp \
-         ../../common/sparkle_surface_fd.h \
-         ../../common/sparkle_connection.cpp \
-         ../../common/sparkle_connection.h \
-         ../../common/sparkle_protocol.cpp \
-         ../../common/sparkle_protocol.h
+         compat-api.h				\
+         dummy_cursor.c				\
+         dummy_driver.c				\
+         dummy.h				\
+         sparkle_c.cpp				\
+         sparkle_c.h				\
+         ../../common/sparkle_surface_shm.cpp	\
+         ../../common/sparkle_surface_shm.h	\
+         ../../common/sparkle_connection.cpp	\
+         ../../common/sparkle_connection.h	\
+         ../../common/sparkle_protocol.cpp	\
+         ../../common/sparkle_protocol.h	\
+         ../../shm/shm.c			\
+         ../../shm/shm.h
 
 all: all-am
 
@@ -499,10 +501,11 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dummy_cursor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dummy_driver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparkle_c.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparkle_connection.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparkle_protocol.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparkle_surface_fd.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparkle_surface_shm.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -525,6 +528,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
+shm.lo: ../../shm/shm.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT shm.lo -MD -MP -MF $(DEPDIR)/shm.Tpo -c -o shm.lo `test -f '../../shm/shm.c' || echo '$(srcdir)/'`../../shm/shm.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shm.Tpo $(DEPDIR)/shm.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../../shm/shm.c' object='shm.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o shm.lo `test -f '../../shm/shm.c' || echo '$(srcdir)/'`../../shm/shm.c
+
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -546,12 +556,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
 
-sparkle_surface_fd.lo: ../../common/sparkle_surface_fd.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparkle_surface_fd.lo -MD -MP -MF $(DEPDIR)/sparkle_surface_fd.Tpo -c -o sparkle_surface_fd.lo `test -f '../../common/sparkle_surface_fd.cpp' || echo '$(srcdir)/'`../../common/sparkle_surface_fd.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sparkle_surface_fd.Tpo $(DEPDIR)/sparkle_surface_fd.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../../common/sparkle_surface_fd.cpp' object='sparkle_surface_fd.lo' libtool=yes @AMDEPBACKSLASH@
+sparkle_surface_shm.lo: ../../common/sparkle_surface_shm.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparkle_surface_shm.lo -MD -MP -MF $(DEPDIR)/sparkle_surface_shm.Tpo -c -o sparkle_surface_shm.lo `test -f '../../common/sparkle_surface_shm.cpp' || echo '$(srcdir)/'`../../common/sparkle_surface_shm.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sparkle_surface_shm.Tpo $(DEPDIR)/sparkle_surface_shm.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../../common/sparkle_surface_shm.cpp' object='sparkle_surface_shm.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparkle_surface_fd.lo `test -f '../../common/sparkle_surface_fd.cpp' || echo '$(srcdir)/'`../../common/sparkle_surface_fd.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparkle_surface_shm.lo `test -f '../../common/sparkle_surface_shm.cpp' || echo '$(srcdir)/'`../../common/sparkle_surface_shm.cpp
 
 sparkle_connection.lo: ../../common/sparkle_connection.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparkle_connection.lo -MD -MP -MF $(DEPDIR)/sparkle_connection.Tpo -c -o sparkle_connection.lo `test -f '../../common/sparkle_connection.cpp' || echo '$(srcdir)/'`../../common/sparkle_connection.cpp

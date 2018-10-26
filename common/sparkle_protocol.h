@@ -5,6 +5,7 @@
 
 /* ================================================================================================================== */
 
+#if 0
 struct RegisterSurfaceFdRequest
 {
     std::string name;
@@ -15,6 +16,18 @@ struct RegisterSurfaceFdRequest
 WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const RegisterSurfaceFdRequest &data);
 WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, RegisterSurfaceFdRequest &data);
 const uint32_t RegisterSurfaceFdRequestCode = 0x01;
+#else
+struct RegisterSurfaceShmRequest
+{
+    std::string name;
+    key_t key;
+    int32_t width;
+    int32_t height;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const RegisterSurfaceShmRequest &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, RegisterSurfaceShmRequest &data);
+const uint32_t RegisterSurfaceShmRequestCode = 0x01;
+#endif
 
 struct UnregisterSurfaceRequest
 {
