@@ -18,6 +18,7 @@ public:
     int width() {return width_;}
     int height() {return height_;}
     int stride() {return width_;}
+    int fd() {return fd_;}
 
 private:
     void map();

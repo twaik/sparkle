@@ -420,7 +420,7 @@ EvdevOpenDevice(InputInfoPtr pInfo)
 
     if (!(pInfo->flags & XI86_SERVER_FD) && pInfo->fd < 0)
     {
-        pEvdev->sparkle = sparklei_c_create();
+        pEvdev->sparkle = sparklei_c_create(pEvdev->compositor, pEvdev->surface_name);
         pInfo->fd = sparklei_c_fd(pEvdev->sparkle);
 
         sparklei_c_set_pointer_down_cb(pEvdev->sparkle, SparkleiPointerDown, pInfo);

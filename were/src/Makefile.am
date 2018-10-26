@@ -43,4 +43,3 @@ libwere_la_SOURCES =				\
 	were_stream.h				\
 	were_socket_unix_message_stream.cpp	\
 	were_socket_unix_message_stream.h
-

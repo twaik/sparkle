@@ -11,7 +11,6 @@
 #include <SLES/OpenSLES_Android.h>
 #endif
 
-#include "common/sparkle_packet.h"
 #include <list>
 #include <vector>
 #include <memory> //FIXME
@@ -40,7 +39,7 @@
 class WereEventLoop;
 class SparkleConnection;
 class SparkleServer;
-
+class WereSocketUnixMessage;
 
 class SoundSLES
 {
@@ -62,7 +61,7 @@ private:
     WereEventLoop *loop_;
     SparkleServer *server_;
 
-    void packet(std::shared_ptr <SparkleConnection> client, std::shared_ptr<SparklePacket> packet);
+    void packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message);
 
     SLObjectItf engineObject;
     SLEngineItf engineEngine;
@@ -77,7 +76,7 @@ private:
     BufferQueueItf playerBufferqueue;
     SLuint32 state;
 
-    std::list< std::shared_ptr<SparklePacket> > queue_;
+    std::list< std::shared_ptr<WereSocketUnixMessage> > queue_;
     bool busy;
 };
 

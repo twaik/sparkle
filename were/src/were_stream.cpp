@@ -74,20 +74,19 @@ WereStream &operator>>(WereStream &stream, int32_t &data)
     return stream;
 }
 
-WereStream &operator<<(WereStream &stream, const std::vector<char> &data)
+WereStream &operator<<(WereStream &stream, const std::string &data)
 {
     uint32_t size = data.size();
     stream << size;
-    stream.write(data.data(), size);
+    stream.write(data.c_str(), size);
     return stream;
 }
 
-WereStream &operator>>(WereStream &stream, std::vector<char> &data)
+WereStream &operator>>(WereStream &stream, std::string &data)
 {
     uint32_t size;
     stream >> size;
-    data.resize(size);
-    stream.read(data.data(), size);
+    data = std::string(reinterpret_cast<const char *>(stream.get(size)), size);
     return stream;
 }
 

@@ -2,6 +2,7 @@
 #include "were/were_event_loop.h"
 #include "common/sparkle_connection.h"
 #include "common/sparkle_server.h"
+#include "common/sparkle_protocol.h"
 #include <SLES/OpenSLES.h>
 #include <stdio.h>
 #include <math.h>
@@ -100,8 +101,10 @@ void SoundSLES::checkQueue()
     if (queue_.size() == 0)
         return;
 
-    struct sound_data_ r1;
-    SparkleConnection::unpack1(&sound_data, queue_.front().get(), &r1);
+    SoundData r1;
+    WereSocketUnixMessageStream stream(queue_.front().get());
+    stream >> r1;
+
     SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, r1.data, r1.size);
     checkResult(result);
 
@@ -126,24 +129,26 @@ void SoundSLES::callback(BufferQueueItf playerBufferqueue, void *data)
 
 //==================================================================================================
 
-void SoundSLES::packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<SparklePacket> packet)
+void SoundSLES::packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message)
 {
-    int operation = packet->header()->operation;
+    uint32_t operation;
 
-    if (operation == sound_data.code)
+    WereSocketUnixMessageStream stream(message.get());
+    stream >> operation;
+
+    if (operation == SoundDataCode)
     {
-        queue_.push_back(packet);
+        queue_.push_back(message);
         checkQueue();
-
     }
-    else if (operation == sound_start.code)
+    else if (operation == SoundStartCode)
     {
         state = SL_PLAYSTATE_PLAYING;
         SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
         checkResult(result);
         checkQueue();
     }
-    else if (operation == sound_stop.code)
+    else if (operation == SoundStopCode)
     {
         state = SL_PLAYSTATE_STOPPED;
         SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);

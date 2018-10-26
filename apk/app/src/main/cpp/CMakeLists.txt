@@ -25,13 +25,14 @@ add_library(sparkle SHARED
             ${SPARKLE_ROOT}/were/src/were_timer.cpp
             ${SPARKLE_ROOT}/were/src/were_socket_unix.cpp
             ${SPARKLE_ROOT}/were/src/were_server_unix.cpp
+            ${SPARKLE_ROOT}/were/src/were_stream.cpp
+            ${SPARKLE_ROOT}/were/src/were_socket_unix_message_stream.cpp
             ${SPARKLE_ROOT}/platform/na/platform_na.cpp
             ${SPARKLE_ROOT}/compositor/gl/compositor_gl.cpp
             ${SPARKLE_ROOT}/compositor/gl/texture.cpp
-            ${SPARKLE_ROOT}/common/sparkle_packet.cpp
             ${SPARKLE_ROOT}/common/sparkle_connection.cpp
             ${SPARKLE_ROOT}/common/sparkle_server.cpp
-            ${SPARKLE_ROOT}/common/sparkle_surface_file.cpp
+            ${SPARKLE_ROOT}/common/sparkle_surface_fd.cpp
             ${SPARKLE_ROOT}/common/were_benchmark.cpp
             ${SPARKLE_ROOT}/sound/sles/sound_sles.cpp
             ${SPARKLE_ROOT}/were/src/were_exception.cpp

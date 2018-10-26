@@ -15,7 +15,7 @@
 
 //==============================================================================
 
-const char *server_path = "/dev/shm/sparkle-sound.socket";
+const char *server_path = "/tmp/sparkle-sound.socket";
 
 #define NONBLOCK
 
@@ -46,8 +46,7 @@ static void sparkle_connect(snd_pcm_sparkle_t *sparkle)
     if (sparkle->fd != -1)
         return;
 
-    //int fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
-    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    int fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
     if (fd == -1)
         return;
 
@@ -84,29 +83,52 @@ static void sparkle_disconnect(snd_pcm_sparkle_t *sparkle)
     close(sparkle->fd);
 
     sparkle->fd = -1;
-    
+
     fprintf(stderr, "[Sparkle sound] Disconnected.\n");
 }
 
-static int sparkle_write1(snd_pcm_sparkle_t *sparkle, const void *buffer, int size)
+static void sparkle_send_data(snd_pcm_sparkle_t *sparkle, const void *data, int size)
 {
-    if (sparkle->fd == -1)
-        return size;
-    
-    int n = write(sparkle->fd, buffer, size);
-    if (n == -1)
-    {
+    uint32_t operation = 0x33;
+
+    struct iovec iov[2];
+    iov[0].iov_base = &operation;
+    iov[0].iov_len = sizeof(uint32_t);
+    iov[1].iov_base = (void *)data;
+    iov[1].iov_len = size;
+
+    struct msghdr msg = {0};
+    msg.msg_iov = iov;
+    msg.msg_iovlen = 2; /* iov array size */
+
+    int ret = sendmsg(sparkle->fd, &msg, 0);
+    if (ret == -1)
         sparkle_disconnect(sparkle);
-        return size;
-    }
-    else if (n != size)
-    {
-        fprintf(stderr, "[Sparkle sound] n != size.\n");
+}
+
+static void sparkle_send_op(snd_pcm_sparkle_t *sparkle, uint32_t operation)
+{
+    struct iovec iov[1];
+    iov[0].iov_base = &operation;
+    iov[0].iov_len = sizeof(uint32_t);
+
+    struct msghdr msg = {0};
+    msg.msg_iov = iov;
+    msg.msg_iovlen = 1; /* iov array size */
+
+    int ret = sendmsg(sparkle->fd, &msg, 0);
+    if (ret == -1)
         sparkle_disconnect(sparkle);
-        return n;
-    }
-    else
-        return n;
+}
+
+static void sparkle_send_start(snd_pcm_sparkle_t *sparkle)
+{
+    sparkle_send_op(sparkle, 0x31);
+}
+
+static void sparkle_send_stop(snd_pcm_sparkle_t *sparkle)
+{
+    sparkle_send_op(sparkle, 0x32);
 }
 
 //==============================================================================
@@ -119,7 +141,7 @@ static snd_pcm_sframes_t sparkle_write(snd_pcm_ioplug_t *io,
 	snd_pcm_sparkle_t *sparkle = io->private_data;
 
 	const char *buf;
-	ssize_t result;
+	//ssize_t result;
 
 	/* we handle only an interleaved buffer */
 	buf = (char *)areas->addr + (areas->first + areas->step * offset) / 8;
@@ -130,23 +152,13 @@ static snd_pcm_sframes_t sparkle_write(snd_pcm_ioplug_t *io,
     if (size > 32768)
         size = 32768;
 
-    uint32_t __size = sizeof(struct sparkle_packet_header) + sizeof(uint32_t) + size;
-    sparkle_write1(sparkle, &__size, sizeof(uint32_t));
-    
-    struct sparkle_packet_header _header = {0x2000};
-    sparkle_write1(sparkle, &_header, sizeof(struct sparkle_packet_header));
-    
-    uint32_t _dataSize = size;
-    sparkle_write1(sparkle, &_dataSize, sizeof(uint32_t));
 
-    int n = sparkle_write1(sparkle, buf, size);
+    sparkle_send_data(sparkle, buf, size);
 
-    result = n;
+	//if (result <= 0)
+	//	return result;
 
-	if (result <= 0)
-		return result;
-
-	return result / sparkle->frame_bytes;
+	return size / sparkle->frame_bytes;
 }
 
 static snd_pcm_sframes_t sparkle_read(snd_pcm_ioplug_t *io,
@@ -204,11 +216,7 @@ static int sparkle_start(snd_pcm_ioplug_t *io)
 
     sparkle_connect(sparkle);
 
-    uint32_t __size = sizeof(struct sparkle_packet_header);
-    sparkle_write1(sparkle, &__size, sizeof(uint32_t));
-    
-    struct sparkle_packet_header _header = {0x2001};
-    sparkle_write1(sparkle, &_header, sizeof(struct sparkle_packet_header));
+    sparkle_send_start(sparkle);
 
 	return 0;
 }
@@ -219,11 +227,7 @@ static int sparkle_stop(snd_pcm_ioplug_t *io)
 
     sparkle->play = 0;
 
-    uint32_t __size = sizeof(struct sparkle_packet_header);
-    sparkle_write1(sparkle, &__size, sizeof(uint32_t));
-    
-    struct sparkle_packet_header _header = {0x2002};
-    sparkle_write1(sparkle, &_header, sizeof(struct sparkle_packet_header));
+    sparkle_send_stop(sparkle);
 
 	return 0;
 }
@@ -295,7 +299,7 @@ static int sparkle_hw_constraint(snd_pcm_sparkle_t *sparkle)
 	if ((err = snd_pcm_ioplug_set_param_list(io, SND_PCM_IOPLUG_HW_FORMAT,
 						 nformats, format)) < 0)
 		return err;
-	
+
 	/* supported channels */
 	nchannels = 0;
 	if (!nchannels) /* assume 2ch stereo */
@@ -333,7 +337,7 @@ static int sparkle_hw_constraint(snd_pcm_sparkle_t *sparkle)
 static int sparkle_close(snd_pcm_ioplug_t *io)
 {
 	snd_pcm_sparkle_t *sparkle = io->private_data;
-    
+
     if (sparkle->fd != -1)
     {
         shutdown(sparkle->fd, SHUT_RDWR);

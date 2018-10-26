@@ -5,9 +5,8 @@
 #include "sound/sles/sound_sles.h"
 #include <sys/stat.h>
 #include <stdexcept>
-#include <sys/memfd.h>
 
-//#define SOUND_THREAD
+#define SOUND_THREAD
 
 void android_main(struct android_app *app)
 {
@@ -19,8 +18,6 @@ void android_main(struct android_app *app)
     std::string tmpPath = internalDataPath + "/tmp";
     mkdir(tmpPath.c_str(), 0777);
 
-    int x = memfd_create("A", 0);
-
     try
     {
         WereEventLoop *loop = new WereEventLoop();
@@ -29,7 +26,7 @@ void android_main(struct android_app *app)
 
 #ifdef SOUND_THREAD
         WereEventLoop *loop2 = new WereEventLoop();
-        SoundSLES *sound = new SoundSLES(loop2);
+        SoundSLES *sound = new SoundSLES(loop2, internalDataPath + "/sparkle-sound.socket");
         loop2->runThread();
 #else
         SoundSLES *sound = new SoundSLES(loop, internalDataPath + "/sparkle-sound.socket");

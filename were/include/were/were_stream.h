@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <string>
 
 /* ================================================================================================================== */
 
@@ -33,8 +34,8 @@ WereStream &operator<<(WereStream &stream, uint32_t data);
 WereStream &operator>>(WereStream &stream, uint32_t &data);
 WereStream &operator<<(WereStream &stream, int32_t data);
 WereStream &operator>>(WereStream &stream, int32_t &data);
-WereStream &operator<<(WereStream &stream, const std::vector<char> &data);
-WereStream &operator>>(WereStream &stream, std::vector<char> &data);
+WereStream &operator<<(WereStream &stream, const std::string &data);
+WereStream &operator>>(WereStream &stream, std::string &data);
 
 /* ================================================================================================================== */
 

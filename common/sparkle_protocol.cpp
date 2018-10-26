@@ -205,3 +205,19 @@ WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, Key
 }
 
 /* ================================================================================================================== */
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SoundData &data)
+{
+    stream << data.size;
+    stream.write(data.data, data.size);
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, SoundData &data)
+{
+    stream >> data.size;
+    data.data = stream.get(data.size);
+    return stream;
+}
+
+/* ================================================================================================================== */

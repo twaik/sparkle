@@ -1,14 +1,9 @@
 #include "sparklei_c.h"
 #include "were/were_event_loop.h"
 #include "common/sparkle_connection.h"
+#include "common/sparkle_protocol.h"
 #include <cstring>
 
-
-/* ================================================================================================================== */
-
-const char *compositor = "/dev/shm/sparkle.socket";
-const char *surface_name = "sparkle";
-const char *surface_file = "/dev/shm/xorg";
 
 /* ================================================================================================================== */
 
@@ -16,7 +11,7 @@ class SparkleiC
 {
 public:
     ~SparkleiC();
-    SparkleiC();
+    SparkleiC(const std::string &compositor, const std::string &surfaceName);
 
     int fd() {return loop_->fd();}
     void process() {loop_->processEvents();}
@@ -42,6 +37,7 @@ private:
 private:
     WereEventLoop *loop_;
     SparkleConnection *connection_;
+    std::string surfaceName_;
 };
 
 SparkleiC::~SparkleiC()
@@ -50,12 +46,13 @@ SparkleiC::~SparkleiC()
     delete loop_;
 }
 
-SparkleiC::SparkleiC()
+SparkleiC::SparkleiC(const std::string &compositor, const std::string &surfaceName)
 {
     loop_ = new WereEventLoop();
     connection_ = new SparkleConnection(loop_, compositor);
+    surfaceName_ = surfaceName;
 
-    connection_->signal_packet.connect(WereSimpleQueuer(loop_, &SparkleiC::handleMessage, this));
+    connection_->signal_message.connect(WereSimpleQueuer(loop_, &SparkleiC::handleMessage, this));
 }
 
 /* ================================================================================================================== */
@@ -64,52 +61,55 @@ void SparkleiC::handleMessage(std::shared_ptr<WereSocketUnixMessage> message)
 {
     uint32_t operation;
 
-    WereStream stream(message->data());
-    stream.pRead(&p_uint32, &operation);
+    WereSocketUnixMessageStream stream(message.get());
+    stream >> operation;
 
-    if (operation == pointer_down_notification.code)
+
+    if (operation == PointerDownNotificationCode)
     {
-        struct pointer_down_notification_ r1;
-        stream.pRead(&pointer_down_notification.packer, &r1);
+        PointerDownNotification r1;
+        stream >> r1;
 
-        if (strcmp(r1.surface, surface_name) == 0)
+        if (r1.surface == surfaceName_)
             pointer_down_callback(pointer_down_user, r1.slot, r1.x, r1.y);
     }
-    else if (operation == pointer_up_notification.code)
+    else if (operation == PointerUpNotificationCode)
     {
-        struct pointer_up_notification_ r1;
-        stream.pRead(&pointer_up_notification.packer, &r1);
+        PointerUpNotification r1;
+        stream >> r1;
 
-        if (strcmp(r1.surface, surface_name) == 0)
+        if (r1.surface == surfaceName_)
             pointer_up_callback(pointer_up_user, r1.slot);
     }
-    else if (operation == pointer_motion_notification.code)
+    else if (operation == PointerMotionNotificationCode)
     {
-        struct pointer_motion_notification_ r1;
-        stream.pRead(&pointer_motion_notification.packer, &r1);
+        PointerMotionNotification r1;
+        stream >> r1;
 
-        if (strcmp(r1.surface, surface_name) == 0)
+        if (r1.surface == surfaceName_)
+        {
             pointer_motion_callback(pointer_motion_user, r1.slot, r1.x, r1.y);
+        }
     }
-    else if (operation == key_down_notification.code)
+    else if (operation == KeyDownNotificationCode)
     {
-        struct key_down_notification_ r1;
-        stream.pRead(&key_down_notification.packer, &r1);
+        KeyDownNotification r1;
+        stream >> r1;
         key_down_callback(key_down_user, r1.code);
     }
-    else if (operation == key_up_notification.code)
+    else if (operation == KeyUpNotificationCode)
     {
-        struct key_up_notification_ r1;
-        stream.pRead(&key_up_notification.packer, &r1);
+        KeyUpNotification r1;
+        stream >> r1;
         key_up_callback(key_up_user, r1.code);
     }
 }
 
 /* ================================================================================================================== */
 
-SparkleiC *sparklei_c_create(void)
+SparkleiC *sparklei_c_create(const char *compositor, const char *surface_name)
 {
-    return new SparkleiC();
+    return new SparkleiC(compositor, surface_name);
 }
 
 void sparklei_c_destroy(SparkleiC *c)

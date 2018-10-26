@@ -245,6 +245,25 @@ int WereSocketUnix::sendMessage(WereSocketUnixMessage *message)
     msg.msg_iov = iov;
     msg.msg_iovlen = 1;
 
+    char *buffer = nullptr;
+
+    if (message->fds()->size() > 0)
+    {
+        int bufferSize = CMSG_SPACE(message->fds()->size() * sizeof(int));
+
+        buffer = new char[bufferSize];
+
+        msg.msg_control = buffer;
+        msg.msg_controllen = bufferSize;
+
+        struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+        cmsg->cmsg_level = SOL_SOCKET;
+        cmsg->cmsg_type = SCM_RIGHTS;
+        cmsg->cmsg_len = CMSG_LEN(message->fds()->size() * sizeof(int));
+        int *fdptr = (int *)CMSG_DATA(cmsg);
+        memcpy(fdptr, message->fds()->data(), message->fds()->size() * sizeof(int));
+    }
+
     int ret = sendmsg(_fd, &msg, 0);
 
     if (ret == -1)
@@ -252,6 +271,9 @@ int WereSocketUnix::sendMessage(WereSocketUnixMessage *message)
         were_debug("[%p][%s] Failed to send message, DISCONNECTING.\n", this, __PRETTY_FUNCTION__);
         disconnect();
     }
+
+    if (buffer != nullptr)
+        delete[] buffer;
 
     return ret;
 }
@@ -274,6 +296,12 @@ int WereSocketUnix::receiveMessage(WereSocketUnixMessage *message)
     msg.msg_iov = iov;
     msg.msg_iovlen = 1;
 
+    int bufferSize = CMSG_SPACE(4 * sizeof(int));
+    char *buffer = new char[bufferSize];
+    msg.msg_control = buffer;
+    msg.msg_controllen = bufferSize;
+
+
     int ret = recvmsg(_fd, &msg, 0);
 
     if (ret == -1)
@@ -281,6 +309,19 @@ int WereSocketUnix::receiveMessage(WereSocketUnixMessage *message)
         were_debug("[%p][%s] Failed to receive message, DISCONNECTING.\n", this, __PRETTY_FUNCTION__);
         disconnect();
     }
+
+    struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+    if (cmsg != nullptr)
+    {
+        int *fdptr = (int *)CMSG_DATA(cmsg);
+        int nfds = cmsg->cmsg_len - sizeof(struct cmsghdr); /* XXX */
+
+        for (int i = 0; i < nfds; ++i)
+            message->fds()->push_back(fdptr[i]);
+    }
+
+    if (buffer != nullptr)
+        delete[] buffer;
 
     return ret;
 }

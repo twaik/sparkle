@@ -229,9 +229,9 @@ class CompositorGLSurface
 {
 public:
     virtual ~CompositorGLSurface();
-    CompositorGLSurface(const std::vector<char> &name);
+    CompositorGLSurface(const std::string &name);
 
-    const std::vector<char> &name() {return _name;}
+    const std::string &name() {return _name;}
     Texture *texture();
     void destroyTexture(); //FIXME Temporary solution
     const RectangleA &position();
@@ -246,7 +246,7 @@ public:
     virtual bool updateTexture() = 0;
 
 protected:
-    std::vector<char> _name;
+    std::string _name;
     Texture *_texture;
     RectangleA _position;
     int _strata;
@@ -259,7 +259,7 @@ CompositorGLSurface::~CompositorGLSurface()
     destroyTexture();
 }
 
-CompositorGLSurface::CompositorGLSurface(const std::vector<char> &name)
+CompositorGLSurface::CompositorGLSurface(const std::string &name)
 {
     _name = name;
     _texture = 0;
@@ -336,7 +336,7 @@ class CompositorGLSurfaceFile : public CompositorGLSurface
 {
 public:
     ~CompositorGLSurfaceFile();
-    CompositorGLSurfaceFile(const std::vector<char> &name, int fd, int width, int height);
+    CompositorGLSurfaceFile(const std::string &name, int fd, int width, int height);
 
     bool updateTexture();
 
@@ -349,7 +349,7 @@ CompositorGLSurfaceFile::~CompositorGLSurfaceFile()
     delete _surface;
 }
 
-CompositorGLSurfaceFile::CompositorGLSurfaceFile(const std::vector<char> &name, int fd, int width, int height) :
+CompositorGLSurfaceFile::CompositorGLSurfaceFile(const std::string &name, int fd, int width, int height) :
     CompositorGLSurface(name)
 {
     _surface = new SparkleSurfaceFd(fd, width, height);
@@ -421,14 +421,14 @@ private:
     void connection(std::shared_ptr <SparkleConnection> client);
     void packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message);
 
-    void registerSurfaceFile(const std::vector<char> &name, int fd, int width, int height);
-    void unregisterSurface(const std::vector<char> &name);
-    void setSurfacePosition(const std::vector<char> &name, int x1, int y1, int x2, int y2);
-    void setSurfaceStrata(const std::vector<char> &name, int strata);
-    void setSurfaceAlpha(const std::vector<char> &name, float alpha);
-    void addSurfaceDamage(const std::vector<char> &name, int x1, int y1, int x2, int y2);
+    void registerSurfaceFile(const std::string &name, int fd, int width, int height);
+    void unregisterSurface(const std::string &name);
+    void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
+    void setSurfaceStrata(const std::string &name, int strata);
+    void setSurfaceAlpha(const std::string &name, float alpha);
+    void addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2);
 
-    std::shared_ptr<CompositorGLSurface> findSurface(const std::vector<char> &name);
+    std::shared_ptr<CompositorGLSurface> findSurface(const std::string &name);
     void transformCoordinates(int x, int y, std::shared_ptr<CompositorGLSurface> surface, int *_x, int *_y);
 
     static bool sortFunction(std::shared_ptr<CompositorGLSurface> a1, std::shared_ptr<CompositorGLSurface> a2);
@@ -781,7 +781,7 @@ void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared
     }
 }
 
-void CompositorGL::registerSurfaceFile(const std::vector<char> &name, int fd, int width, int height)
+void CompositorGL::registerSurfaceFile(const std::string &name, int fd, int width, int height)
 {
     unregisterSurface(name);
 
@@ -790,10 +790,10 @@ void CompositorGL::registerSurfaceFile(const std::vector<char> &name, int fd, in
     std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
 
     _redraw = true;
-    were_debug("Surface [%s] registered.\n", "");
+    were_debug("Surface [%s] registered.\n", name.c_str());
 }
 
-void CompositorGL::unregisterSurface(const std::vector<char> &name)
+void CompositorGL::unregisterSurface(const std::string &name)
 {
     auto it = _surfaces.begin();
     while (it != _surfaces.end())
@@ -802,7 +802,7 @@ void CompositorGL::unregisterSurface(const std::vector<char> &name)
         if (surface->name() == name)
         {
             it = _surfaces.erase(it);
-            were_debug("Surface [%s] unregistered.\n", "");
+            were_debug("Surface [%s] unregistered.\n", name.c_str());
         }
         else
             ++it;
@@ -811,18 +811,18 @@ void CompositorGL::unregisterSurface(const std::vector<char> &name)
     _redraw = true;
 }
 
-void CompositorGL::setSurfacePosition(const std::vector<char> &name, int x1, int y1, int x2, int y2)
+void CompositorGL::setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2)
 {
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != nullptr)
     {
         surface->setPosition(x1, y1, x2, y2);
         _redraw = true;
-        were_debug("Surface [%s]: position changed (%d %d %d %d).\n", "", x1, y1, x2, y2);
+        were_debug("Surface [%s]: position changed (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
     }
 }
 
-void CompositorGL::setSurfaceStrata(const std::vector<char> &name, int strata)
+void CompositorGL::setSurfaceStrata(const std::string &name, int strata)
 {
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != nullptr)
@@ -830,34 +830,34 @@ void CompositorGL::setSurfaceStrata(const std::vector<char> &name, int strata)
         surface->setStrata(strata);
         std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
         _redraw = true;
-        were_debug("Surface [%s]: strata changed.\n", "");
+        were_debug("Surface [%s]: strata changed.\n", name.c_str());
     }
 }
 
-void CompositorGL::setSurfaceAlpha(const std::vector<char> &name, float alpha)
+void CompositorGL::setSurfaceAlpha(const std::string &name, float alpha)
 {
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != nullptr)
     {
         surface->setAlpha(alpha);
         _redraw = true;
-        were_debug("Surface [%s]: alpha changed.\n", "");
+        were_debug("Surface [%s]: alpha changed.\n", name.c_str());
     }
 }
 
-void CompositorGL::addSurfaceDamage(const std::vector<char> &name, int x1, int y1, int x2, int y2)
+void CompositorGL::addSurfaceDamage(const std::string &name, int x1, int y1, int x2, int y2)
 {
     std::shared_ptr<CompositorGLSurface> surface = findSurface(name);
     if (surface != nullptr)
     {
         surface->addDamage(x1, y1, x2, y2);
-        //were_debug("Surface [%s]: damage (%d %d %d %d).\n", nullptr, x1, y1, x2, y2);
+        //were_debug("Surface [%s]: damage (%d %d %d %d).\n", name.c_str(), x1, y1, x2, y2);
     }
 }
 
 /* ================================================================================================================== */
 
-std::shared_ptr<CompositorGLSurface> CompositorGL::findSurface(const std::vector<char> &name)
+std::shared_ptr<CompositorGLSurface> CompositorGL::findSurface(const std::string &name)
 {
     for (auto it = _surfaces.begin(); it != _surfaces.end(); ++it)
     {
@@ -865,7 +865,7 @@ std::shared_ptr<CompositorGLSurface> CompositorGL::findSurface(const std::vector
             return (*it);
     }
 
-    were_debug("Surface [%s]: not registered.\n", "");
+    were_debug("Surface [%s]: not registered.\n", name.c_str());
 
     return nullptr;
 }

@@ -20,7 +20,7 @@ typedef struct SparkleiC SparkleiC;
 extern "C" {
 #endif
 
-SparkleiC *sparklei_c_create(void);
+SparkleiC *sparklei_c_create(const char *compositor, const char *surface_name);
 void sparklei_c_destroy(SparkleiC *c);
 
 int sparklei_c_fd(SparkleiC *c);

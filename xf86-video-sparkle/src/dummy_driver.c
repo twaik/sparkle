@@ -325,6 +325,37 @@ static void handle_event(int fd, int ready, void *data)
         sparkle_c_process(dPtr->sparkle);
 }
 
+static void handle_display_size(void *user, int width, int height)
+{
+    ScrnInfoPtr pScrn = (ScrnInfoPtr)user;
+    ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
+    DUMMYPtr dPtr = DUMMYPTR(pScrn);
+
+    dPtr->displayWidth = width;
+    dPtr->displayHeight = height;
+
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "DISPLAY SIZE: %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
+
+    if (dPtr->displayWidth != dPtr->configuredWidth || dPtr->displayHeight != dPtr->configuredHeight)
+    {
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Reconfiguring for %dx%d\n", dPtr->displayWidth, dPtr->displayHeight);
+
+        DUMMYUpdateModes(pScrn, dPtr->displayWidth, dPtr->displayHeight);
+
+        DisplayModePtr mode = dPtr->modes;
+        //pScrn->currentMode = mode;
+
+        int mmWidth = mode->HDisplay * 25.4 / monitorResolution;
+        int mmHeight = mode->VDisplay * 25.4 / monitorResolution;
+
+        RRScreenSizeSet(pScreen, mode->HDisplay, mode->VDisplay, mmWidth, mmHeight);
+        xf86SetSingleMode(pScrn, mode, RR_Rotate_0);
+
+        dPtr->configuredWidth = dPtr->displayWidth;
+        dPtr->configuredHeight = dPtr->displayHeight;
+    }
+}
+
 //==================================================================================================
 
 Bool DUMMYCrtc_resize(ScrnInfoPtr pScrn, int width, int height)
@@ -346,14 +377,14 @@ Bool DUMMYCrtc_resize(ScrnInfoPtr pScrn, int width, int height)
     }
 #endif
 
-    //sparkle_c_resize_surface(dPtr->sparkle, width, height);
+    sparkle_c_resize_surface(dPtr->sparkle, width, height);
 
     pScrn->virtualX = width;
     pScrn->virtualY = height;
     pScrn->displayWidth = width; //XXX
 
     int cpp = (pScrn->bitsPerPixel + 7) / 8;
-    pScreen->ModifyPixmapHeader(pPixmap, 800, 600, -1, -1, pScrn->displayWidth * cpp, sparkle_c_surface_data(dPtr->sparkle));
+    pScreen->ModifyPixmapHeader(pPixmap, width, height, -1, -1, pScrn->displayWidth * cpp, sparkle_c_surface_data(dPtr->sparkle));
 
 
     //XXX
@@ -804,8 +835,9 @@ DUMMYScreenInit(SCREEN_INIT_ARGS_DECL)
 	return FALSE;
 #else
 
-    dPtr->sparkle = sparkle_c_create();
+    dPtr->sparkle = sparkle_c_create(dPtr->compositor, dPtr->surface_name, dPtr->surface_file);
     SetNotifyFd(sparkle_c_fd(dPtr->sparkle), handle_event, X_NOTIFY_READ, pScrn);
+    sparkle_c_set_display_size_cb(dPtr->sparkle, handle_display_size, pScrn);
 
 #endif
 

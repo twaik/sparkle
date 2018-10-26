@@ -1,16 +1,54 @@
 {
    supp1
-   Memcheck:Leak
-   fun:malloc
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
    ...
-   obj:/usr/lib64/libEGL.so.1.0.0
+   obj:/usr/lib64/libGLX_mesa.so.0.0.0
 }
 
 {
    supp2
+   Memcheck:Leak
+   ...
+   obj:/usr/lib64/dri/nouveau_dri.so
+}
+
+{
+   supp3
+   Memcheck:Leak
+   ...
+   obj:/usr/lib64/libGLX.so.0.0.0
+}
+
+{
+   supp4
+   Memcheck:Leak
+   ...
+   obj:/usr/lib64/libGL.so.1.7.0
+}
+
+{
+   supp5
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:XextAddDisplay
+}
+
+{
+   supp6
    Memcheck:Param
    ioctl(generic)
    fun:ioctl
    ...
    obj:/usr/lib64/libEGL_mesa.so.0.0.0
 }
+
+{
+   supp7
+   Memcheck:Leak
+   ...
+   obj:/usr/lib64/libEGL.so.1.1.0
+}
+

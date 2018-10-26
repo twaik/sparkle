@@ -7,7 +7,7 @@
 
 struct RegisterSurfaceFdRequest
 {
-    std::vector<char> name;
+    std::string name;
     int fd;
     int32_t width;
     int32_t height;
@@ -18,7 +18,7 @@ const uint32_t RegisterSurfaceFdRequestCode = 0x01;
 
 struct UnregisterSurfaceRequest
 {
-    std::vector<char> name;
+    std::string name;
 };
 WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const UnregisterSurfaceRequest &data);
 WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, UnregisterSurfaceRequest &data);
@@ -26,7 +26,7 @@ const uint32_t UnregisterSurfaceRequestCode = 0x02;
 
 struct SetSurfacePositionRequest
 {
-    std::vector<char> name;
+    std::string name;
     int32_t x1;
     int32_t y1;
     int32_t x2;
@@ -38,7 +38,7 @@ const uint32_t SetSurfacePositionRequestCode = 0x03;
 
 struct SetSurfaceStrataRequest
 {
-    std::vector<char> name;
+    std::string name;
     int32_t strata;
 };
 WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SetSurfaceStrataRequest &data);
@@ -47,7 +47,7 @@ const uint32_t SetSurfaceStrataRequestCode = 0x04;
 
 struct SetSurfaceAlphaRequest
 {
-    std::vector<char> name;
+    std::string name;
     int32_t alpha;
 };
 WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SetSurfaceAlphaRequest &data);
@@ -56,7 +56,7 @@ const uint32_t SetSurfaceAlphaRequestCode = 0x05;
 
 struct AddSurfaceDamageRequest
 {
-    std::vector<char> name;
+    std::string name;
     int32_t x1;
     int32_t y1;
     int32_t x2;
@@ -77,7 +77,7 @@ const uint32_t DisplaySizeNotificationCode = 0x07;
 
 struct PointerDownNotification
 {
-    std::vector<char> surface;
+    std::string surface;
     int32_t slot;
     int32_t x;
     int32_t y;
@@ -88,7 +88,7 @@ const uint32_t PointerDownNotificationCode = 0x21;
 
 struct PointerUpNotification
 {
-    std::vector<char> surface;
+    std::string surface;
     int32_t slot;
     int32_t x;
     int32_t y;
@@ -99,7 +99,7 @@ const uint32_t PointerUpNotificationCode = 0x22;
 
 struct PointerMotionNotification
 {
-    std::vector<char> surface;
+    std::string surface;
     int32_t slot;
     int32_t x;
     int32_t y;
@@ -123,6 +123,18 @@ struct KeyUpNotification
 WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const KeyUpNotification &data);
 WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, KeyUpNotification &data);
 const uint32_t KeyUpNotificationCode = 0x25;
+
+const uint32_t SoundStartCode = 0x31;
+const uint32_t SoundStopCode = 0x32;
+
+struct SoundData
+{
+    uint32_t size;
+    const unsigned char *data;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SoundData &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, SoundData &data);
+const uint32_t SoundDataCode = 0x33;
 
 /* ================================================================================================================== */
 
