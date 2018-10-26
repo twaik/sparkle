@@ -15,8 +15,6 @@ void android_main(struct android_app *app)
     umask(0);
 
     std::string internalDataPath(app->activity->internalDataPath);
-    std::string tmpPath = internalDataPath + "/tmp";
-    mkdir(tmpPath.c_str(), 0777);
 
     try
     {

@@ -84,8 +84,12 @@ void WereEventLoop::runThread()
 
 void WereEventLoop::exit()
 {
-    /* FIXME Break epoll_wait */
     _exit = true;
+
+    queue([](){}); /* XXX */
+
+    if (_thread.joinable())
+        _thread.join();
 }
 
 void WereEventLoop::processEvents()
