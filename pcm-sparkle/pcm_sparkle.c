@@ -15,7 +15,7 @@
 
 //==============================================================================
 
-const char *server_path = "/tmp/sparkle-sound.socket";
+const char *server_path = "/proc/1/root/data/data/com.sion.sparkle/files/sparkle-sound.socket";
 
 #define NONBLOCK
 
