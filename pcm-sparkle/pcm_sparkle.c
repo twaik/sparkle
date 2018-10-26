@@ -87,7 +87,7 @@ static void sparkle_disconnect(snd_pcm_sparkle_t *sparkle)
     fprintf(stderr, "[Sparkle sound] Disconnected.\n");
 }
 
-static void sparkle_send_data(snd_pcm_sparkle_t *sparkle, const void *data, int$
+static void sparkle_send_data(snd_pcm_sparkle_t *sparkle, const void *data, int size)
 {
     uint32_t operation = 0x33;
     uint32_t size_ = size;
