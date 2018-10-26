@@ -1,0 +1,19 @@
+# Deps
+sudo apt-get install gcc g++ make automake libtool
+sudo apt-get install git
+sudo apt-get install xserver-xorg-dev xutils-dev pkg-config libasound2-dev
+
+# Installation
+cd ~
+git clone https://gitlab.com/mogryph/sparkle.git
+cd sparkle
+make configure-drivers
+make build-drivers
+sudo make install-drivers
+
+sudo cp configs/xorg.conf /etc/X11/xorg-sparkle.conf
+cp configs/.asoundrc ~/
+
+# Running
+sudo Xorg -config xorg-sparkle.conf
+
