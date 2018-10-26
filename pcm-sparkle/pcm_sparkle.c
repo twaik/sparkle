@@ -87,19 +87,22 @@ static void sparkle_disconnect(snd_pcm_sparkle_t *sparkle)
     fprintf(stderr, "[Sparkle sound] Disconnected.\n");
 }
 
-static void sparkle_send_data(snd_pcm_sparkle_t *sparkle, const void *data, int size)
+static void sparkle_send_data(snd_pcm_sparkle_t *sparkle, const void *data, int$
 {
     uint32_t operation = 0x33;
+    uint32_t size_ = size;
 
-    struct iovec iov[2];
+    struct iovec iov[3];
     iov[0].iov_base = &operation;
     iov[0].iov_len = sizeof(uint32_t);
-    iov[1].iov_base = (void *)data;
-    iov[1].iov_len = size;
+    iov[1].iov_base = &size_;
+    iov[1].iov_len = sizeof(uint32_t);
+    iov[2].iov_base = (void *)data;
+    iov[2].iov_len = size;
 
     struct msghdr msg = {0};
     msg.msg_iov = iov;
-    msg.msg_iovlen = 2; /* iov array size */
+    msg.msg_iovlen = 3; /* iov array size */
 
     int ret = sendmsg(sparkle->fd, &msg, 0);
     if (ret == -1)
@@ -138,27 +141,26 @@ static snd_pcm_sframes_t sparkle_write(snd_pcm_ioplug_t *io,
 				   snd_pcm_uframes_t offset,
 				   snd_pcm_uframes_t size)
 {
-	snd_pcm_sparkle_t *sparkle = io->private_data;
+    snd_pcm_sparkle_t *sparkle = io->private_data;
 
-	const char *buf;
-	//ssize_t result;
+    const char *buf;
+    //ssize_t result;
 
-	/* we handle only an interleaved buffer */
-	buf = (char *)areas->addr + (areas->first + areas->step * offset) / 8;
-	size *= sparkle->frame_bytes;
+    /* we handle only an interleaved buffer */
+    buf = (char *)areas->addr + (areas->first + areas->step * offset) / 8;
 
-	//result = write(oss->fd, buf, size);
+    //result = write(oss->fd, buf, size);
 
-    if (size > 32768)
-        size = 32768;
+    int max_frames = 4096 / sparkle->frame_bytes;
+    if (size > max_frames)
+        size = max_frames;
 
+    sparkle_send_data(sparkle, buf, size * sparkle->frame_bytes);
 
-    sparkle_send_data(sparkle, buf, size);
+    //if (result <= 0)
+    //  return result;
 
-	//if (result <= 0)
-	//	return result;
-
-	return size / sparkle->frame_bytes;
+    return size;
 }
 
 static snd_pcm_sframes_t sparkle_read(snd_pcm_ioplug_t *io,

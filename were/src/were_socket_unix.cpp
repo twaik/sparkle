@@ -286,7 +286,7 @@ int WereSocketUnix::receiveMessage(WereSocketUnixMessage *message)
         return -1;
     }
 
-    message->data()->resize(256);
+    message->data()->resize(8192);
 
     struct iovec iov[1];
     iov[0].iov_base = message->data()->data();

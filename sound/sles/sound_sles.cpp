@@ -101,8 +101,10 @@ void SoundSLES::checkQueue()
     if (queue_.size() == 0)
         return;
 
+    uint32_t operation;
     SoundData r1;
     WereSocketUnixMessageStream stream(queue_.front().get());
+    stream >> operation;
     stream >> r1;
 
     SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, r1.data, r1.size);
@@ -143,6 +145,7 @@ void SoundSLES::packet(std::shared_ptr<SparkleConnection> client, std::shared_pt
     }
     else if (operation == SoundStartCode)
     {
+        were_debug("Starting playback...");
         state = SL_PLAYSTATE_PLAYING;
         SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
         checkResult(result);
@@ -150,6 +153,7 @@ void SoundSLES::packet(std::shared_ptr<SparkleConnection> client, std::shared_pt
     }
     else if (operation == SoundStopCode)
     {
+        were_debug("Stopping playback...");
         state = SL_PLAYSTATE_STOPPED;
         SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
         checkResult(result);
