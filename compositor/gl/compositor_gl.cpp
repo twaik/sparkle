@@ -417,6 +417,9 @@ private:
     void pointerMotion(int slot, int x, int y);
     void keyDown(int code);
     void keyUp(int code);
+    void buttonPress(int button, int x, int y);
+    void buttonRelease(int button, int x, int y);
+    void cursorMotion(int x, int y);
 
     void connection(std::shared_ptr <SparkleConnection> client);
     void packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message);
@@ -503,6 +506,9 @@ CompositorGL::CompositorGL(WereEventLoop *loop, Platform *platform, const std::s
     _platform->pointerMotion.connect(WereSimpleQueuer(loop, &CompositorGL::pointerMotion, this));
     _platform->keyDown.connect(WereSimpleQueuer(loop, &CompositorGL::keyDown, this));
     _platform->keyUp.connect(WereSimpleQueuer(loop, &CompositorGL::keyUp, this));
+    _platform->buttonPress.connect(WereSimpleQueuer(loop, &CompositorGL::buttonPress, this));
+    _platform->buttonRelease.connect(WereSimpleQueuer(loop, &CompositorGL::buttonRelease, this));
+    _platform->cursorMotion.connect(WereSimpleQueuer(loop, &CompositorGL::cursorMotion, this));
 
     _server = new SparkleServer(_loop, file);
 
@@ -724,6 +730,54 @@ void CompositorGL::keyDown(int code)
 void CompositorGL::keyUp(int code)
 {
     _server->broadcast(KeyUpNotification({code}));
+}
+
+void CompositorGL::buttonPress(int button, int x, int y)
+{
+    for (auto rit = _surfaces.rbegin(); rit != _surfaces.rend(); ++rit)
+    {
+        std::shared_ptr<CompositorGLSurface> surface = (*rit);
+        int _x;
+        int _y;
+        transformCoordinates(x, y, surface, &_x, &_y);
+        if (_x != -1 && _y != -1)
+        {
+            _server->broadcast(ButtonPressNotification({surface->name(), button, _x, _y}));
+            return;
+        }
+    }
+}
+
+void CompositorGL::buttonRelease(int button, int x, int y)
+{
+    for (auto rit = _surfaces.rbegin(); rit != _surfaces.rend(); ++rit)
+    {
+        std::shared_ptr<CompositorGLSurface> surface = (*rit);
+        int _x;
+        int _y;
+        transformCoordinates(x, y, surface, &_x, &_y);
+        if (_x != -1 && _y != -1)
+        {
+            _server->broadcast(ButtonReleaseNotification({surface->name(), button, _x, _y}));
+            return;
+        }
+    }
+}
+
+void CompositorGL::cursorMotion(int x, int y)
+{
+    for (auto rit = _surfaces.rbegin(); rit != _surfaces.rend(); ++rit)
+    {
+        std::shared_ptr<CompositorGLSurface> surface = (*rit);
+        int _x;
+        int _y;
+        transformCoordinates(x, y, surface, &_x, &_y);
+        if (_x != -1 && _y != -1)
+        {
+            _server->broadcast(CursorMotionNotification({surface->name(), _x, _y}));
+            return;
+        }
+    }
 }
 
 /* ================================================================================================================== */

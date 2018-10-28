@@ -4,7 +4,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 const int w_x = 100;
 const int w_y = 100;
@@ -12,7 +12,7 @@ const int w_width = 800;
 const int w_height = 600;
 const char *w_title = "Sparkle";
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 class PlatformX11 : public Platform
 {
@@ -50,7 +50,7 @@ PlatformX11::PlatformX11(WereEventLoop *loop)
 
     _timer = new WereTimer(_loop);
     _timer->timeout.connect(WereSimpleQueuer(loop, &PlatformX11::timeout, this));
-    
+
     _display = 0;
     _window = 0;
 }
@@ -76,17 +76,17 @@ int PlatformX11::start()
 int PlatformX11::stop()
 {
     _timer->stop();
-    
+
     finishForNativeWindow();
     finishForNativeDisplay();
-    
+
     return 0;
 }
 
 void PlatformX11::timeout()
 {
     processEvents();
-    
+
     draw();
 }
 
@@ -193,18 +193,35 @@ int PlatformX11::processEvents()
         {
             case ButtonPress:
             {
-                pointerDown(0, event.xbutton.x, event.xbutton.y);
+                if (event.xbutton.type == ButtonPress)
+                {
+                    int button = event.xbutton.button;
+                    if (button == 3)
+                        button = 2;
+                    else if (button == 2)
+                        button = 3;
+
+                    buttonPress(button, event.xbutton.x, event.xbutton.y);
+                }
                 break;
             }
             case ButtonRelease:
             {
-                if (event.xbutton.type == 5)
-                    pointerUp(0, event.xbutton.x, event.xbutton.y);
+                if (event.xbutton.type == ButtonRelease)
+                {
+                    int button = event.xbutton.button;
+                    if (button == 3)
+                        button = 2;
+                    else if (button == 2)
+                        button = 3;
+
+                    buttonRelease(button, event.xbutton.x, event.xbutton.y);
+                }
                 break;
             }
             case MotionNotify:
             {
-                pointerMotion(0, event.xbutton.x, event.xbutton.y);
+                cursorMotion(event.xbutton.x, event.xbutton.y);
                 break;
             }
             case KeyPress:
@@ -227,12 +244,11 @@ int PlatformX11::processEvents()
     return 0;
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 Platform *platform_x11_create(WereEventLoop *loop)
 {
     return new PlatformX11(loop);
 }
 
-//==================================================================================================
-
+/* ================================================================================================================== */

@@ -31,6 +31,15 @@ public:
     void (*key_up_callback)(void *user, int code);
     void *key_up_user;
 
+    void (*button_press_callback)(void *user, int button, int x, int y);
+    void *button_press_user;
+
+    void (*button_release_callback)(void *user, int button, int x, int y);
+    void *button_release_user;
+
+    void (*cursor_motion_callback)(void *user, int x, int y);
+    void *cursor_motion_user;
+
 private:
     void handleMessage(std::shared_ptr<WereSocketUnixMessage> message);
 
@@ -103,6 +112,24 @@ void SparkleiC::handleMessage(std::shared_ptr<WereSocketUnixMessage> message)
         stream >> r1;
         key_up_callback(key_up_user, r1.code);
     }
+    else if (operation == ButtonPressNotificationCode)
+    {
+        ButtonPressNotification r1;
+        stream >> r1;
+        button_press_callback(button_press_user, r1.button, r1.x, r1.y);
+    }
+    else if (operation == ButtonReleaseNotificationCode)
+    {
+        ButtonReleaseNotification r1;
+        stream >> r1;
+        button_release_callback(button_release_user, r1.button, r1.x, r1.y);
+    }
+    else if (operation == CursorMotionNotificationCode)
+    {
+        CursorMotionNotification r1;
+        stream >> r1;
+        cursor_motion_callback(cursor_motion_user, r1.x, r1.y);
+    }
 }
 
 /* ================================================================================================================== */
@@ -155,6 +182,24 @@ void sparklei_c_set_key_up_cb(SparkleiC *c, void (*f)(void *user, int code), voi
 {
     c->key_up_callback = f;
     c->key_up_user = user;
+}
+
+void sparklei_c_set_button_press_cb(SparkleiC *c, void (*f)(void *user, int button, int x, int y), void *user)
+{
+    c->button_press_callback = f;
+    c->button_press_user = user;
+}
+
+void sparklei_c_set_button_release_cb(SparkleiC *c, void (*f)(void *user, int button, int x, int y), void *user)
+{
+    c->button_release_callback = f;
+    c->button_release_user = user;
+}
+
+void sparklei_c_set_cursor_motion_cb(SparkleiC *c, void (*f)(void *user, int x, int y), void *user)
+{
+    c->cursor_motion_callback = f;
+    c->cursor_motion_user = user;
 }
 
 /* ================================================================================================================== */

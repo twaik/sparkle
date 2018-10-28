@@ -225,6 +225,61 @@ WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, Key
     return stream;
 }
 
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const ButtonPressNotification &data)
+{
+    stream << ButtonPressNotificationCode;
+    stream << data.surface;
+    stream << data.button;
+    stream << data.x;
+    stream << data.y;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, ButtonPressNotification &data)
+{
+    stream >> data.surface;
+    stream >> data.button;
+    stream >> data.x;
+    stream >> data.y;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const ButtonReleaseNotification &data)
+{
+    stream << ButtonReleaseNotificationCode;
+    stream << data.surface;
+    stream << data.button;
+    stream << data.x;
+    stream << data.y;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, ButtonReleaseNotification &data)
+{
+    stream >> data.surface;
+    stream >> data.button;
+    stream >> data.x;
+    stream >> data.y;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const CursorMotionNotification &data)
+{
+    stream << CursorMotionNotificationCode;
+    stream << data.surface;
+    stream << data.x;
+    stream << data.y;
+    return stream;
+}
+
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, CursorMotionNotification &data)
+{
+    stream >> data.surface;
+    stream >> data.x;
+    stream >> data.y;
+    return stream;
+}
+
 /* ================================================================================================================== */
 
 WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SoundData &data)

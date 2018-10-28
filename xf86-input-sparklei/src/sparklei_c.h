@@ -32,6 +32,10 @@ void sparklei_c_set_pointer_motion_cb(SparkleiC *c, void (*f)(void *user, int sl
 void sparklei_c_set_key_down_cb(SparkleiC *c, void (*f)(void *user, int code), void *user);
 void sparklei_c_set_key_up_cb(SparkleiC *c, void (*f)(void *user, int code), void *user);
 
+void sparklei_c_set_button_press_cb(SparkleiC *c, void (*f)(void *user, int button, int x, int y), void *user);
+void sparklei_c_set_button_release_cb(SparkleiC *c, void (*f)(void *user, int button, int x, int y), void *user);
+void sparklei_c_set_cursor_motion_cb(SparkleiC *c, void (*f)(void *user, int x, int y), void *user);
+
 #ifdef __cplusplus
 }
 #endif

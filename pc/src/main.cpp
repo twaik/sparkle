@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     delete sig;
     delete loop;
 
-    were_message("Done\n");
+    were_message("Done.\n");
 
     return 0;
 }

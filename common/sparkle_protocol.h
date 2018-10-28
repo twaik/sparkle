@@ -137,6 +137,38 @@ WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, con
 WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, KeyUpNotification &data);
 const uint32_t KeyUpNotificationCode = 0x25;
 
+struct ButtonPressNotification
+{
+    std::string surface;
+    int32_t button;
+    int32_t x;
+    int32_t y;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const ButtonPressNotification &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, ButtonPressNotification &data);
+const uint32_t ButtonPressNotificationCode = 0x26;
+
+struct ButtonReleaseNotification
+{
+    std::string surface;
+    int32_t button;
+    int32_t x;
+    int32_t y;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const ButtonReleaseNotification &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, ButtonReleaseNotification &data);
+const uint32_t ButtonReleaseNotificationCode = 0x27;
+
+struct CursorMotionNotification
+{
+    std::string surface;
+    int32_t x;
+    int32_t y;
+};
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const CursorMotionNotification &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, CursorMotionNotification &data);
+const uint32_t CursorMotionNotificationCode = 0x28;
+
 const uint32_t SoundStartCode = 0x31;
 const uint32_t SoundStopCode = 0x32;
 

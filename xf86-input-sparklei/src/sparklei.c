@@ -44,17 +44,7 @@
 #define MODEFLAG	8
 #define COMPOSEFLAG	16
 
-#ifndef ABS_MT_SLOT
-#define ABS_MT_SLOT 0x2f
-#endif
 
-#ifndef ABS_MT_TRACKING_ID
-#define ABS_MT_TRACKING_ID 0x39
-#endif
-
-//#ifndef XI86_SERVER_FD
-//#define XI86_SERVER_FD 0x20
-//#endif
 
 
 static int EvdevOn(DeviceIntPtr);
@@ -246,24 +236,12 @@ EvdevInit(DeviceIntPtr device)
     //pInfo = device->public.devicePrivate;
     //pEvdev = pInfo->private;
 
-	EvdevAddKeyClass(device);
-	EvdevAddButtonClass(device);
+    EvdevAddKeyClass(device);
+    EvdevAddButtonClass(device);
     EvdevAddAbsValuatorClass(device);
 
     return Success;
 }
-
-#if 0
-static CARD32 EvdevTimeout(OsTimerPtr timer, CARD32 time, pointer arg)
-{
-    //InputInfoPtr      pInfo    = (InputInfoPtr)arg;
-    //EvdevPtr          pEvdev   = pInfo->private;
-
-    //pEvdev->timer = TimerSet(pEvdev->timer, 0, 1000, EvdevTimeout, pInfo);
-
-    return 0;
-}
-#endif
 
 static int
 EvdevOn(DeviceIntPtr device)
@@ -309,7 +287,7 @@ EvdevProc(DeviceIntPtr device, int what)
             break;
 
         case DEVICE_CLOSE:
-            xf86IDrvMsg(pInfo, X_INFO, "Close\n");
+            xf86IDrvMsg(pInfo, X_INFO, "Close.\n");
                 EvdevCloseDevice(pInfo);
                 EvdevFreeMasks(pEvdev);
             break;
@@ -326,9 +304,8 @@ EvdevProbe(InputInfoPtr pInfo)
 {
     //EvdevPtr pEvdev = pInfo->private;
 
-    pInfo->flags |= XI86_SEND_DRAG_EVENTS;
-    pInfo->type_name = XI_TOUCHSCREEN; //XXX
-    //pInfo->type_name = XI_KEYBOARD;
+    //pInfo->flags |= XI86_SEND_DRAG_EVENTS;
+    pInfo->type_name = "Sparkle"; //XXX
 
     return Success;
 }
@@ -406,6 +383,49 @@ static void SparkleiKeyUp(void *user, int code)
         xf86PostKeyboardEvent(pInfo->dev, code, 0);
 }
 
+static void SparkleiButtonPress(void *user, int button, int x, int y)
+{
+    InputInfoPtr      pInfo    = (InputInfoPtr)user;
+    EvdevPtr          pEvdev   = pInfo->private;
+
+    if (button == 3)
+        button = 2;
+    else if (button == 2)
+        button = 3;
+
+    valuator_mask_set(pEvdev->mt_mask, 0, x);
+    valuator_mask_set(pEvdev->mt_mask, 1, y);
+    xf86PostButtonEventM(pInfo->dev, Absolute, button, 1, pEvdev->mt_mask);
+    valuator_mask_zero(pEvdev->mt_mask);
+}
+
+static void SparkleiButtonRelease(void *user, int button, int x, int y)
+{
+    InputInfoPtr      pInfo    = (InputInfoPtr)user;
+    EvdevPtr          pEvdev   = pInfo->private;
+
+    if (button == 3)
+        button = 2;
+    else if (button == 2)
+        button = 3;
+
+    valuator_mask_set(pEvdev->mt_mask, 0, x);
+    valuator_mask_set(pEvdev->mt_mask, 1, y);
+    xf86PostButtonEventM(pInfo->dev, Absolute, button, 0, pEvdev->mt_mask);
+    valuator_mask_zero(pEvdev->mt_mask);
+}
+
+static void SparkleiCursorMotion(void *user, int x, int y)
+{
+    InputInfoPtr      pInfo    = (InputInfoPtr)user;
+    EvdevPtr          pEvdev   = pInfo->private;
+
+    valuator_mask_set(pEvdev->mt_mask, 0, x);
+    valuator_mask_set(pEvdev->mt_mask, 1, y);
+    xf86PostMotionEventM(pInfo->dev, Absolute, pEvdev->mt_mask);
+    valuator_mask_zero(pEvdev->mt_mask);
+}
+
 static int
 EvdevOpenDevice(InputInfoPtr pInfo)
 {
@@ -419,6 +439,9 @@ EvdevOpenDevice(InputInfoPtr pInfo)
     sparklei_c_set_pointer_motion_cb(pEvdev->sparkle, SparkleiPointerMotion, pInfo);
     sparklei_c_set_key_down_cb(pEvdev->sparkle, SparkleiKeyDown, pInfo);
     sparklei_c_set_key_up_cb(pEvdev->sparkle, SparkleiKeyUp, pInfo);
+    sparklei_c_set_button_press_cb(pEvdev->sparkle, SparkleiButtonPress, pInfo);
+    sparklei_c_set_button_release_cb(pEvdev->sparkle, SparkleiButtonRelease, pInfo);
+    sparklei_c_set_cursor_motion_cb(pEvdev->sparkle, SparkleiCursorMotion, pInfo);
 
     return Success;
 }
@@ -566,5 +589,4 @@ static void EvdevInitButtonLabels(EvdevPtr pEvdev, int natoms, Atom *atoms)
     atoms[2] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_2);
 #endif
 }
-
 

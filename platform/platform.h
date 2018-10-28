@@ -25,7 +25,10 @@ public:
     WereSignal<void (int, int, int)> pointerMotion;
     WereSignal<void (int)> keyDown;
     WereSignal<void (int)> keyUp;
+
+    WereSignal<void (int, int, int)> buttonPress;
+    WereSignal<void (int, int, int)> buttonRelease;
+    WereSignal<void (int, int)> cursorMotion;
 };
 
-#endif //PLATFORM_H
-
+#endif /* PLATFORM_H */
