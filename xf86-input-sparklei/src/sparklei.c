@@ -155,11 +155,14 @@ EvdevAddAbsValuatorClass(DeviceIntPtr device)
         goto out;
     }
 
+/* FIXME */
+#if 1
     if (!InitTouchClassDeviceStruct(device, 10, XIDirectTouch, 2)) {
         xf86Msg(X_ERROR, "%s: failed to initialize touch class device.\n",
                 device->name);
         goto out;
     }
+#endif
 
     axnum = 0;
     xf86InitValuatorAxisStruct(device, axnum,
@@ -386,33 +389,33 @@ static void SparkleiKeyUp(void *user, int code)
 static void SparkleiButtonPress(void *user, int button, int x, int y)
 {
     InputInfoPtr      pInfo    = (InputInfoPtr)user;
-    EvdevPtr          pEvdev   = pInfo->private;
+    //EvdevPtr          pEvdev   = pInfo->private;
 
     if (button == 3)
         button = 2;
     else if (button == 2)
         button = 3;
 
-    valuator_mask_set(pEvdev->mt_mask, 0, x);
-    valuator_mask_set(pEvdev->mt_mask, 1, y);
-    xf86PostButtonEventM(pInfo->dev, Absolute, button, 1, pEvdev->mt_mask);
-    valuator_mask_zero(pEvdev->mt_mask);
+    //valuator_mask_set(pEvdev->mt_mask, 0, x);
+    //valuator_mask_set(pEvdev->mt_mask, 1, y);
+    xf86PostButtonEvent(pInfo->dev, Absolute, button, 1, 0, 0);
+    //valuator_mask_zero(pEvdev->mt_mask);
 }
 
 static void SparkleiButtonRelease(void *user, int button, int x, int y)
 {
     InputInfoPtr      pInfo    = (InputInfoPtr)user;
-    EvdevPtr          pEvdev   = pInfo->private;
+    //EvdevPtr          pEvdev   = pInfo->private;
 
     if (button == 3)
         button = 2;
     else if (button == 2)
         button = 3;
 
-    valuator_mask_set(pEvdev->mt_mask, 0, x);
-    valuator_mask_set(pEvdev->mt_mask, 1, y);
-    xf86PostButtonEventM(pInfo->dev, Absolute, button, 0, pEvdev->mt_mask);
-    valuator_mask_zero(pEvdev->mt_mask);
+    //valuator_mask_set(pEvdev->mt_mask, 0, x);
+    //valuator_mask_set(pEvdev->mt_mask, 1, y);
+    xf86PostButtonEvent(pInfo->dev, Absolute, button, 0, 0, 0);
+    //valuator_mask_zero(pEvdev->mt_mask);
 }
 
 static void SparkleiCursorMotion(void *user, int x, int y)

@@ -20,24 +20,28 @@ class PlatformNA : public Platform
 public:
     ~PlatformNA();
     PlatformNA(WereEventLoop *loop, struct android_app *app);
-    
+
     int start();
     int stop();
 
 private:
     void timeout();
+    int handleTouchscreen(AInputEvent *event);
+    int handleMouse(AInputEvent *event);
+    int handleKey(AInputEvent *event);
     static int handleInput(struct android_app *app, AInputEvent *event);
     static void handleCmd(struct android_app *app, int32_t cmd);
 
 private:
     WereEventLoop *_loop;
     struct android_app *_app;
-    
+
     WereTimer *_timer;
-    
+
     bool _draw;
 
     PointerState _pointer[10];
+    int buttons_;
 };
 
 PlatformNA::~PlatformNA()
@@ -55,7 +59,8 @@ PlatformNA::PlatformNA(WereEventLoop *loop, struct android_app *app)
     _app->onAppCmd = &handleCmd;
 
     _draw = false;
-    
+    buttons_ = 0;
+
     _timer = new WereTimer(_loop);
     _timer->timeout.connect(WereSimpleQueuer(loop, &PlatformNA::timeout, this));
 }
@@ -63,9 +68,9 @@ PlatformNA::PlatformNA(WereEventLoop *loop, struct android_app *app)
 int PlatformNA::start()
 {
     ANativeActivity_setWindowFlags(_app->activity, AWINDOW_FLAG_FULLSCREEN, AWINDOW_FLAG_FORCE_NOT_FULLSCREEN);
-    
+
     _timer->start(1000/60, false);
-    
+
     return 0;
 }
 
@@ -99,82 +104,147 @@ void PlatformNA::timeout()
         draw();
 }
 
+int PlatformNA::handleTouchscreen(AInputEvent *event)
+{
+    int action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
+
+    if (action == AMOTION_EVENT_ACTION_DOWN || action == AMOTION_EVENT_ACTION_POINTER_DOWN)
+    {
+        int pointerIndex = (AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK) >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
+        int x = AMotionEvent_getX(event, pointerIndex);
+        int y = AMotionEvent_getY(event, pointerIndex);
+        int slot = AMotionEvent_getPointerId(event, pointerIndex);
+        _pointer[slot].down = true;
+        _pointer[slot].x = x;
+        _pointer[slot].y = y;
+        pointerDown(slot, x, y);
+        //were_message("DOWN %d %d %d\n", slot, x, y);
+        return 1;
+    }
+    else if (action == AMOTION_EVENT_ACTION_UP || action == AMOTION_EVENT_ACTION_POINTER_UP)
+    {
+        int pointerIndex = (AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK) >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
+        int x = AMotionEvent_getX(event, pointerIndex);
+        int y = AMotionEvent_getY(event, pointerIndex);
+        int slot = AMotionEvent_getPointerId(event, pointerIndex);
+        _pointer[slot].down = false;
+        _pointer[slot].x = x;
+        _pointer[slot].y = y;
+        pointerUp(slot, x, y);
+        //were_message("UP %d %d %d\n", slot, x, y);
+        return 1;
+    }
+    else if (action == AMOTION_EVENT_ACTION_MOVE)
+    {
+        int pointerCount = AMotionEvent_getPointerCount(event);
+        for(int i = 0; i < pointerCount; ++i)
+        {
+            int x = AMotionEvent_getX(event, i);
+            int y = AMotionEvent_getY(event, i);
+            int slot = AMotionEvent_getPointerId(event, i);
+
+            if (x != _pointer[slot].x || y != _pointer[slot].y)
+            {
+                _pointer[slot].x = x;
+                _pointer[slot].y = y;
+                pointerMotion(slot, x, y);
+                //were_message("MOVE %d %d %d\n", slot, x, y);
+            }
+        }
+        return 1;
+    }
+
+    return 0;
+}
+
+int PlatformNA::handleMouse(AInputEvent *event)
+{
+    int action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
+    were_message("MOUSE %d\n", action);
+
+    if (action == AMOTION_EVENT_ACTION_MOVE || action == AMOTION_EVENT_ACTION_HOVER_MOVE)
+    {
+        int x = AMotionEvent_getX(event, 0);
+        int y = AMotionEvent_getY(event, 0);
+        cursorMotion(x, y);
+        were_message("CURSOR MOTION %d %d\n", x, y);
+        return 1;
+    }
+    else if (action == AMOTION_EVENT_ACTION_BUTTON_PRESS || action == AMOTION_EVENT_ACTION_BUTTON_RELEASE)
+    {
+        int x = AMotionEvent_getX(event, 0);
+        int y = AMotionEvent_getY(event, 0);
+        int buttons = AMotionEvent_getButtonState(event);
+
+        for (int button = 0; button < 3; ++button)
+        {
+            int oldState = (buttons_ >> button) & 1;
+            int newState = (buttons >> button) & 1;
+
+            if (!oldState && newState)
+            {
+                buttonPress(button, x, y);
+                were_message("BUTTON PRESS %d\n", button);
+            }
+            else if (oldState && !newState)
+            {
+                buttonRelease(button, x, y);
+                were_message("BUTTON RELEASE %d\n", button);
+            }
+        }
+
+        buttons_ = buttons;
+
+        return 1;
+    }
+
+    return 0;
+}
+
+int PlatformNA::handleKey(AInputEvent *event)
+{
+    int action = AKeyEvent_getAction(event);
+    int code = AKeyEvent_getKeyCode(event);
+
+    code = sion_keymap[code];
+
+    if (code == 0)
+        return 0;
+
+    if (action == AKEY_EVENT_ACTION_DOWN)
+    {
+        keyDown(code);
+        //were_message("KEY DOWN %d\n", code);
+        return 1;
+    }
+    else if (action == AKEY_EVENT_ACTION_UP)
+    {
+        keyUp(code);
+        //were_message("KEY UP %d\n", code);
+        return 1;
+    }
+
+    return 0;
+}
+
 int PlatformNA::handleInput(struct android_app *app, AInputEvent *event)
 {
     PlatformNA *platform = reinterpret_cast<PlatformNA *>(app->userData);
 
-    if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION)
+    int type = AInputEvent_getType(event);
+
+    if (type == AINPUT_EVENT_TYPE_MOTION)
     {
-        int action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
+        int source = AInputEvent_getSource(event);
 
-        if (action == AMOTION_EVENT_ACTION_DOWN || action == AMOTION_EVENT_ACTION_POINTER_DOWN)
-        {
-            int pointerIndex = (AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK) >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
-            int x = AMotionEvent_getX(event, pointerIndex);
-            int y = AMotionEvent_getY(event, pointerIndex);
-            int slot = AMotionEvent_getPointerId(event, pointerIndex);
-            platform->_pointer[slot].down = true;
-            platform->_pointer[slot].x = x;
-            platform->_pointer[slot].y = y;
-            platform->pointerDown(slot, x, y);
-            //were_message("DOWN %d %d %d\n", slot, x, y);
-        }
-        else if (action == AMOTION_EVENT_ACTION_UP || action == AMOTION_EVENT_ACTION_POINTER_UP)
-        {
-            int pointerIndex = (AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK) >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
-            int x = AMotionEvent_getX(event, pointerIndex);
-            int y = AMotionEvent_getY(event, pointerIndex);
-            int slot = AMotionEvent_getPointerId(event, pointerIndex);
-            platform->_pointer[slot].down = false;
-            platform->_pointer[slot].x = x;
-            platform->_pointer[slot].y = y;
-            platform->pointerUp(slot, x, y);
-            //were_message("UP %d %d %d\n", slot, x, y);
-        }
-        else if (action == AMOTION_EVENT_ACTION_MOVE)
-        {
-            int pointerCount = AMotionEvent_getPointerCount(event);
-            for(int i = 0; i < pointerCount; ++i)
-            {
-                int x = AMotionEvent_getX(event, i);
-                int y = AMotionEvent_getY(event, i);
-                int slot = AMotionEvent_getPointerId(event, i);
-
-                if (x != platform->_pointer[slot].x || y != platform->_pointer[slot].y)
-                {
-                    platform->_pointer[slot].x = x;
-                    platform->_pointer[slot].y = y;
-                    platform->pointerMotion(slot, x, y);
-                    //were_message("MOVE %d %d %d\n", slot, x, y);
-                }
-            }
-        }
-
-        return 1;
+        if (source == AINPUT_SOURCE_MOUSE)
+            return platform->handleMouse(event);
+        else
+            return platform->handleTouchscreen(event);
     }
-    else if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_KEY)
+    else if (type == AINPUT_EVENT_TYPE_KEY)
     {
-        int action = AKeyEvent_getAction(event);
-        int code = AKeyEvent_getKeyCode(event);
-        //int code = KeyEvent_getScanCode(event);
-
-        //were_message("KEY %d\n", code);
-        
-        code = sion_keymap[code];
-
-        if (code == 0)
-            return 0;
-
-        if (action == AKEY_EVENT_ACTION_DOWN)
-        {
-            platform->keyDown(code);
-        }
-        else if (action == AKEY_EVENT_ACTION_UP)
-        {
-            platform->keyUp(code);
-        }
-
-        return 1;
+        return platform->handleKey(event);
     }
 
     return 0;
