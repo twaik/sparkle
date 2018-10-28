@@ -434,17 +434,20 @@ EvdevOpenDevice(InputInfoPtr pInfo)
 {
     EvdevPtr pEvdev = pInfo->private;
 
-    pEvdev->sparkle = sparklei_c_create(pEvdev->compositor, pEvdev->surface_name);
-    SetNotifyFd(sparklei_c_fd(pEvdev->sparkle), handle_event, X_NOTIFY_READ, pInfo);
+    if (pEvdev->sparkle == NULL)
+    {
+        pEvdev->sparkle = sparklei_c_create(pEvdev->compositor, pEvdev->surface_name);
+        SetNotifyFd(sparklei_c_fd(pEvdev->sparkle), handle_event, X_NOTIFY_READ, pInfo);
 
-    sparklei_c_set_pointer_down_cb(pEvdev->sparkle, SparkleiPointerDown, pInfo);
-    sparklei_c_set_pointer_up_cb(pEvdev->sparkle, SparkleiPointerUp, pInfo);
-    sparklei_c_set_pointer_motion_cb(pEvdev->sparkle, SparkleiPointerMotion, pInfo);
-    sparklei_c_set_key_down_cb(pEvdev->sparkle, SparkleiKeyDown, pInfo);
-    sparklei_c_set_key_up_cb(pEvdev->sparkle, SparkleiKeyUp, pInfo);
-    sparklei_c_set_button_press_cb(pEvdev->sparkle, SparkleiButtonPress, pInfo);
-    sparklei_c_set_button_release_cb(pEvdev->sparkle, SparkleiButtonRelease, pInfo);
-    sparklei_c_set_cursor_motion_cb(pEvdev->sparkle, SparkleiCursorMotion, pInfo);
+        sparklei_c_set_pointer_down_cb(pEvdev->sparkle, SparkleiPointerDown, pInfo);
+        sparklei_c_set_pointer_up_cb(pEvdev->sparkle, SparkleiPointerUp, pInfo);
+        sparklei_c_set_pointer_motion_cb(pEvdev->sparkle, SparkleiPointerMotion, pInfo);
+        sparklei_c_set_key_down_cb(pEvdev->sparkle, SparkleiKeyDown, pInfo);
+        sparklei_c_set_key_up_cb(pEvdev->sparkle, SparkleiKeyUp, pInfo);
+        sparklei_c_set_button_press_cb(pEvdev->sparkle, SparkleiButtonPress, pInfo);
+        sparklei_c_set_button_release_cb(pEvdev->sparkle, SparkleiButtonRelease, pInfo);
+        sparklei_c_set_cursor_motion_cb(pEvdev->sparkle, SparkleiCursorMotion, pInfo);
+    }
 
     return Success;
 }

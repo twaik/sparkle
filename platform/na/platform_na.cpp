@@ -160,14 +160,14 @@ int PlatformNA::handleTouchscreen(AInputEvent *event)
 int PlatformNA::handleMouse(AInputEvent *event)
 {
     int action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
-    were_message("MOUSE %d\n", action);
+    //were_message("MOUSE %d\n", action);
 
     if (action == AMOTION_EVENT_ACTION_MOVE || action == AMOTION_EVENT_ACTION_HOVER_MOVE)
     {
         int x = AMotionEvent_getX(event, 0);
         int y = AMotionEvent_getY(event, 0);
         cursorMotion(x, y);
-        were_message("CURSOR MOTION %d %d\n", x, y);
+        //were_message("CURSOR MOTION %d %d\n", x, y);
         return 1;
     }
     else if (action == AMOTION_EVENT_ACTION_BUTTON_PRESS || action == AMOTION_EVENT_ACTION_BUTTON_RELEASE)
@@ -183,13 +183,13 @@ int PlatformNA::handleMouse(AInputEvent *event)
 
             if (!oldState && newState)
             {
-                buttonPress(button, x, y);
-                were_message("BUTTON PRESS %d\n", button);
+                buttonPress(button + 1, x, y);
+                //were_message("BUTTON PRESS %d\n", button);
             }
             else if (oldState && !newState)
             {
-                buttonRelease(button, x, y);
-                were_message("BUTTON RELEASE %d\n", button);
+                buttonRelease(button + 1, x, y);
+                //were_message("BUTTON RELEASE %d\n", button);
             }
         }
 
