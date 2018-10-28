@@ -52,9 +52,9 @@
 #define ABS_MT_TRACKING_ID 0x39
 #endif
 
-#ifndef XI86_SERVER_FD
-#define XI86_SERVER_FD 0x20
-#endif
+//#ifndef XI86_SERVER_FD
+//#define XI86_SERVER_FD 0x20
+//#endif
 
 
 static int EvdevOn(DeviceIntPtr);
@@ -65,6 +65,15 @@ static void EvdevCloseDevice(InputInfoPtr pInfo);
 
 static void EvdevInitAxesLabels(EvdevPtr pEvdev, int mode, int natoms, Atom *atoms);
 static void EvdevInitButtonLabels(EvdevPtr pEvdev, int natoms, Atom *atoms);
+
+static void handle_event(int fd, int ready, void *data)
+{
+    InputInfoPtr pInfo = (InputInfoPtr)data;
+    EvdevPtr pEvdev = pInfo->private;
+
+    if (ready)
+        sparklei_c_process(pEvdev->sparkle);
+}
 
 static int EvdevSwitchMode(ClientPtr client, DeviceIntPtr device, int mode)
 {
@@ -83,12 +92,6 @@ EvdevFreeMasks(EvdevPtr pEvdev)
 static void
 EvdevReadInput(InputInfoPtr pInfo)
 {
-    EvdevPtr pEvdev = pInfo->private;
-
-    sparklei_c_process(pEvdev->sparkle); /* TODO */
-
-    //if (rc == -ENODEV) /* May happen after resume */
-    //    xf86RemoveEnabledDevice(pInfo);
 }
 
 static void
@@ -272,17 +275,12 @@ EvdevOn(DeviceIntPtr device)
     pInfo = device->public.devicePrivate;
     //pEvdev = pInfo->private;
 
-
-    /* after PreInit fd is still open */
     rc = EvdevOpenDevice(pInfo);
     if (rc != Success)
         return rc;
 
-    xf86FlushInput(pInfo->fd);
     xf86AddEnabledDevice(pInfo);
     device->public.on = TRUE;
-
-    //pEvdev->timer = TimerSet(pEvdev->timer, 0, 1000, EvdevTimeout, pInfo); //FIXME
 
     return Success;
 }
@@ -298,31 +296,26 @@ EvdevProc(DeviceIntPtr device, int what)
 
     switch (what)
     {
-    case DEVICE_INIT:
-	return EvdevInit(device);
+        case DEVICE_INIT:
+            return EvdevInit(device);
 
-    case DEVICE_ON:
-        return EvdevOn(device);
+        case DEVICE_ON:
+            return EvdevOn(device);
 
-    case DEVICE_OFF:
-        if (pInfo->fd != -1)
-        {
-            //TimerCancel(pEvdev->timer);
-            //TimerFree(pEvdev->timer);
+        case DEVICE_OFF:
             xf86RemoveEnabledDevice(pInfo);
             EvdevCloseDevice(pInfo);
-        }
-	    device->public.on = FALSE;
-	break;
+            device->public.on = FALSE;
+            break;
 
-    case DEVICE_CLOSE:
-	xf86IDrvMsg(pInfo, X_INFO, "Close\n");
-        EvdevCloseDevice(pInfo);
-        EvdevFreeMasks(pEvdev);
-	break;
+        case DEVICE_CLOSE:
+            xf86IDrvMsg(pInfo, X_INFO, "Close\n");
+                EvdevCloseDevice(pInfo);
+                EvdevFreeMasks(pEvdev);
+            break;
 
-    default:
-        return BadValue;
+        default:
+            return BadValue;
     }
 
     return Success;
@@ -418,43 +411,32 @@ EvdevOpenDevice(InputInfoPtr pInfo)
 {
     EvdevPtr pEvdev = pInfo->private;
 
-    if (!(pInfo->flags & XI86_SERVER_FD) && pInfo->fd < 0)
-    {
-        pEvdev->sparkle = sparklei_c_create(pEvdev->compositor, pEvdev->surface_name);
-        pInfo->fd = sparklei_c_fd(pEvdev->sparkle);
+    pEvdev->sparkle = sparklei_c_create(pEvdev->compositor, pEvdev->surface_name);
+    SetNotifyFd(sparklei_c_fd(pEvdev->sparkle), handle_event, X_NOTIFY_READ, pInfo);
 
-        sparklei_c_set_pointer_down_cb(pEvdev->sparkle, SparkleiPointerDown, pInfo);
-        sparklei_c_set_pointer_up_cb(pEvdev->sparkle, SparkleiPointerUp, pInfo);
-        sparklei_c_set_pointer_motion_cb(pEvdev->sparkle, SparkleiPointerMotion, pInfo);
-        sparklei_c_set_key_down_cb(pEvdev->sparkle, SparkleiKeyDown, pInfo);
-        sparklei_c_set_key_up_cb(pEvdev->sparkle, SparkleiKeyUp, pInfo);
-    }
-
-    if (pInfo->fd < 0) {
-        xf86IDrvMsg(pInfo, X_ERROR, "Unable to open device\n");
-        return BadValue;
-    }
+    sparklei_c_set_pointer_down_cb(pEvdev->sparkle, SparkleiPointerDown, pInfo);
+    sparklei_c_set_pointer_up_cb(pEvdev->sparkle, SparkleiPointerUp, pInfo);
+    sparklei_c_set_pointer_motion_cb(pEvdev->sparkle, SparkleiPointerMotion, pInfo);
+    sparklei_c_set_key_down_cb(pEvdev->sparkle, SparkleiKeyDown, pInfo);
+    sparklei_c_set_key_up_cb(pEvdev->sparkle, SparkleiKeyUp, pInfo);
 
     return Success;
 }
 
-static void
-EvdevCloseDevice(InputInfoPtr pInfo)
+static void EvdevCloseDevice(InputInfoPtr pInfo)
 {
     EvdevPtr pEvdev = pInfo->private;
 
-    if (!(pInfo->flags & XI86_SERVER_FD) && pInfo->fd >= 0)
+    if (pEvdev->sparkle != NULL)
     {
+        RemoveNotifyFd(sparklei_c_fd(pEvdev->sparkle));
         sparklei_c_destroy(pEvdev->sparkle);
-        pInfo->fd = -1;
+        pEvdev->sparkle = NULL;
     }
 }
 
-static void
-EvdevUnInit(InputDriverPtr drv, InputInfoPtr pInfo, int flags)
+static void EvdevUnInit(InputDriverPtr drv, InputInfoPtr pInfo, int flags)
 {
-    //EvdevPtr pEvdev = pInfo ? pInfo->private : NULL;
-
     xf86DeleteInput(pInfo, flags);
 }
 

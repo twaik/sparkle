@@ -12,6 +12,8 @@
 #define IPC_STAT 2
 #define IPC_INFO 3
 
+#define IPC_PRIVATE ((key_t) 0)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

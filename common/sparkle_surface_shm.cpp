@@ -11,10 +11,12 @@
 
 SparkleSurfaceShm::~SparkleSurfaceShm()
 {
-    shmdt_(data_);
+    if (shmdt_(data_) == -1)
+        were_debug("[%p][%s] shmdt failed.\n", this, __PRETTY_FUNCTION__);
 
     if (owner_)
-        shmctl_(shmId_, IPC_RMID, NULL);
+        if (shmctl_(shmId_, IPC_RMID, NULL) == -1)
+            were_debug("[%p][%s] shmctl failed.\n", this, __PRETTY_FUNCTION__);
 }
 
 SparkleSurfaceShm::SparkleSurfaceShm(key_t key, int width, int height, bool owner)
