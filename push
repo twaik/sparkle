@@ -4,5 +4,6 @@ set -e
 
 cd ..
 tar -czf /tmp/sparkle.tar.gz ./sparkle
-adb push /tmp/sparkle.tar.gz /data/local/tmp/fedora/home/sion/
+adb root
+adb push /tmp/sparkle.tar.gz /data/local/tmp/debian/home/sion/
 

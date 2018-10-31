@@ -2,7 +2,6 @@
 #define SPARKLE_SURFACE_SHM_H
 
 #include "were-graphics/were_surface.h"
-#include <string>
 
 /* ================================================================================================================== */
 
@@ -19,7 +18,6 @@ public:
     int stride() {return width_;}
 
 private:
-
     int width_;
     int height_;
     bool owner_;
@@ -31,4 +29,4 @@ private:
 
 /* ================================================================================================================== */
 
-#endif /* SPARKLE_SURFACE_SHM */
+#endif /* SPARKLE_SURFACE_SHM_H */

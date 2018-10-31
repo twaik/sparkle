@@ -38,6 +38,7 @@ add_library(sparkle SHARED
             ${SPARKLE_ROOT}/were/src/were_exception.cpp
             ${SPARKLE_ROOT}/common/sparkle_protocol.cpp
             ${SPARKLE_ROOT}/shm/shm.c
+            ${SPARKLE_ROOT}/common/sparkle_sound_buffer.cpp
 )
 
 target_include_directories(sparkle PRIVATE

@@ -1,23 +1,19 @@
 #include "sound_sles.h"
 #include "were/were_event_loop.h"
 #include "common/sparkle_connection.h"
-#include "common/sparkle_server.h"
 #include "common/sparkle_protocol.h"
+#include "common/sparkle_server.h"
+#include "common/sparkle_sound_buffer.h"
 #include <SLES/OpenSLES.h>
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 SoundSLES::~SoundSLES()
 {
-    state = SL_PLAYSTATE_STOPPED;
-    SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
-    checkResult(result);
-    result = (*playerBufferqueue)->Clear(playerBufferqueue);
-    checkResult(result);
-    clearQueue();
+    stop();
 
     (*playerObject)->Destroy(playerObject);
     (*outputmixObject)->Destroy(outputmixObject);
@@ -31,7 +27,10 @@ SoundSLES::SoundSLES(WereEventLoop *loop, const std::string &file)
     loop_ = loop;
 
     server_ = new SparkleServer(loop_, file);
+    server_->signal_connected.connect(WereSimpleQueuer(loop, &SoundSLES::connection, this));
+    server_->signal_disconnected.connect(WereSimpleQueuer(loop, &SoundSLES::disconnection, this));
     server_->signal_packet.connect(WereSimpleQueuer(loop, &SoundSLES::packet, this));
+    buffer_ = nullptr;
 
     SLresult result;
 
@@ -90,46 +89,79 @@ SoundSLES::SoundSLES(WereEventLoop *loop, const std::string &file)
     result = (*playerBufferqueue)->RegisterCallback(playerBufferqueue, callback, this);
     checkResult(result);
 
-    busy = false;
+#if 1
+    state = SL_PLAYSTATE_STOPPED;
+    result = (*playerPlay)->SetPlayState(playerPlay, state);
+    checkResult(result);
+#endif
 }
 
-void SoundSLES::checkQueue()
+void SoundSLES::start()
 {
-    if (busy)
+    if (state == SL_PLAYSTATE_PLAYING)
         return;
 
-    if (queue_.size() == 0)
-        return;
-
-    uint32_t operation;
-    SoundData r1;
-    WereSocketUnixMessageStream stream(queue_.front().get());
-    stream >> operation;
-    stream >> r1;
-
-    SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, r1.data, r1.size);
+    were_debug("Starting playback...\n");
+    state = SL_PLAYSTATE_PLAYING;
+    SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
     checkResult(result);
 
-    busy = true;
+    queue();
 }
 
-void SoundSLES::clearQueue()
+void SoundSLES::stop()
 {
-    queue_.clear();
+    if (state == SL_PLAYSTATE_STOPPED)
+        return;
+
+    were_debug("Stopping playback...\n");
+    state = SL_PLAYSTATE_STOPPED;
+    SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
+    checkResult(result);
+    result = (*playerBufferqueue)->Clear(playerBufferqueue);
+    checkResult(result);
+}
+
+void SoundSLES::queue()
+{
+    if (buffer_ == nullptr)
+        return;
+
+    //were_debug("rpos %d\n", *buffer_->readPosition());
+
+    void *data;
+    int r_size;
+    buffer_->get(&data, 16384 * 4, &r_size);
+
+    SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, data, r_size);
+    checkResult(result);
 }
 
 void SoundSLES::callback(BufferQueueItf playerBufferqueue, void *data)
 {
     SoundSLES *sound = reinterpret_cast<SoundSLES *>(data);
 
-    sound->queue_.pop_front();
-
-    sound->busy = false;
-
-    sound->checkQueue();
+    sound->queue();
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
+
+void SoundSLES::connection(std::shared_ptr <SparkleConnection> client)
+{
+    were_debug("Sound: connection.\n");
+    stop();
+}
+
+void SoundSLES::disconnection(std::shared_ptr <SparkleConnection> client)
+{
+    were_debug("Sound: disconnection.\n");
+    stop();
+    if (buffer_ != nullptr)
+    {
+        delete buffer_;
+        buffer_ = nullptr;
+    }
+}
 
 void SoundSLES::packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message)
 {
@@ -138,34 +170,38 @@ void SoundSLES::packet(std::shared_ptr<SparkleConnection> client, std::shared_pt
     WereSocketUnixMessageStream stream(message.get());
     stream >> operation;
 
-    if (operation == SoundDataCode)
+    if (operation == RegisterSoundBufferRequestCode)
     {
-        queue_.push_back(message);
-        checkQueue();
+        stop();
+        if (buffer_ != nullptr)
+        {
+            delete buffer_;
+            buffer_ = nullptr;
+        }
+
+        RegisterSoundBufferRequest r1;
+        stream >> r1;
+
+        buffer_ = new SparkleSoundBuffer(r1.key, r1.size, false);
+    }
+    else if (operation == UnregisterSoundBufferRequestCode)
+    {
+        stop();
+        if (buffer_ != nullptr)
+        {
+            delete buffer_;
+            buffer_ = nullptr;
+        }
     }
     else if (operation == SoundStartCode)
-    {
-        were_debug("Starting playback...");
-        state = SL_PLAYSTATE_PLAYING;
-        SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
-        checkResult(result);
-        checkQueue();
-    }
+        start();
     else if (operation == SoundStopCode)
-    {
-        were_debug("Stopping playback...");
-        state = SL_PLAYSTATE_STOPPED;
-        SLresult result = (*playerPlay)->SetPlayState(playerPlay, state);
-        checkResult(result);
-        result = (*playerBufferqueue)->Clear(playerBufferqueue);
-        checkResult(result);
-        clearQueue();
-        busy = 0;
-    }
+        stop();
 }
 
-//==================================================================================================
+/* ================================================================================================================== */
 
+#if 0
 void SoundSLES::beep()
 {
     const int SINE_FRAMES = 44100 / 20;
@@ -197,7 +233,6 @@ void SoundSLES::beep()
     SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, buffer, size);
     checkResult(result);
 }
+#endif
 
-//==================================================================================================
-
-
+/* ================================================================================================================== */

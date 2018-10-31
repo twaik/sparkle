@@ -13,7 +13,7 @@
 
 #include <list>
 #include <vector>
-#include <memory> //FIXME
+//#include <memory> //FIXME
 
 //==================================================================================================
 
@@ -34,12 +34,13 @@
 #define checkResult(r) do { if ((r) != SL_RESULT_SUCCESS) were_error("error %d at %s:%d\n", \
     (int) r, __FILE__, __LINE__); } while (0)
 
-//==================================================================================================
+/* ================================================================================================================== */
 
 class WereEventLoop;
 class SparkleConnection;
 class SparkleServer;
 class WereSocketUnixMessage;
+class SparkleSoundBuffer;
 
 class SoundSLES
 {
@@ -47,21 +48,20 @@ public:
     ~SoundSLES();
     SoundSLES(WereEventLoop *loop, const std::string &file);
 
-    void beep();
-
 private:
-    void connection();
-    void disconnection();
-    void data();
-    void checkQueue();
-    void clearQueue();
+    void start();
+    void stop();
+    void queue();
     static void callback(BufferQueueItf playerBufferqueue, void *data);
+
+    void connection(std::shared_ptr <SparkleConnection> client);
+    void disconnection(std::shared_ptr <SparkleConnection> client);
+    void packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message);
 
 private:
     WereEventLoop *loop_;
     SparkleServer *server_;
-
-    void packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message);
+    SparkleSoundBuffer *buffer_;
 
     SLObjectItf engineObject;
     SLEngineItf engineEngine;
@@ -75,12 +75,8 @@ private:
     SLPlayItf playerPlay;
     BufferQueueItf playerBufferqueue;
     SLuint32 state;
-
-    std::list< std::shared_ptr<WereSocketUnixMessage> > queue_;
-    bool busy;
 };
 
-//==================================================================================================
+/* ================================================================================================================== */
 
-#endif //SOUND_SLES_H
-
+#endif /* SOUND_SLES_H */

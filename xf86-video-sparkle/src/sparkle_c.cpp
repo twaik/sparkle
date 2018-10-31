@@ -1,8 +1,8 @@
 #include "sparkle_c.h"
 #include "were/were_event_loop.h"
 #include "common/sparkle_connection.h"
-#include "common/sparkle_surface_shm.h"
 #include "common/sparkle_protocol.h"
+#include "common/sparkle_surface_shm.h"
 #include <unistd.h>
 #include <cstring>
 

@@ -17,3 +17,7 @@ cp configs/.asoundrc ~/
 # Running
 sudo Xorg -config xorg-sparkle.conf
 
+# Pulseaudio
+comment "load-module module-udev-detect"
+comment "load-module module-detect"
+uncomment "load-module module-alsa-sink"

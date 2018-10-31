@@ -33,6 +33,7 @@ public:
 
 werethings:
     WereSignal<void (std::shared_ptr<SparkleConnection> client)> signal_connected;
+    WereSignal<void (std::shared_ptr<SparkleConnection> client)> signal_disconnected;
     WereSignal<void (std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message)> signal_packet;
 
 private:

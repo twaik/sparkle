@@ -29,9 +29,9 @@ SparkleSurfaceShm::SparkleSurfaceShm(key_t key, int width, int height, bool owne
     data_ = nullptr;
 
     if (owner_)
-        shmId_ = shmget_(key_, width * height * 4, IPC_CREAT | 0666);
+        shmId_ = shmget_(key_, width_ * height_ * 4, IPC_CREAT | 0666);
     else
-        shmId_ = shmget_(key_, width * height * 4, 0666);
+        shmId_ = shmget_(key_, width_ * height_ * 4, 0666);
 
     if (shmId_ == -1)
         throw WereException("[%p][%s] shmget failed.", this, __PRETTY_FUNCTION__);

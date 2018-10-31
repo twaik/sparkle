@@ -48,6 +48,8 @@ void SparkleServer::handleConnection()
 
 void SparkleServer::handleDisconnection(std::shared_ptr<SparkleConnection> client)
 {
+    signal_disconnected(client);
+
     _clients.erase(client);
 }
 

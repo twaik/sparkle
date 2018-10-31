@@ -282,17 +282,18 @@ WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, Cur
 
 /* ================================================================================================================== */
 
-WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SoundData &data)
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const RegisterSoundBufferRequest &data)
 {
+    stream << RegisterSoundBufferRequestCode;
+    stream << data.key;
     stream << data.size;
-    stream.write(data.data, data.size);
     return stream;
 }
 
-WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, SoundData &data)
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, RegisterSoundBufferRequest &data)
 {
+    stream >> data.key;
     stream >> data.size;
-    data.data = stream.get(data.size);
     return stream;
 }
 

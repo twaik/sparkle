@@ -169,17 +169,18 @@ WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, con
 WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, CursorMotionNotification &data);
 const uint32_t CursorMotionNotificationCode = 0x28;
 
-const uint32_t SoundStartCode = 0x31;
-const uint32_t SoundStopCode = 0x32;
-
-struct SoundData
+struct RegisterSoundBufferRequest
 {
-    uint32_t size;
-    const unsigned char *data;
+    key_t key;
+    int32_t size;
 };
-WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const SoundData &data);
-WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, SoundData &data);
-const uint32_t SoundDataCode = 0x33;
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const RegisterSoundBufferRequest &data);
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, RegisterSoundBufferRequest &data);
+const uint32_t RegisterSoundBufferRequestCode = 0x31;
+
+const uint32_t UnregisterSoundBufferRequestCode = 0x32;
+const uint32_t SoundStartCode = 0x33;
+const uint32_t SoundStopCode = 0x34;
 
 /* ================================================================================================================== */
 
