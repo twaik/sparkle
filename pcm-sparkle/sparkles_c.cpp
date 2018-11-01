@@ -7,12 +7,6 @@
 
 /* ================================================================================================================== */
 
-const uint64_t periodSize = 16384;
-const uint64_t bufferSize = 65536;
-const uint64_t periodTime = periodSize * 1000000000ULL / 44100;
-
-/* ================================================================================================================== */
-
 class SparklesC
 {
 public:
@@ -61,7 +55,7 @@ SparklesC::SparklesC(const std::string &server)
 
     frames_ = 0;
 
-    buffer_ = new SparkleSoundBuffer(4041, bufferSize * 4, true);
+    buffer_ = new SparkleSoundBuffer(4041, 65536 * 4, true);
 
     connection_ = new SparkleConnection(loop_, server);
     connection_->signal_connected.connect(WereSimpleQueuer(loop_, &SparklesC::handleConnection, this));
@@ -74,7 +68,7 @@ SparklesC::SparklesC(const std::string &server)
 
 int SparklesC::start()
 {
-    clock_gettime(CLOCK_MONOTONIC, &startTime_);
+    buffer_->start();
 
     timer_->start(100, false);
 
@@ -87,11 +81,13 @@ int SparklesC::start()
 
 int SparklesC::stop()
 {
+    playing_ = false;
+
     connection_->send(SoundStopCode);
 
     timer_->stop();
 
-    playing_ = false;
+    buffer_->stop();
 
     return 0;
 }
@@ -109,23 +105,11 @@ int SparklesC::pointer()
 {
     loop_->processEvents(); /* Hack to make mplayer work */
 
-    return frames_;
+    return buffer_->readPosition() / 4;
 }
 
 void SparklesC::timeout()
 {
-    timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-
-    uint64_t elapsed = 0;
-    elapsed += 1000000000ULL * (now.tv_sec - startTime_.tv_sec);
-    elapsed += now.tv_nsec - startTime_.tv_nsec;
-
-    elapsed /= periodTime;
-
-    frames_ = (elapsed * periodSize) % bufferSize;
-
-    *buffer_->readPosition() = frames_ * 4;
 }
 
 void SparklesC::handleConnection()

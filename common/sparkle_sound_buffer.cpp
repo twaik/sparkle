@@ -10,10 +10,16 @@
 
 /* ================================================================================================================== */
 
+const uint64_t periodSize = 16384;
+const uint64_t bufferSize = 65536;
+const uint64_t periodTime = periodSize * 1000000000ULL / 44100;
+
+/* ================================================================================================================== */
+
 struct SparkleSoundBufferHeader
 {
-    int writePosition;
-    int readPosition;
+    uint64_t sec;
+    uint64_t nsec;
     unsigned char data[0];
 };
 
@@ -36,6 +42,7 @@ SparkleSoundBuffer::SparkleSoundBuffer(key_t key, int size, bool owner)
     key_ = key;
     shmId_ = -1;
     data_ = nullptr;
+    writePosition_ = 0;
 
     if (owner_)
         shmId_ = shmget_(key_, sizeof(SparkleSoundBufferHeader) + size_, IPC_CREAT | 0666);
@@ -48,10 +55,6 @@ SparkleSoundBuffer::SparkleSoundBuffer(key_t key, int size, bool owner)
     data_ = reinterpret_cast<unsigned char *>(shmat_(shmId_, NULL, 0));
     if (data_ == reinterpret_cast<unsigned char *>(-1))
         throw WereException("[%p][%s] shmat failed.", this, __PRETTY_FUNCTION__);
-
-    SparkleSoundBufferHeader *header = reinterpret_cast<SparkleSoundBufferHeader *>(data_);
-    header->writePosition = 0;
-    header->readPosition = 0;
 }
 
 /* ================================================================================================================== */
@@ -63,39 +66,60 @@ unsigned char *SparkleSoundBuffer::data()
     return header->data;
 }
 
-int *SparkleSoundBuffer::writePosition()
-{
-    SparkleSoundBufferHeader *header = reinterpret_cast<SparkleSoundBufferHeader *>(data_);
-
-    return &header->writePosition;
-}
-
-int *SparkleSoundBuffer::readPosition()
-{
-    SparkleSoundBufferHeader *header = reinterpret_cast<SparkleSoundBufferHeader *>(data_);
-
-    return &header->readPosition;
-}
-
 void SparkleSoundBuffer::write(const void *data, int size, int *r_size)
 {
-    int *pos = writePosition();
-    int max = size_ - *pos;
+    int max = size_ - writePosition_;
     if (size > max)
         size = max;
-    memcpy(this->data() + *pos, data, size);
-    *pos = (*pos + size) % size_;
+    memcpy(this->data() + writePosition_, data, size);
+    writePosition_ = (writePosition_ + size) % size_;
     *r_size = size;
 }
 
-void SparkleSoundBuffer::get(void **data, int size, int *r_size)
+void SparkleSoundBuffer::get(void **data, int size, int *r_size, bool forward)
 {
-    int *pos = readPosition();
-    int max = size_ - *pos;
+    int pos = readPosition(forward);
+    int max = size_ - pos;
     if (size > max)
         size = max;
-    *data = this->data() + *pos;
+    *data = this->data() + pos;
     *r_size = size;
+}
+
+void SparkleSoundBuffer::start()
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+
+    SparkleSoundBufferHeader *header = reinterpret_cast<SparkleSoundBufferHeader *>(data_);
+    header->sec = now.tv_sec;
+    header->nsec = now.tv_nsec;
+}
+
+void SparkleSoundBuffer::stop()
+{
+    writePosition_ = 0;
+}
+
+int SparkleSoundBuffer::readPosition(bool forward)
+{
+    timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+
+    SparkleSoundBufferHeader *header = reinterpret_cast<SparkleSoundBufferHeader *>(data_);
+
+    uint64_t elapsed = 0;
+    elapsed += 1000000000ULL * (now.tv_sec - header->sec);
+    elapsed += now.tv_nsec - header->nsec;
+
+    if (forward)
+        elapsed += periodTime - 1;
+
+    elapsed /= periodTime;
+
+    int frames = (elapsed * periodSize) % bufferSize;
+
+    return frames * 4;
 }
 
 /* ================================================================================================================== */

@@ -131,7 +131,7 @@ void SoundSLES::queue()
 
     void *data;
     int r_size;
-    buffer_->get(&data, 16384 * 4, &r_size);
+    buffer_->get(&data, 16384 * 4, &r_size, true);
 
     SLresult result = (*playerBufferqueue)->Enqueue(playerBufferqueue, data, r_size);
     checkResult(result);

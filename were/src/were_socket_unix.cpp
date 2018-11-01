@@ -99,40 +99,11 @@ WereSocketUnix::SocketState WereSocketUnix::state()
 
 /* ================================================================================================================== */
 
-static void show_events(uint32_t events)
-{
-#define SHOW_EVENT_IF(name)     \
-    if (events & name)          \
-    {                           \
-        were_debug(#name);      \
-        were_debug(" ");        \
-    }
-
-    were_debug("events: ");
-    SHOW_EVENT_IF(EPOLLIN);
-    SHOW_EVENT_IF(EPOLLPRI);
-    SHOW_EVENT_IF(EPOLLOUT);
-    SHOW_EVENT_IF(EPOLLRDNORM);
-    SHOW_EVENT_IF(EPOLLRDBAND);
-    SHOW_EVENT_IF(EPOLLWRNORM);
-    SHOW_EVENT_IF(EPOLLWRBAND);
-    SHOW_EVENT_IF(EPOLLMSG);
-    SHOW_EVENT_IF(EPOLLERR);
-    SHOW_EVENT_IF(EPOLLHUP);
-    SHOW_EVENT_IF(EPOLLRDHUP);
-    SHOW_EVENT_IF(EPOLLEXCLUSIVE);
-    SHOW_EVENT_IF(EPOLLWAKEUP);
-    SHOW_EVENT_IF(EPOLLONESHOT);
-    SHOW_EVENT_IF(EPOLLET);
-    were_debug("\n");
-}
-
 void WereSocketUnix::event(uint32_t events)
 {
     if (!(events == EPOLLIN || events == EPOLLOUT || events == (EPOLLIN | EPOLLOUT))) /* FIXME */
     {
         were_debug("[%p][%s] Unknown event type (%d), DISCONNECTING.\n", this, __PRETTY_FUNCTION__, events);
-        show_events(events);
         disconnect();
         return;
     }

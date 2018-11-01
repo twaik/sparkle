@@ -17,4 +17,16 @@
 
 #define werethings public
 
+inline void were_timestamp(timespec *ts)
+{
+    if (ts == nullptr)
+    {
+        timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        were_timestamp(&now);
+    }
+    else
+        were_message("[%ld.%.9ld] ", ts->tv_sec, ts->tv_nsec);
+}
+
 #endif /* WERE_H */
