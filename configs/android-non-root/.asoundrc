@@ -1,0 +1,5 @@
+pcm.!default
+{
+    type sparkle
+    server "/tmp/com.sion.sparkle/files/sparkle-sound.socket"
+}
