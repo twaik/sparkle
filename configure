@@ -1,0 +1,43 @@
+#!/bin/bash
+REPOROOT=$(dirname "$(realpath "$0")")
+
+cd ${REPOROOT}/were/
+./configure $@
+exitcode=$?
+if [ $exitcode -ne 0 ]; then
+    return $exitcode
+fi
+
+cd ${REPOROOT}/xf86-video-sparkle/
+./configure $@
+exitcode=$?
+if [ $exitcode -ne 0 ]; then
+    return $exitcode
+fi
+
+cd ${REPOROOT}/xf86-input-sparklei/
+./configure $@
+exitcode=$?
+if [ $exitcode -ne 0 ]; then
+    return $exitcode
+fi
+
+cat > ${REPOROOT}/Makefile <<EOF
+all:
+	cd were; make -j4;
+	cd xf86-video-sparkle; make -j4;
+	cd xf86-input-sparklei; make -j4;
+
+install:
+	cd were; make -j4 install;
+	cd xf86-video-sparkle; make -j4 install;
+	cd xf86-input-sparklei; make -j4 install;
+
+clean:
+	cd were; make clean;
+	cd xf86-video-sparkle; make clean;
+	cd xf86-input-sparklei; make clean;
+
+.PHONY: install clean
+.NOTPARALLEL:
+EOF

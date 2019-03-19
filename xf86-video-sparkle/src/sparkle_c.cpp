@@ -2,7 +2,7 @@
 #include "were/were_event_loop.h"
 #include "common/sparkle_connection.h"
 #include "common/sparkle_protocol.h"
-#include "common/sparkle_surface_shm.h"
+#include "common/sparkle_surface_ashmem.h"
 #include <unistd.h>
 #include <cstring>
 
@@ -37,7 +37,7 @@ private:
 private:
     WereEventLoop *loop_;
     SparkleConnection *connection_;
-    SparkleSurfaceShm *surface_;
+    SparkleSurfaceAshmem *surface_;
     std::string surfaceName_;
     std::string surfaceFile_;
     bool registered_;
@@ -56,7 +56,7 @@ SparkleC::SparkleC(const std::string &compositor, const std::string &surfaceName
 {
     loop_ = new WereEventLoop();
     connection_ = new SparkleConnection(loop_, compositor);
-    surface_ = new SparkleSurfaceShm(4040, 800, 600, true);
+    surface_ = new SparkleSurfaceAshmem(800, 600);
     surfaceName_ = surfaceName;
     surfaceFile_ = surfaceFile;
 
@@ -69,7 +69,7 @@ SparkleC::SparkleC(const std::string &compositor, const std::string &surfaceName
 
 void SparkleC::registerSurface()
 {
-    connection_->send(RegisterSurfaceShmRequest({surfaceName_, surface_->key(), surface_->width(), surface_->height()}));
+    connection_->send(RegisterSurfaceAshmemRequest({surfaceName_, surface_->fd(), surface_->width(), surface_->height()}));
     connection_->send(SetSurfacePositionRequest({surfaceName_, 0, 0, surface_->width(), surface_->height()}));
     registered_ = true;
 }
@@ -87,13 +87,13 @@ void SparkleC::resizeSurface(int width, int height)
     {
         unregisterSurface();
         delete surface_;
-        surface_ = new SparkleSurfaceShm(4040, width, height, true);
+        surface_ = new SparkleSurfaceAshmem(width, height);
         registerSurface();
     }
     else
     {
         delete surface_;
-        surface_ = new SparkleSurfaceShm(4040, width, height, true);
+        surface_ = new SparkleSurfaceAshmem(width, height);
     }
 }
 

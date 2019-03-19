@@ -12,7 +12,7 @@
 #include <algorithm>
 
 #include "common/utility.h"
-#include "common/sparkle_surface_shm.h"
+#include "common/sparkle_surface_ashmem.h"
 #include "common/sparkle_server.h"
 #include "common/sparkle_protocol.h"
 #include "common/sparkle_connection.h"
@@ -336,12 +336,12 @@ class CompositorGLSurfaceFile : public CompositorGLSurface
 {
 public:
     ~CompositorGLSurfaceFile();
-    CompositorGLSurfaceFile(const std::string &name, key_t key, int width, int height);
+    CompositorGLSurfaceFile(const std::string &name, int fd, int width, int height);
 
     bool updateTexture();
 
 private:
-    SparkleSurfaceShm *_surface;
+    SparkleSurfaceAshmem *_surface;
 };
 
 CompositorGLSurfaceFile::~CompositorGLSurfaceFile()
@@ -349,10 +349,10 @@ CompositorGLSurfaceFile::~CompositorGLSurfaceFile()
     delete _surface;
 }
 
-CompositorGLSurfaceFile::CompositorGLSurfaceFile(const std::string &name, key_t key, int width, int height) :
+CompositorGLSurfaceFile::CompositorGLSurfaceFile(const std::string &name, int fd, int width, int height) :
     CompositorGLSurface(name)
 {
-    _surface = new SparkleSurfaceShm(key, width, height, false);
+    _surface = new SparkleSurfaceAshmem(fd, width, height);
 }
 
 bool CompositorGLSurfaceFile::updateTexture()
@@ -424,7 +424,7 @@ private:
     void connection(std::shared_ptr <SparkleConnection> client);
     void packet(std::shared_ptr<SparkleConnection> client, std::shared_ptr<WereSocketUnixMessage> message);
 
-    void registerSurfaceFile(const std::string &name, key_t key, int width, int height);
+    void registerSurfaceFile(const std::string &name, int fd, int width, int height);
     void unregisterSurface(const std::string &name);
     void setSurfacePosition(const std::string &name, int x1, int y1, int x2, int y2);
     void setSurfaceStrata(const std::string &name, int strata);
@@ -596,7 +596,7 @@ void CompositorGL::draw()
     {
         _redraw = false;
 
-        glClearColor(0.15f, 0.35f, 0.55f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -797,11 +797,11 @@ void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared
     WereSocketUnixMessageStream stream(message.get());
     stream >> operation;
 
-    if (operation == RegisterSurfaceShmRequestCode)
+    if (operation == RegisterSurfaceAshmemRequestCode)
     {
-        RegisterSurfaceShmRequest r1;
+        RegisterSurfaceAshmemRequest r1;
         stream >> r1;
-        registerSurfaceFile(r1.name, r1.key, r1.width, r1.height);
+        registerSurfaceFile(r1.name, r1.fd, r1.width, r1.height);
     }
     else if (operation == UnregisterSurfaceRequestCode)
     {
@@ -835,11 +835,11 @@ void CompositorGL::packet(std::shared_ptr<SparkleConnection> client, std::shared
     }
 }
 
-void CompositorGL::registerSurfaceFile(const std::string &name, key_t key, int width, int height)
+void CompositorGL::registerSurfaceFile(const std::string &name, int fd, int width, int height)
 {
     unregisterSurface(name);
 
-    std::shared_ptr<CompositorGLSurface> surface(new CompositorGLSurfaceFile(name, key, width, height));
+    std::shared_ptr<CompositorGLSurface> surface(new CompositorGLSurfaceFile(name, fd, width, height));
     _surfaces.push_back(surface);
     std::sort (_surfaces.begin(), _surfaces.end(), sortFunction);
 

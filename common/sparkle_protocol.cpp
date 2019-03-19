@@ -3,6 +3,7 @@
 /* ================================================================================================================== */
 
 #if 0
+#if 0
 WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const RegisterSurfaceFdRequest &data)
 {
     stream << RegisterSurfaceFdRequestCode;
@@ -36,6 +37,25 @@ WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, Reg
 {
     stream >> data.name;
     stream >> data.key;
+    stream >> data.width;
+    stream >> data.height;
+    return stream;
+}
+#endif
+#else
+WereSocketUnixMessageStream &operator<<(WereSocketUnixMessageStream &stream, const RegisterSurfaceAshmemRequest &data)
+{
+    stream << RegisterSurfaceAshmemRequestCode;
+    stream << data.name;
+    stream.writeFD(data.fd);
+    stream << data.width;
+    stream << data.height;
+    return stream;
+}
+WereSocketUnixMessageStream &operator>>(WereSocketUnixMessageStream &stream, RegisterSurfaceAshmemRequest &data)
+{
+    stream >> data.name;
+    stream.readFD(&data.fd);
     stream >> data.width;
     stream >> data.height;
     return stream;

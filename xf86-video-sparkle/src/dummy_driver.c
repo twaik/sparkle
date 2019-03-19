@@ -745,7 +745,7 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
     //output->mm_width = 0;
     //output->mm_height = 0;
 #endif
-
+#if 0
     if (xf86LoadSubModule(pScrn, "fb") == NULL) {
 	RETURN;
     }
@@ -754,6 +754,7 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
 	if (!xf86LoadSubModule(pScrn, "ramdac"))
 	    RETURN;
     }
+#endif
 
     /* We have no contiguous physical fb in physical memory */
     pScrn->memPhysBase = 0;

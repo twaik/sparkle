@@ -29,7 +29,7 @@ AM_CFLAGS = $(XORG_CFLAGS)
 AM_CPPFLAGS = -I../../were/include -I../..
 
 sparkle_drv_la_LTLIBRARIES = sparkle_drv.la
-sparkle_drv_la_LDFLAGS = -module -avoid-version
+sparkle_drv_la_LDFLAGS = -module -avoid-version -lXFree86
 sparkle_drv_la_LIBADD = $(XORG_LIBS) ../../were/src/libwere.la
 sparkle_drv_ladir = @moduledir@/drivers
 
@@ -40,12 +40,10 @@ sparkle_drv_la_SOURCES = \
          dummy.h				\
          sparkle_c.cpp				\
          sparkle_c.h				\
-         ../../common/sparkle_surface_shm.cpp	\
-         ../../common/sparkle_surface_shm.h	\
+         ../../common/sparkle_surface_ashmem.cpp	\
+         ../../common/sparkle_surface_ashmem.h	\
          ../../common/sparkle_connection.cpp	\
          ../../common/sparkle_connection.h	\
          ../../common/sparkle_protocol.cpp	\
-         ../../common/sparkle_protocol.h	\
-         ../../shm/shm.c			\
-         ../../shm/shm.h
+         ../../common/sparkle_protocol.h
 
