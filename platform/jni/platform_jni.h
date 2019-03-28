@@ -3,7 +3,6 @@
 
 #include "platform/platform.h"
 #include "were/were_event_loop.h"
-#include <android_native_app_glue.h>
 
 Platform *platform_na_create(WereEventLoop *loop, struct android_app *app);
 

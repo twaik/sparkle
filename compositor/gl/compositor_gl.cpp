@@ -926,6 +926,10 @@ std::shared_ptr<CompositorGLSurface> CompositorGL::findSurface(const std::string
 
 void CompositorGL::transformCoordinates(int x, int y, std::shared_ptr<CompositorGLSurface> surface, int *_x, int *_y)
 {
+	*_x = x;
+	*_y = y;
+	return;
+	
     *_x = -1;
     *_y = -1;
 

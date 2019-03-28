@@ -749,12 +749,12 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
     if (xf86LoadSubModule(pScrn, "fb") == NULL) {
 	RETURN;
     }
+#endif
 
     if (!dPtr->swCursor) {
 	if (!xf86LoadSubModule(pScrn, "ramdac"))
 	    RETURN;
     }
-#endif
 
     /* We have no contiguous physical fb in physical memory */
     pScrn->memPhysBase = 0;

@@ -235,7 +235,9 @@ int WereSocketUnix::sendMessage(WereSocketUnixMessage *message)
         memcpy(fdptr, message->fds()->data(), message->fds()->size() * sizeof(int));
     }
 
+    pthread_mutex_lock(&lock);
     int ret = sendmsg(_fd, &msg, 0);
+    pthread_mutex_unlock(&lock);
 
     if (ret == -1)
     {
@@ -272,8 +274,9 @@ int WereSocketUnix::receiveMessage(WereSocketUnixMessage *message)
     msg.msg_control = buffer;
     msg.msg_controllen = bufferSize;
 
-
+    pthread_mutex_lock(&lock);
     int ret = recvmsg(_fd, &msg, 0);
+    pthread_mutex_unlock(&lock);
 
     if (ret == -1)
     {

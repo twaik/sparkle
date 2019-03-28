@@ -61,6 +61,7 @@ static Bool
 dummyUseHWCursor(ScreenPtr pScr, CursorPtr pCurs)
 {
     DUMMYPtr dPtr = DUMMYPTR(xf86ScreenToScrn(pScr));
+    return FALSE;
     return(!dPtr->swCursor);
 }
 

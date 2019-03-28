@@ -5,6 +5,7 @@
 #include "were_event_source.h"
 #include "were_signal.h"
 #include <string>
+#include <pthread.h>
 
 /* ================================================================================================================== */
 
@@ -66,6 +67,7 @@ private:
 
 private:
     SocketState state_;
+    pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 };
 
 /* ================================================================================================================== */
