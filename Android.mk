@@ -37,8 +37,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH) $(LOCAL_PATH)/src $(SPARKLE_C_INCLUDES)
 LOCAL_SRC_FILES := \
 	platform/jni/platform_jni.cpp					\
 	compositor/gl/compositor_gl.cpp					\
-	compositor/gl/texture.cpp						\
-	common/sparkle_protocol.cpp
+	compositor/gl/texture.cpp
 
 LOCAL_STATIC_LIBRARIES := libsparkle_common
 include $(BUILD_SHARED_LIBRARY)

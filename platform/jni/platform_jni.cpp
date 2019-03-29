@@ -1,7 +1,6 @@
 #include "platform_jni.h"
 #include "were/were_timer.h"
 #include "compositor/gl/compositor_gl.h"
-#include "sion_keymap.h"
 #include <stdexcept>
 #include <android/window.h>
 #include <android/native_window_jni.h>

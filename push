@@ -1,9 +1,0 @@
-#!/bin/sh
-
-set -e
-
-cd ..
-tar -czf /tmp/sparkle.tar.gz ./sparkle
-adb root
-adb push /tmp/sparkle.tar.gz /data/local/tmp/debian/home/sion/
-
