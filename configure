@@ -1,39 +1,50 @@
 #!/bin/bash
 REPOROOT=$(dirname "$(realpath "$0")")
 
+cd ${REPOROOT}/platform/jni/
+autoreconf -if
+./configure $@
+exitcode=$?
+if [ $exitcode -ne 0 ]; then
+    exit $exitcode
+fi
+
 cd ${REPOROOT}/were/
 ./configure $@
 exitcode=$?
 if [ $exitcode -ne 0 ]; then
-    return $exitcode
+    exit $exitcode
 fi
 
 cd ${REPOROOT}/xf86-video-sparkle/
 ./configure $@
 exitcode=$?
 if [ $exitcode -ne 0 ]; then
-    return $exitcode
+    exit $exitcode
 fi
 
 cd ${REPOROOT}/xf86-input-sparklei/
 ./configure $@
 exitcode=$?
 if [ $exitcode -ne 0 ]; then
-    return $exitcode
+    exit $exitcode
 fi
 
 cat > ${REPOROOT}/Makefile <<EOF
 all:
+	cd platform/jni; make -j4;
 	cd were; make -j4;
 	cd xf86-video-sparkle; make -j4;
 	cd xf86-input-sparklei; make -j4;
 
 install:
+	cd platform/jni; make -j4 install;
 	cd were; make -j4 install;
 	cd xf86-video-sparkle; make -j4 install;
 	cd xf86-input-sparklei; make -j4 install;
 
 clean:
+	cd platform/jni; make -j4 install;
 	cd were; make clean;
 	cd xf86-video-sparkle; make clean;
 	cd xf86-input-sparklei; make clean;

@@ -34,14 +34,11 @@ LOCAL_CXXFLAGS	:= -std=gnu++11 -Wall -fexceptions
 LOCAL_LDFLAGS	:= -u JNI_OnLoad
 LOCAL_LDLIBS	:= -landroid -llog -lEGL -lGLESv2 -lOpenSLES
 LOCAL_C_INCLUDES := $(LOCAL_PATH) $(LOCAL_PATH)/src $(SPARKLE_C_INCLUDES)
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/libandroidjni/jutils $(LOCAL_PATH)/libandroidjni/src $(LOCAL_PATH)/native_app_glue
 LOCAL_SRC_FILES := \
 	platform/jni/platform_jni.cpp					\
 	compositor/gl/compositor_gl.cpp					\
 	compositor/gl/texture.cpp						\
-	sound/sles/sound_sles.cpp						\
-	common/sparkle_protocol.cpp						\
-	common/sparkle_sound_buffer.cpp
+	common/sparkle_protocol.cpp
 
 LOCAL_STATIC_LIBRARIES := libsparkle_common
 include $(BUILD_SHARED_LIBRARY)
